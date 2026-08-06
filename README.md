@@ -29,3 +29,13 @@ Este prototipo usa pandas/scikit-learn por velocidad de desarrollo. La
 lógica es directamente portable a Apache Spark MLlib (`pyspark.ml`) sobre
 el Lakehouse Hadoop descrito en el Anexo 2 del TDR cuando se conecte a
 datos reales de volumen productivo.
+
+## Productos formales (Anexo 01)
+La carpeta `reporte/productos_formales/` contiene los 7 productos del TDR
+como documentos .docx separados, cada uno con la estructura exacta que
+exige el Anexo 01 (carátula, resumen ejecutivo, índice, introducción,
+objetivo, productos alcanzados, actividades, grado de cumplimiento,
+dificultades, conclusiones, anexos). El `reporte/Reporte_Tecnico_*.docx`
+en la raíz de `reporte/` es un documento único consolidado, útil para
+lectura rápida; los 7 productos son la versión formal equivalente al
+formato que la CGR usaría para evaluar entregables reales.
