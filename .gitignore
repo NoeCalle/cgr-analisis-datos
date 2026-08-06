@@ -15,3 +15,9 @@ lakehouse/oro/contratos_particionado/
 
 # Base de datos local (stand-in de SQL Server, regenerable)
 ssrs/reportes.db
+
+# Datos crudos reales de SEACE (pesados, con licencia CC BY 4.0 de OECE - no versionar el crudo)
+data_real/main.csv
+data_real/contracts.csv
+data_real/awards.csv
+data_real/parties.csv
