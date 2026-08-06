@@ -411,28 +411,71 @@ const doc = new Document({
         vineta("No se probó a escala de big data; el prototipo corre en pandas/scikit-learn sobre una muestra de miles de registros, no millones."),
         vineta("No cubre la integración con SSRS/Power BI, el pipeline de orquestación (Airflow/DAGs) ni el proceso de certificación institucional descritos en el TDR."),
 
-        titulo("8. Ruta de Escalamiento a Producción"),
+        titulo("8. Validación en Apache Spark MLlib (Ejecutado)"),
         parrafo(
-          "La lógica de features y modelado de este prototipo es directamente portable a Apache Spark MLlib " +
-          "(pyspark.ml) sobre el Lakehouse Hadoop descrito en el Anexo 2 del TDR: RandomForestClassifier e " +
-          "IsolationForest (o su equivalente con Bucketed Random Projection LSH / KMeans en MLlib) tienen APIs " +
-          "prácticamente idénticas a scikit-learn. El trabajo adicional para producción consiste principalmente " +
-          "en:"
+          "A diferencia de las secciones anteriores, que describen el prototipo en scikit-learn, esta sección " +
+          "documenta una ejecución real sobre pyspark.ml en modo local (local[*], sin clúster YARN), para " +
+          "cerrar la brecha señalada frente al objetivo específico 3.2.a del TDR (\"Diseñar, entrenar y " +
+          "optimizar modelos... utilizando Apache Spark (Spark MLlib)\")."
         ),
-        vineta("Conectar la ingesta real a las capas Plata/Oro del Lakehouse (reemplazando el generador sintético)."),
-        vineta("Migrar el feature engineering de pandas a Spark DataFrames / Spark SQL."),
+        subtitulo("8.1. Favoritismo — RandomForestClassifier (pyspark.ml)"),
+        parrafo(
+          "Misma arquitectura que la versión scikit-learn (300 árboles, profundidad 6), con ponderación de " +
+          "clases vía columna de pesos (Spark MLlib no tiene class_weight='balanced' nativo). Resultado: los " +
+          "6 casos reales sembrados aparecen en el top-6 del ranking, igual que en la versión scikit-learn. " +
+          "Sesión Spark completa (arranque + entrenamiento + evaluación): ~50 segundos en modo local — el " +
+          "costo real de portar a Spark es de infraestructura y arranque, no de lógica de modelado."
+        ),
+        subtitulo("8.2. Fraccionamiento — decisión de arquitectura real: KMeans en vez de Isolation Forest"),
+        parrafo(
+          "Hallazgo de implementación no anticipado: Spark MLlib no incluye Isolation Forest de forma nativa " +
+          "y no existe un paquete confiable en PyPI que lo agregue a pyspark.ml. El numeral 4.2.3 del TDR " +
+          "permite explícitamente \"agrupamiento (clustering) o detección de anomalías\", por lo que se " +
+          "implementó KMeans (pyspark.ml.clustering) usando la distancia al centroide asignado como score de " +
+          "anomalía — la alternativa nativa correcta dentro de MLlib."
+        ),
+        tabla(
+          ["Enfoque (Spark MLlib)", "Grupos marcados", "Aciertos reales", "Precisión"],
+          [
+            ["KMeans (distancia a centroide, solo)", "8", "0", "0.0%"],
+            ["Regla interpretable (umbral legal)", "7", "7", "100.0%"],
+          ],
+          [4200, 2200, 2000, 1600],
+        ),
+        parrafo("", { size: 4 }),
+        parrafo(
+          "Este resultado refuerza el hallazgo central del prototipo (Sección 4): KMeans en Spark tuvo un " +
+          "desempeño incluso menor que Isolation Forest en scikit-learn (0/8 vs. 3/8) para detectar " +
+          "fraccionamiento sin contexto normativo, mientras que la regla interpretable mantuvo 100% de " +
+          "precisión de forma idéntica en ambas plataformas. La elección del algoritmo de \"caja negra\" " +
+          "importa menos que traducir correctamente el umbral legal a una regla computable."
+        ),
+        subtitulo("8.3. Lo que sigue siendo trabajo pendiente"),
+        vineta("Ejecución sobre un clúster YARN real, no en modo local[*] sobre una sola máquina."),
+        vineta("Lectura desde el Lakehouse (capas Bronce/Plata/Oro) en vez de un CSV local."),
+        vineta("Validación cruzada rigurosa vía pyspark.ml.tuning.CrossValidator (aquí se evaluó sobre el conjunto completo de entrenamiento, no con un esquema k-fold estratificado nativo de Spark)."),
+        vineta("Orquestación con Airflow, integración SSRS/Power BI y despliegue en ambientes de certificación — ver limitaciones."),
+
+        titulo("9. Ruta de Escalamiento Restante"),
+        parrafo(
+          "Con la validación de la Sección 8, el trabajo pendiente para producción se reduce a infraestructura " +
+          "y gobernanza de datos, no a portar la lógica de modelado — eso ya se ejecutó en Spark MLlib real:"
+        ),
+        vineta("Conectar la ingesta real a las capas Plata/Oro del Lakehouse (reemplazando el CSV local por lectura del Delta Lake sobre Hadoop, según el Anexo 2 del TDR)."),
         vineta("Orquestar el pipeline con Airflow (ya disponible en la plataforma de la CGR según el Anexo 2)."),
-        vineta("Añadir el módulo de análisis de grafos (proveedor-funcionario) con GraphX."),
+        vineta("Ejecutar sobre un clúster YARN real, no en modo local[*]."),
+        vineta("Añadir el módulo de análisis de grafos (proveedor-funcionario) con GraphX, en vez de networkx (usado en la Sección 5 por rapidez de desarrollo)."),
         vineta("Publicar resultados hacia SQL Server / SSRS para consumo desde Power BI, tal como especifica la arquitectura institucional."),
 
-        titulo("9. Conclusión"),
+        titulo("10. Conclusión"),
         parrafo(
           "Este prototipo demuestra en código abierto y en un plazo muy corto que los tres casos de uso " +
           "priorizados del TDR —favoritismo, fraccionamiento y vínculos proveedor-funcionario— son técnicamente " +
           "alcanzables sin necesidad de comprometer de inmediato una consultoría individual de 180 días y S/. " +
-          "72,000. El código fuente completo, comentado y versionado está disponible públicamente en el " +
-          "repositorio indicado en la portada, cumpliendo con el espíritu del ítem 6 del checklist de " +
-          "aceptación del Anexo 3 (\"código versionado en Git institucional\")."
+          "72,000, y que la lógica de modelado ya fue validada tanto en scikit-learn como en Apache Spark " +
+          "MLlib real (Sección 8), no solo de forma teórica. El código fuente completo, comentado y versionado " +
+          "está disponible públicamente en el repositorio indicado en la portada, cumpliendo con el espíritu " +
+          "del ítem 6 del checklist de aceptación del Anexo 3 (\"código versionado en Git institucional\")."
         ),
       ],
     },
