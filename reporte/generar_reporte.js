@@ -665,6 +665,65 @@ const doc = new Document({
           "el repositorio documenta cómo reproducirlos desde la fuente pública original."
         ),
 
+        titulo("Anexo B. Verificación de Componentes de la Plataforma (Anexo 2 del TDR)"),
+        parrafo(
+          "El Anexo 2 del TDR (\"Arquitectura de la Plataforma de Minería de Datos\") especifica los " +
+          "componentes esperados: ingesta Batch/CDC-CDF/Streaming, Delta Lake con capas Bronce/Plata/Oro, HMS " +
+          "sobre MySQL, lenguajes soportados (Python, SQL, Scala, R, Java), Spark (SQL/Streaming/MLlib/GraphX) " +
+          "sobre Hadoop YARN, Airflow, y salida hacia SQL Server/SSRS/Power BI. Se verificó, componente por " +
+          "componente, cuáles corren realmente en este entorno de prueba de concepto."
+        ),
+        tabla(
+          ["Componente", "Estado"],
+          [
+            ["Ingesta Batch", "Completo"],
+            ["Ingesta Streaming", "Completo (verificado abajo)"],
+            ["Ingesta CDC/CDF", "Bloqueado (depende de Delta Lake)"],
+            ["Capas Bronce/Plata/Oro", "Completo (como Parquet, no Delta Lake)"],
+            ["Delta Lake (formato nativo)", "Bloqueado — requiere Maven"],
+            ["HMS (Hive Metastore)", "Completo (verificado abajo)"],
+            ["Parquet", "Completo"],
+            ["Python / SQL / Scala / R / Java", "Completo — los 5 verificados"],
+            ["Spark MLlib", "Completo"],
+            ["Spark GraphX", "Bloqueado — requiere Maven"],
+            ["Hadoop YARN / HDFS", "Bloqueado — sin paquete disponible en este entorno"],
+            ["Apache Airflow", "Completo"],
+            ["SQL Server / SSRS", "Parcial — esquema real, SQLite como stand-in"],
+            ["Modelo Tabular (SSAS)", "Fuera de alcance — solo Windows Server"],
+            ["Power BI", "Fuera de alcance — requiere licencia/cuenta"],
+          ],
+          [5200, 3600],
+        ),
+        parrafo("", { size: 4 }),
+        subtitulo("Tres tipos de bloqueo, no uno solo"),
+        vineta("Red del entorno de prueba: Hadoop/YARN, HDFS, GraphX y Delta Lake requieren descargar un .jar o tarball desde Maven Central o Apache, dominios fuera de la lista de salida permitida aquí. Con acceso a internet sin restricciones (ej. un servidor de la CGR), esto no es un límite técnico real."),
+        vineta("Sistema operativo: SSAS es tecnología exclusiva de Windows Server; no existe equivalente en Linux."),
+        vineta("Licencia/cuenta: Power BI y un SQL Server real requieren una cuenta o licencia — no hay forma de \"instalarlos gratis\" en ningún entorno. Quedan fuera de alcance por decisión, no por límite técnico."),
+
+        subtitulo("Evidencia: Streaming"),
+        parrafo(
+          "Se construyó un stream de Spark Structured Streaming que vigila una carpeta y procesa cada archivo " +
+          "nuevo que llega — simulando la publicación incremental de contratos a lo largo del día, no una " +
+          "carga única. Resultado real: 3 micro-batches procesados de forma incremental; la entidad E01 " +
+          "acumuló correctamente 3 contratos por S/. 296,000 a medida que llegaban, sin reprocesar desde cero."
+        ),
+        subtitulo("Evidencia: HMS (Hive Metastore)"),
+        parrafo(
+          "Se registraron 4 tablas reales del prototipo (incluyendo los 47,442 contratos reales de SEACE del " +
+          "Anexo A) en un catálogo Hive Metastore, consultables por nombre vía SQL puro sin conocer la ruta " +
+          "física del archivo — el propósito real de un metastore. El backend es Derby local, no MySQL como " +
+          "especifica el Anexo 2, pero es un cambio de una línea de configuración, no de arquitectura."
+        ),
+        subtitulo("Evidencia: R"),
+        parrafo(
+          "Se ejecutó una prueba t de Welch en R sobre la variable de mayor importancia del modelo de " +
+          "favoritismo (concentracion_objeto, ver Sección 3), comparando el grupo con favoritismo real contra " +
+          "el resto. Resultado: diferencia altamente significativa (p = 3.58×10⁻⁸), confirmando con una prueba " +
+          "estadística formal lo que el Random Forest ya señalaba por importancia de variable."
+        ),
+        imagen("outputs/charts/13_r_boxplot_concentracion.png", 460, 306),
+        piePagina("Figura 11. Separación entre grupos (R) — evidencia visual de la misma señal que detecta el modelo."),
+
         titulo("14. Ruta de Escalamiento Restante"),
         parrafo(
           "Con las validaciones de las Secciones 8 y 9, el trabajo pendiente para producción se reduce casi " +
