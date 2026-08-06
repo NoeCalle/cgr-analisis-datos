@@ -1,0 +1,5 @@
+timestamp,escenario,psi_monto_total,psi_pct_no_competitiva,psi_concentracion_objeto,psi_max,recall_casos_nuevos,reentrenamiento_disparado,motivo,n_registros_modelo_resultante
+2026-08-06T20:43:49.304839+00:00,normal,0.149,0.1862,0.0,0.1862,,False,sin señales de deriva ni degradación,
+2026-08-06T20:43:49.603239+00:00,con_drift,0.0895,1.6078,0.0,1.6078,1.0,True,PSI máximo (1.6078) supera el umbral (0.25),2923.0
+2026-08-06T20:44:45.411530+00:00,normal,0.149,0.1862,0.0,0.1862,,False,sin señales de deriva ni degradación,
+2026-08-06T20:44:45.740191+00:00,con_drift,0.0895,1.6078,0.0,1.6078,1.0,True,PSI máximo (1.6078) supera el umbral (0.25),2923.0

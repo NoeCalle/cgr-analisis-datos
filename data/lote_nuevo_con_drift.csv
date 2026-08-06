@@ -1,0 +1,607 @@
+id_contrato,id_proveedor,id_entidad,id_funcionario,modalidad,objeto,monto,fecha_contrato,es_favoritismo_real,es_fraccionamiento_real
+CN000293,P0216,E12,F021,Contratación Directa,Adquisición de bienes de oficina,57395.84,2026-07-07,False,False
+CN000003,P0176,E14,F016,Licitación Pública,Consultoría en ingeniería,68889.63,2026-08-06,False,False
+CN000010,P0096,E08,F015,Adjudicación Simplificada,Servicio de transporte,43675.43,2026-09-23,False,False
+CN000188,P0041,E05,F059,Contratación Directa,Suministro de combustible,43440.59,2026-09-07,False,False
+CN000597,P0034,E02,F011,Concurso Público,Suministro de combustible,103716.4,2026-07-06,False,False
+CN000074,P0136,E14,F040,Comparación de Precios,Adquisición de equipos informáticos,184023.59,2026-08-13,False,False
+CN000544,P0123,E09,F027,Contratación Directa,Suministro de combustible,128345.41,2026-08-03,False,False
+CN000105,P0198,E01,F048,Adjudicación Simplificada,Servicio de mantenimiento de infraestructura,80749.31,2026-08-28,False,False
+CN000279,P0035,E04,F053,Contratación Directa,Servicio de transporte,101387.55,2026-09-23,False,False
+CN000199,P0029,E16,F057,Adjudicación Simplificada,Adquisición de equipos informáticos,5037.1,2026-07-18,False,False
+CN000432,P0110,E07,F013,Contratación Directa,Servicio de limpieza y vigilancia,67435.36,2026-08-11,False,False
+CN000278,P0207,E12,F021,Licitación Pública,Servicio de transporte,31184.62,2026-08-18,False,False
+CN000337,P0162,E11,F049,Contratación Directa,Suministro de combustible,129785.93,2026-08-25,False,False
+CN000418,P0120,E03,F000,Licitación Pública,Obra de rehabilitación vial,75607.53,2026-07-24,False,False
+CN000335,P0215,E06,F039,Contratación Directa,Adquisición de materiales de construcción,40294.34,2026-07-27,False,False
+CN000048,P0111,E10,F008,Contratación Directa,Adquisición de equipos informáticos,50165.81,2026-07-29,False,False
+CN000190,P0129,E04,F053,Comparación de Precios,Adquisición de bienes de oficina,9300.96,2026-07-17,False,False
+CN000263,P0121,E07,F023,Contratación Directa,Servicio de mantenimiento de infraestructura,141066.22,2026-08-14,False,False
+CN000006,P0026,E08,F028,Comparación de Precios,Obra de rehabilitación vial,237554.6,2026-08-27,False,False
+CN000387,P0018,E17,F031,Comparación de Precios,Adquisición de equipos informáticos,21108.26,2026-08-21,False,False
+CN000499,P0188,E04,F030,Contratación Directa,Consultoría en ingeniería,16221.04,2026-09-03,False,False
+CN000416,P0065,E16,F024,Contratación Directa,Servicio de transporte,189631.4,2026-07-12,False,False
+CN000167,P0212,E02,F051,Comparación de Precios,Servicio de capacitación,42539.08,2026-07-13,False,False
+CND0101,P0205,E12,F021,Contratación Directa,Adquisición de materiales de construcción,1090769.77,2026-09-08,True,False
+CND0100,P0205,E12,F021,Contratación Directa,Adquisición de materiales de construcción,1479496.48,2026-09-05,True,False
+CN000134,P0021,E05,F037,Comparación de Precios,Servicio de limpieza y vigilancia,58439.57,2026-08-21,False,False
+CN000321,P0098,E09,F027,Comparación de Precios,Servicio de transporte,26337.89,2026-07-26,False,False
+CN000032,P0043,E08,F005,Licitación Pública,Adquisición de materiales de construcción,96425.73,2026-07-29,False,False
+CN000050,P0164,E16,F024,Contratación Directa,Servicio de limpieza y vigilancia,34312.83,2026-09-03,False,False
+CN000206,P0134,E04,F030,Adjudicación Simplificada,Servicio de mantenimiento de infraestructura,28876.54,2026-08-14,False,False
+CN000027,P0123,E05,F001,Contratación Directa,Consultoría en ingeniería,42511.61,2026-07-06,False,False
+CN000562,P0101,E00,F010,Contratación Directa,Adquisición de bienes de oficina,136130.65,2026-08-19,False,False
+CN000431,P0103,E02,F025,Comparación de Precios,Adquisición de materiales de construcción,183847.02,2026-09-23,False,False
+CN000081,P0162,E16,F057,Contratación Directa,Servicio de mantenimiento de infraestructura,33835.37,2026-07-16,False,False
+CN000576,P0189,E11,F007,Comparación de Precios,Servicio de transporte,56329.53,2026-07-30,False,False
+CN000518,P0065,E00,F041,Comparación de Precios,Servicio de transporte,6433.87,2026-08-27,False,False
+CN000552,P0061,E14,F029,Comparación de Precios,Servicio de mantenimiento de infraestructura,47315.2,2026-09-09,False,False
+CN000208,P0097,E13,F055,Contratación Directa,Servicio de transporte,22796.79,2026-07-27,False,False
+CN000100,P0029,E11,F007,Contratación Directa,Servicio de mantenimiento de infraestructura,185924.89,2026-08-04,False,False
+CN000434,P0125,E06,F006,Comparación de Precios,Suministro de combustible,30000.23,2026-09-04,False,False
+CN000015,P0066,E02,F011,Comparación de Precios,Obra de rehabilitación vial,34234.24,2026-08-30,False,False
+CN000144,P0103,E14,F029,Comparación de Precios,Adquisición de materiales de construcción,32382.24,2026-07-23,False,False
+CN000036,P0068,E00,F038,Comparación de Precios,Servicio de capacitación,59473.69,2026-08-14,False,False
+CN000596,P0156,E10,F004,Contratación Directa,Servicio de mantenimiento de infraestructura,35164.78,2026-07-26,False,False
+CN000448,P0119,E00,F041,Concurso Público,Adquisición de equipos informáticos,103552.38,2026-08-21,False,False
+CN000514,P0197,E17,F012,Licitación Pública,Servicio de capacitación,126336.69,2026-08-05,False,False
+CN000275,P0066,E09,F034,Contratación Directa,Adquisición de equipos informáticos,63032.34,2026-09-17,False,False
+CN000030,P0171,E17,F031,Comparación de Precios,Adquisición de bienes de oficina,36292.18,2026-08-01,False,False
+CN000487,P0117,E09,F046,Comparación de Precios,Adquisición de materiales de construcción,8248.44,2026-08-29,False,False
+CN000317,P0111,E09,F033,Contratación Directa,Servicio de mantenimiento de infraestructura,191227.86,2026-09-29,False,False
+CN000530,P0171,E05,F059,Contratación Directa,Servicio de mantenimiento de infraestructura,46281.27,2026-07-19,False,False
+CN000247,P0155,E03,F000,Contratación Directa,Suministro de combustible,28722.12,2026-07-26,False,False
+CN000360,P0163,E00,F010,Adjudicación Simplificada,Adquisición de bienes de oficina,36193.01,2026-09-03,False,False
+CN000064,P0134,E05,F009,Comparación de Precios,Adquisición de bienes de oficina,91823.96,2026-09-13,False,False
+CN000049,P0212,E05,F052,Contratación Directa,Servicio de capacitación,1138633.51,2026-07-21,False,False
+CN000155,P0141,E04,F053,Contratación Directa,Obra de rehabilitación vial,23388.49,2026-07-03,False,False
+CN000007,P0115,E16,F042,Comparación de Precios,Adquisición de materiales de construcción,60656.62,2026-07-01,False,False
+CN000195,P0006,E10,F004,Comparación de Precios,Obra de rehabilitación vial,228411.39,2026-08-13,False,False
+CN000111,P0048,E13,F056,Comparación de Precios,Consultoría en ingeniería,123832.12,2026-08-02,False,False
+CN000172,P0067,E17,F031,Comparación de Precios,Suministro de combustible,25116.86,2026-08-19,False,False
+CN000107,P0046,E05,F032,Contratación Directa,Servicio de capacitación,34711.27,2026-08-10,False,False
+CN000316,P0126,E11,F054,Contratación Directa,Consultoría en ingeniería,72723.31,2026-08-24,False,False
+CN000555,P0185,E14,F040,Comparación de Precios,Servicio de mantenimiento de infraestructura,60655.97,2026-07-19,False,False
+CN000118,P0129,E01,F017,Adjudicación Simplificada,Suministro de combustible,47731.0,2026-09-06,False,False
+CN000482,P0008,E10,F004,Contratación Directa,Servicio de mantenimiento de infraestructura,47499.34,2026-08-01,False,False
+CN000324,P0058,E02,F011,Comparación de Precios,Obra de rehabilitación vial,11142.33,2026-08-30,False,False
+CN000137,P0202,E10,F008,Contratación Directa,Suministro de combustible,52981.41,2026-08-01,False,False
+CN000040,P0003,E04,F030,Contratación Directa,Servicio de capacitación,13392.08,2026-09-24,False,False
+CN000517,P0196,E17,F003,Contratación Directa,Consultoría en ingeniería,101565.07,2026-08-23,False,False
+CN000171,P0054,E00,F041,Comparación de Precios,Servicio de transporte,150130.74,2026-07-13,False,False
+CN000538,P0045,E07,F036,Contratación Directa,Suministro de combustible,84844.43,2026-09-19,False,False
+CN000574,P0119,E17,F012,Contratación Directa,Servicio de limpieza y vigilancia,689299.29,2026-08-25,False,False
+CN000459,P0125,E15,F035,Contratación Directa,Servicio de transporte,89680.1,2026-08-30,False,False
+CN000398,P0166,E01,F017,Contratación Directa,Servicio de limpieza y vigilancia,30821.38,2026-07-12,False,False
+CN000086,P0122,E02,F025,Contratación Directa,Servicio de capacitación,77833.8,2026-08-30,False,False
+CN000174,P0100,E14,F040,Comparación de Precios,Consultoría en ingeniería,26792.64,2026-09-02,False,False
+CN000545,P0087,E17,F031,Comparación de Precios,Consultoría en ingeniería,115925.91,2026-07-03,False,False
+CN000180,P0177,E13,F055,Adjudicación Simplificada,Servicio de capacitación,162054.37,2026-08-14,False,False
+CN000540,P0118,E01,F018,Contratación Directa,Servicio de capacitación,594625.19,2026-07-28,False,False
+CN000506,P0208,E13,F058,Contratación Directa,Adquisición de bienes de oficina,544511.05,2026-07-06,False,False
+CN000439,P0045,E01,F018,Comparación de Precios,Adquisición de equipos informáticos,733620.53,2026-07-27,False,False
+CN000214,P0083,E03,F000,Contratación Directa,Servicio de mantenimiento de infraestructura,87621.46,2026-08-18,False,False
+CN000533,P0165,E03,F000,Contratación Directa,Servicio de limpieza y vigilancia,95362.29,2026-09-24,False,False
+CN000579,P0160,E07,F023,Comparación de Precios,Servicio de capacitación,3222.11,2026-08-26,False,False
+CN000126,P0201,E08,F022,Contratación Directa,Suministro de combustible,6187.69,2026-08-15,False,False
+CN000309,P0117,E04,F019,Contratación Directa,Suministro de combustible,27948.07,2026-09-14,False,False
+CN000249,P0047,E17,F031,Adjudicación Simplificada,Suministro de combustible,330454.73,2026-08-24,False,False
+CN000228,P0061,E11,F054,Adjudicación Simplificada,Adquisición de bienes de oficina,41859.78,2026-09-26,False,False
+CN000216,P0132,E16,F024,Contratación Directa,Servicio de transporte,41544.02,2026-09-22,False,False
+CN000209,P0099,E01,F017,Comparación de Precios,Obra de rehabilitación vial,26597.05,2026-07-12,False,False
+CN000300,P0108,E00,F041,Contratación Directa,Servicio de capacitación,488802.3,2026-08-08,False,False
+CN000440,P0171,E17,F003,Comparación de Precios,Suministro de combustible,35608.75,2026-07-26,False,False
+CN000152,P0129,E04,F030,Contratación Directa,Consultoría en ingeniería,24474.9,2026-07-04,False,False
+CN000331,P0051,E06,F006,Comparación de Precios,Suministro de combustible,55005.84,2026-09-28,False,False
+CN000366,P0077,E08,F015,Contratación Directa,Suministro de combustible,13044.76,2026-07-07,False,False
+CN000370,P0031,E16,F042,Contratación Directa,Adquisición de equipos informáticos,33964.51,2026-09-11,False,False
+CN000269,P0034,E12,F021,Contratación Directa,Servicio de transporte,72769.15,2026-09-19,False,False
+CN000462,P0137,E08,F022,Licitación Pública,Adquisición de bienes de oficina,37556.86,2026-08-17,False,False
+CN000456,P0161,E07,F036,Contratación Directa,Adquisición de bienes de oficina,18781.46,2026-08-18,False,False
+CN000410,P0167,E06,F039,Comparación de Precios,Obra de rehabilitación vial,90186.66,2026-09-23,False,False
+CN000302,P0097,E09,F027,Contratación Directa,Servicio de transporte,70514.54,2026-07-06,False,False
+CN000500,P0036,E00,F038,Contratación Directa,Servicio de mantenimiento de infraestructura,249101.6,2026-07-14,False,False
+CN000281,P0171,E10,F008,Licitación Pública,Servicio de limpieza y vigilancia,69664.62,2026-08-09,False,False
+CN000258,P0058,E07,F023,Contratación Directa,Servicio de transporte,42084.44,2026-07-28,False,False
+CN000307,P0091,E05,F047,Licitación Pública,Obra de rehabilitación vial,330533.89,2026-07-31,False,False
+CN000451,P0170,E12,F021,Contratación Directa,Adquisición de materiales de construcción,500128.26,2026-09-19,False,False
+CN000177,P0172,E08,F028,Concurso Público,Servicio de transporte,88052.38,2026-08-28,False,False
+CN000078,P0173,E06,F006,Comparación de Precios,Consultoría en ingeniería,29562.32,2026-09-29,False,False
+CN000103,P0170,E17,F003,Adjudicación Simplificada,Obra de rehabilitación vial,141004.21,2026-09-11,False,False
+CN000425,P0146,E13,F056,Contratación Directa,Servicio de limpieza y vigilancia,183189.78,2026-07-25,False,False
+CN000053,P0134,E07,F036,Contratación Directa,Consultoría en ingeniería,118900.16,2026-09-11,False,False
+CN000295,P0008,E08,F005,Comparación de Precios,Adquisición de materiales de construcción,126100.24,2026-07-01,False,False
+CN000362,P0084,E14,F016,Adjudicación Simplificada,Consultoría en ingeniería,175291.68,2026-07-23,False,False
+CN000217,P0102,E05,F009,Contratación Directa,Servicio de limpieza y vigilancia,24802.23,2026-08-02,False,False
+CN000308,P0066,E12,F050,Comparación de Precios,Adquisición de materiales de construcción,84345.37,2026-08-10,False,False
+CN000577,P0026,E16,F042,Contratación Directa,Suministro de combustible,32441.56,2026-07-28,False,False
+CN000465,P0132,E09,F043,Contratación Directa,Suministro de combustible,527500.92,2026-07-18,False,False
+CN000037,P0052,E02,F044,Contratación Directa,Servicio de transporte,181687.06,2026-09-09,False,False
+CN000191,P0139,E07,F023,Contratación Directa,Suministro de combustible,17406.6,2026-07-21,False,False
+CN000113,P0005,E09,F046,Comparación de Precios,Suministro de combustible,32024.95,2026-07-15,False,False
+CN000343,P0201,E15,F035,Contratación Directa,Servicio de capacitación,13412.61,2026-07-25,False,False
+CN000380,P0090,E11,F049,Comparación de Precios,Servicio de limpieza y vigilancia,42017.46,2026-08-16,False,False
+CN000563,P0051,E05,F032,Contratación Directa,Obra de rehabilitación vial,12402.32,2026-07-15,False,False
+CN000266,P0004,E16,F057,Contratación Directa,Servicio de mantenimiento de infraestructura,269523.6,2026-08-16,False,False
+CN000071,P0171,E13,F058,Adjudicación Simplificada,Adquisición de equipos informáticos,88912.06,2026-08-19,False,False
+CN000183,P0102,E03,F000,Contratación Directa,Obra de rehabilitación vial,137214.43,2026-08-24,False,False
+CN000166,P0168,E13,F055,Contratación Directa,Servicio de limpieza y vigilancia,29809.27,2026-09-13,False,False
+CN000374,P0056,E11,F007,Contratación Directa,Servicio de limpieza y vigilancia,11368.92,2026-08-29,False,False
+CN000592,P0068,E01,F018,Comparación de Precios,Suministro de combustible,30338.0,2026-07-26,False,False
+CN000486,P0095,E17,F012,Comparación de Precios,Suministro de combustible,93282.15,2026-08-28,False,False
+CN000002,P0029,E00,F038,Contratación Directa,Obra de rehabilitación vial,861988.09,2026-09-12,False,False
+CN000319,P0082,E00,F041,Comparación de Precios,Servicio de transporte,16005.14,2026-07-11,False,False
+CN000004,P0039,E11,F049,Contratación Directa,Servicio de capacitación,73614.16,2026-08-27,False,False
+CN000471,P0046,E12,F050,Comparación de Precios,Servicio de mantenimiento de infraestructura,78922.9,2026-07-18,False,False
+CN000383,P0095,E08,F015,Contratación Directa,Servicio de mantenimiento de infraestructura,22580.14,2026-07-17,False,False
+CN000025,P0108,E09,F027,Contratación Directa,Suministro de combustible,36358.81,2026-08-22,False,False
+CN000162,P0090,E07,F013,Comparación de Precios,Servicio de mantenimiento de infraestructura,251174.89,2026-08-31,False,False
+CN000046,P0191,E01,F018,Comparación de Precios,Adquisición de bienes de oficina,71673.42,2026-07-30,False,False
+CN000245,P0181,E10,F008,Contratación Directa,Consultoría en ingeniería,23571.5,2026-09-18,False,False
+CN000551,P0013,E01,F048,Comparación de Precios,Consultoría en ingeniería,57841.16,2026-08-01,False,False
+CN000194,P0099,E13,F056,Contratación Directa,Obra de rehabilitación vial,47313.68,2026-07-30,False,False
+CN000115,P0105,E04,F019,Comparación de Precios,Suministro de combustible,756045.22,2026-07-17,False,False
+CN000287,P0020,E05,F001,Comparación de Precios,Servicio de transporte,39120.72,2026-08-05,False,False
+CN000476,P0027,E16,F002,Contratación Directa,Servicio de limpieza y vigilancia,203216.03,2026-07-11,False,False
+CN000435,P0047,E03,F000,Comparación de Precios,Suministro de combustible,40073.07,2026-07-29,False,False
+CN000017,P0008,E10,F026,Comparación de Precios,Servicio de transporte,184478.57,2026-07-06,False,False
+CN000132,P0135,E17,F003,Contratación Directa,Servicio de capacitación,50576.61,2026-07-16,False,False
+CN000204,P0213,E07,F023,Contratación Directa,Servicio de transporte,28773.69,2026-08-28,False,False
+CN000210,P0171,E15,F035,Comparación de Precios,Servicio de transporte,30239.01,2026-07-03,False,False
+CN000367,P0011,E15,F035,Comparación de Precios,Adquisición de equipos informáticos,47836.26,2026-08-10,False,False
+CN000102,P0097,E04,F019,Contratación Directa,Adquisición de materiales de construcción,4340.15,2026-08-03,False,False
+CN000289,P0013,E00,F038,Comparación de Precios,Suministro de combustible,221183.46,2026-08-27,False,False
+CN000230,P0097,E14,F029,Licitación Pública,Adquisición de bienes de oficina,38155.1,2026-09-27,False,False
+CN000369,P0111,E12,F021,Comparación de Precios,Servicio de transporte,81834.2,2026-08-12,False,False
+CN000415,P0142,E05,F037,Contratación Directa,Servicio de capacitación,14829.39,2026-07-07,False,False
+CN000141,P0112,E15,F035,Comparación de Precios,Adquisición de bienes de oficina,236512.4,2026-08-28,False,False
+CN000591,P0061,E17,F031,Contratación Directa,Obra de rehabilitación vial,43893.58,2026-08-03,False,False
+CN000559,P0090,E10,F008,Contratación Directa,Adquisición de materiales de construcción,20403.28,2026-07-01,False,False
+CN000044,P0113,E11,F054,Contratación Directa,Servicio de limpieza y vigilancia,48466.65,2026-07-13,False,False
+CN000595,P0052,E02,F011,Comparación de Precios,Suministro de combustible,96298.48,2026-09-22,False,False
+CN000136,P0181,E12,F021,Contratación Directa,Consultoría en ingeniería,249001.0,2026-08-28,False,False
+CN000598,P0094,E08,F022,Comparación de Precios,Adquisición de equipos informáticos,26157.67,2026-09-22,False,False
+CN000420,P0028,E14,F029,Comparación de Precios,Suministro de combustible,9285.1,2026-08-19,False,False
+CN000467,P0105,E03,F000,Contratación Directa,Adquisición de bienes de oficina,33731.46,2026-09-26,False,False
+CN000547,P0163,E17,F031,Contratación Directa,Consultoría en ingeniería,20821.23,2026-09-22,False,False
+CN000508,P0105,E12,F050,Comparación de Precios,Suministro de combustible,43699.8,2026-08-19,False,False
+CND0001,P0076,E08,F022,Contratación Directa,Consultoría en ingeniería,1097074.89,2026-07-01,True,False
+CN000026,P0109,E11,F054,Comparación de Precios,Suministro de combustible,16036.56,2026-08-23,False,False
+CN000142,P0152,E08,F014,Comparación de Precios,Adquisición de equipos informáticos,318084.11,2026-08-09,False,False
+CND0102,P0205,E12,F021,Contratación Directa,Adquisición de materiales de construcción,1052968.4,2026-08-23,True,False
+CN000567,P0068,E16,F024,Contratación Directa,Servicio de limpieza y vigilancia,71321.84,2026-09-02,False,False
+CN000348,P0004,E15,F035,Contratación Directa,Servicio de limpieza y vigilancia,259971.65,2026-07-30,False,False
+CN000043,P0097,E05,F052,Contratación Directa,Adquisición de equipos informáticos,77343.03,2026-07-14,False,False
+CN000178,P0146,E05,F032,Concurso Público,Consultoría en ingeniería,44928.27,2026-08-06,False,False
+CN000364,P0053,E02,F044,Contratación Directa,Servicio de transporte,88464.66,2026-08-25,False,False
+CN000590,P0047,E09,F034,Contratación Directa,Obra de rehabilitación vial,23955.04,2026-09-19,False,False
+CN000124,P0088,E03,F000,Comparación de Precios,Obra de rehabilitación vial,38123.42,2026-08-02,False,False
+CN000549,P0021,E17,F031,Licitación Pública,Obra de rehabilitación vial,83514.13,2026-07-15,False,False
+CN000222,P0084,E09,F034,Contratación Directa,Servicio de transporte,167591.88,2026-09-13,False,False
+CN000463,P0132,E11,F054,Contratación Directa,Adquisición de bienes de oficina,36986.53,2026-07-01,False,False
+CN000261,P0025,E08,F015,Comparación de Precios,Servicio de mantenimiento de infraestructura,100804.42,2026-08-11,False,False
+CN000586,P0059,E10,F008,Contratación Directa,Adquisición de materiales de construcción,15009.93,2026-09-16,False,False
+CN000522,P0034,E02,F044,Contratación Directa,Servicio de mantenimiento de infraestructura,84447.24,2026-08-08,False,False
+CN000583,P0200,E01,F018,Contratación Directa,Adquisición de bienes de oficina,60278.86,2026-09-19,False,False
+CN000564,P0146,E15,F035,Contratación Directa,Servicio de transporte,10819.67,2026-08-02,False,False
+CN000267,P0072,E06,F039,Contratación Directa,Servicio de limpieza y vigilancia,109845.33,2026-08-15,False,False
+CN000125,P0116,E11,F054,Contratación Directa,Servicio de mantenimiento de infraestructura,28409.5,2026-07-24,False,False
+CN000509,P0009,E02,F044,Contratación Directa,Adquisición de bienes de oficina,27230.14,2026-07-04,False,False
+CN000489,P0044,E00,F041,Comparación de Precios,Servicio de capacitación,70934.28,2026-09-05,False,False
+CN000233,P0019,E02,F044,Contratación Directa,Adquisición de equipos informáticos,219809.61,2026-07-23,False,False
+CN000202,P0057,E15,F035,Contratación Directa,Adquisición de bienes de oficina,11491.32,2026-07-03,False,False
+CN000075,P0078,E12,F021,Contratación Directa,Adquisición de equipos informáticos,14137.17,2026-09-27,False,False
+CN000173,P0150,E16,F042,Contratación Directa,Adquisición de bienes de oficina,123660.1,2026-07-23,False,False
+CN000584,P0138,E05,F037,Adjudicación Simplificada,Suministro de combustible,10664.26,2026-09-25,False,False
+CN000051,P0028,E09,F033,Contratación Directa,Adquisición de materiales de construcción,284918.52,2026-07-29,False,False
+CN000470,P0103,E15,F035,Contratación Directa,Adquisición de equipos informáticos,69616.3,2026-09-14,False,False
+CN000340,P0098,E01,F048,Comparación de Precios,Adquisición de materiales de construcción,43765.53,2026-08-29,False,False
+CN000588,P0066,E12,F050,Comparación de Precios,Adquisición de materiales de construcción,15755.23,2026-08-17,False,False
+CN000554,P0031,E03,F000,Contratación Directa,Adquisición de equipos informáticos,64109.91,2026-09-11,False,False
+CN000057,P0075,E03,F000,Contratación Directa,Servicio de capacitación,126353.31,2026-07-05,False,False
+CN000163,P0138,E15,F035,Comparación de Precios,Servicio de limpieza y vigilancia,107618.75,2026-08-29,False,False
+CN000433,P0048,E02,F011,Concurso Público,Adquisición de bienes de oficina,63592.21,2026-07-17,False,False
+CN000537,P0099,E05,F052,Contratación Directa,Servicio de limpieza y vigilancia,57464.97,2026-09-06,False,False
+CN000397,P0191,E05,F059,Comparación de Precios,Adquisición de equipos informáticos,210149.83,2026-09-02,False,False
+CN000322,P0209,E07,F013,Contratación Directa,Consultoría en ingeniería,169613.92,2026-08-05,False,False
+CN000294,P0045,E16,F057,Contratación Directa,Adquisición de equipos informáticos,64397.64,2026-08-16,False,False
+CN000495,P0108,E06,F039,Contratación Directa,Consultoría en ingeniería,33526.42,2026-07-02,False,False
+CN000093,P0004,E17,F012,Contratación Directa,Adquisición de materiales de construcción,127023.9,2026-09-13,False,False
+CN000099,P0042,E08,F022,Adjudicación Simplificada,Servicio de limpieza y vigilancia,30129.46,2026-07-18,False,False
+CN000481,P0207,E17,F012,Contratación Directa,Obra de rehabilitación vial,73597.52,2026-09-14,False,False
+CN000443,P0172,E07,F036,Contratación Directa,Servicio de capacitación,15958.62,2026-08-18,False,False
+CN000129,P0198,E04,F030,Contratación Directa,Obra de rehabilitación vial,110874.19,2026-07-02,False,False
+CN000438,P0151,E12,F050,Contratación Directa,Obra de rehabilitación vial,783339.15,2026-07-27,False,False
+CN000148,P0027,E02,F025,Contratación Directa,Servicio de mantenimiento de infraestructura,142432.56,2026-08-04,False,False
+CN000400,P0199,E09,F043,Contratación Directa,Obra de rehabilitación vial,324916.03,2026-09-10,False,False
+CN000084,P0067,E05,F052,Comparación de Precios,Adquisición de bienes de oficina,56918.36,2026-07-29,False,False
+CN000288,P0194,E08,F028,Contratación Directa,Servicio de mantenimiento de infraestructura,29970.0,2026-07-14,False,False
+CN000351,P0218,E08,F015,Contratación Directa,Servicio de limpieza y vigilancia,13454.99,2026-07-22,False,False
+CN000578,P0040,E00,F041,Comparación de Precios,Consultoría en ingeniería,53224.52,2026-09-06,False,False
+CN000091,P0113,E05,F009,Contratación Directa,Suministro de combustible,154434.82,2026-09-11,False,False
+CN000220,P0070,E13,F055,Contratación Directa,Servicio de limpieza y vigilancia,64011.6,2026-09-04,False,False
+CN000028,P0092,E01,F017,Licitación Pública,Adquisición de equipos informáticos,21544.25,2026-09-14,False,False
+CN000342,P0185,E00,F038,Contratación Directa,Obra de rehabilitación vial,17448.03,2026-09-18,False,False
+CN000072,P0090,E04,F030,Comparación de Precios,Servicio de mantenimiento de infraestructura,52867.93,2026-07-05,False,False
+CN000262,P0197,E15,F035,Comparación de Precios,Servicio de limpieza y vigilancia,29417.16,2026-07-08,False,False
+CN000318,P0164,E07,F023,Contratación Directa,Suministro de combustible,31577.38,2026-08-31,False,False
+CN000466,P0016,E03,F000,Comparación de Precios,Consultoría en ingeniería,74863.54,2026-09-27,False,False
+CN000357,P0041,E04,F019,Contratación Directa,Adquisición de materiales de construcción,22686.32,2026-08-10,False,False
+CN000426,P0013,E03,F000,Comparación de Precios,Adquisición de materiales de construcción,140360.53,2026-07-04,False,False
+CN000154,P0182,E16,F057,Comparación de Precios,Adquisición de bienes de oficina,95445.31,2026-08-26,False,False
+CN000259,P0128,E12,F021,Contratación Directa,Adquisición de materiales de construcción,27256.95,2026-07-29,False,False
+CN000375,P0200,E16,F024,Contratación Directa,Obra de rehabilitación vial,25842.6,2026-09-24,False,False
+CN000200,P0113,E08,F020,Comparación de Precios,Suministro de combustible,122179.06,2026-07-10,False,False
+CN000575,P0109,E06,F006,Adjudicación Simplificada,Consultoría en ingeniería,212909.84,2026-09-15,False,False
+CN000329,P0000,E17,F012,Contratación Directa,Adquisición de equipos informáticos,26746.18,2026-07-25,False,False
+CN000182,P0180,E00,F041,Comparación de Precios,Servicio de capacitación,112344.39,2026-07-09,False,False
+CN000524,P0081,E15,F035,Contratación Directa,Suministro de combustible,66810.52,2026-09-19,False,False
+CN000175,P0067,E17,F012,Contratación Directa,Consultoría en ingeniería,32568.38,2026-08-06,False,False
+CN000292,P0165,E02,F044,Comparación de Precios,Servicio de mantenimiento de infraestructura,173662.03,2026-08-28,False,False
+CN000312,P0075,E03,F000,Comparación de Precios,Adquisición de equipos informáticos,97185.27,2026-07-04,False,False
+CN000401,P0131,E02,F051,Comparación de Precios,Servicio de capacitación,88302.09,2026-09-01,False,False
+CN000235,P0078,E00,F038,Comparación de Precios,Servicio de limpieza y vigilancia,61081.16,2026-07-20,False,False
+CN000382,P0158,E16,F024,Contratación Directa,Adquisición de equipos informáticos,339763.21,2026-09-05,False,False
+CN000280,P0200,E05,F037,Contratación Directa,Servicio de capacitación,70836.47,2026-07-20,False,False
+CN000548,P0170,E08,F020,Adjudicación Simplificada,Obra de rehabilitación vial,55898.99,2026-08-01,False,False
+CN000484,P0210,E03,F000,Contratación Directa,Adquisición de equipos informáticos,21473.14,2026-08-29,False,False
+CN000396,P0045,E17,F012,Comparación de Precios,Servicio de mantenimiento de infraestructura,46520.05,2026-09-19,False,False
+CN000507,P0101,E05,F032,Comparación de Precios,Suministro de combustible,35578.23,2026-07-19,False,False
+CN000536,P0031,E10,F004,Contratación Directa,Adquisición de materiales de construcción,89332.98,2026-07-16,False,False
+CN000080,P0215,E11,F054,Contratación Directa,Obra de rehabilitación vial,90070.52,2026-09-20,False,False
+CN000512,P0092,E07,F023,Comparación de Precios,Adquisición de equipos informáticos,84562.87,2026-07-11,False,False
+CN000301,P0144,E02,F051,Comparación de Precios,Suministro de combustible,21223.11,2026-09-04,False,False
+CN000541,P0094,E09,F027,Contratación Directa,Suministro de combustible,53086.45,2026-07-18,False,False
+CN000510,P0092,E05,F032,Licitación Pública,Adquisición de bienes de oficina,31975.4,2026-07-25,False,False
+CN000344,P0219,E08,F020,Comparación de Precios,Adquisición de bienes de oficina,592041.24,2026-09-21,False,False
+CN000452,P0199,E06,F006,Contratación Directa,Servicio de mantenimiento de infraestructura,219560.11,2026-09-01,False,False
+CN000063,P0211,E08,F020,Contratación Directa,Consultoría en ingeniería,50440.66,2026-07-17,False,False
+CN000061,P0206,E02,F044,Comparación de Precios,Adquisición de equipos informáticos,235522.82,2026-08-14,False,False
+CN000479,P0021,E06,F039,Contratación Directa,Adquisición de materiales de construcción,117491.13,2026-08-15,False,False
+CN000373,P0127,E03,F000,Comparación de Precios,Adquisición de bienes de oficina,34956.24,2026-08-10,False,False
+CN000480,P0133,E15,F035,Comparación de Precios,Suministro de combustible,23814.08,2026-07-15,False,False
+CN000395,P0193,E05,F047,Contratación Directa,Servicio de limpieza y vigilancia,86218.82,2026-07-24,False,False
+CN000186,P0081,E06,F039,Comparación de Precios,Obra de rehabilitación vial,630168.91,2026-07-09,False,False
+CN000008,P0158,E10,F004,Licitación Pública,Servicio de capacitación,99005.39,2026-09-12,False,False
+CN000085,P0209,E00,F041,Comparación de Precios,Obra de rehabilitación vial,327403.32,2026-08-09,False,False
+CN000390,P0083,E06,F039,Comparación de Precios,Servicio de limpieza y vigilancia,100154.04,2026-07-15,False,False
+CN000371,P0062,E07,F036,Comparación de Precios,Servicio de transporte,59702.53,2026-08-16,False,False
+CN000491,P0065,E10,F026,Contratación Directa,Servicio de capacitación,49615.84,2026-07-03,False,False
+CN000096,P0150,E14,F016,Contratación Directa,Adquisición de equipos informáticos,215916.04,2026-07-29,False,False
+CN000273,P0012,E08,F015,Comparación de Precios,Adquisición de materiales de construcción,112032.08,2026-07-09,False,False
+CN000156,P0106,E00,F038,Comparación de Precios,Servicio de limpieza y vigilancia,85236.58,2026-09-09,False,False
+CN000393,P0192,E13,F058,Contratación Directa,Consultoría en ingeniería,57315.79,2026-08-05,False,False
+CN000546,P0047,E13,F058,Contratación Directa,Servicio de transporte,89677.05,2026-08-20,False,False
+CN000121,P0154,E15,F035,Contratación Directa,Obra de rehabilitación vial,105064.0,2026-08-28,False,False
+CN000542,P0031,E17,F012,Adjudicación Simplificada,Servicio de transporte,17416.68,2026-07-22,False,False
+CN000211,P0178,E15,F035,Comparación de Precios,Servicio de mantenimiento de infraestructura,40519.08,2026-09-23,False,False
+CN000305,P0021,E02,F051,Contratación Directa,Adquisición de equipos informáticos,107135.37,2026-09-15,False,False
+CN000384,P0086,E02,F051,Comparación de Precios,Servicio de transporte,201712.6,2026-09-14,False,False
+CN000593,P0069,E14,F016,Contratación Directa,Adquisición de equipos informáticos,122872.9,2026-09-12,False,False
+CN000164,P0179,E06,F006,Contratación Directa,Adquisición de bienes de oficina,9190.88,2026-07-19,False,False
+CN000386,P0076,E14,F016,Contratación Directa,Servicio de capacitación,35475.46,2026-07-14,False,False
+CN000306,P0029,E13,F056,Adjudicación Simplificada,Suministro de combustible,36556.17,2026-09-25,False,False
+CN000234,P0168,E10,F004,Contratación Directa,Suministro de combustible,141927.32,2026-07-13,False,False
+CN000179,P0029,E02,F011,Contratación Directa,Servicio de limpieza y vigilancia,213798.38,2026-08-29,False,False
+CN000069,P0111,E01,F017,Comparación de Precios,Adquisición de materiales de construcción,64289.82,2026-08-16,False,False
+CN000271,P0082,E17,F003,Comparación de Precios,Adquisición de materiales de construcción,16036.99,2026-08-20,False,False
+CN000571,P0094,E09,F027,Comparación de Precios,Adquisición de bienes de oficina,13181.32,2026-07-09,False,False
+CN000023,P0157,E17,F012,Comparación de Precios,Adquisición de materiales de construcción,38165.28,2026-08-11,False,False
+CN000427,P0164,E06,F039,Contratación Directa,Obra de rehabilitación vial,49471.53,2026-08-22,False,False
+CN000568,P0116,E02,F025,Contratación Directa,Obra de rehabilitación vial,44606.81,2026-07-04,False,False
+CN000058,P0137,E11,F007,Comparación de Precios,Servicio de limpieza y vigilancia,79015.13,2026-09-05,False,False
+CN000526,P0053,E05,F037,Contratación Directa,Servicio de transporte,23944.77,2026-07-19,False,False
+CN000494,P0099,E04,F030,Comparación de Precios,Adquisición de equipos informáticos,93872.55,2026-07-29,False,False
+CN000265,P0099,E11,F007,Contratación Directa,Adquisición de equipos informáticos,43142.13,2026-07-25,False,False
+CN000409,P0106,E09,F033,Adjudicación Simplificada,Adquisición de bienes de oficina,15702.37,2026-08-08,False,False
+CN000436,P0026,E10,F026,Contratación Directa,Consultoría en ingeniería,52413.75,2026-08-03,False,False
+CN000092,P0194,E00,F010,Adjudicación Simplificada,Servicio de mantenimiento de infraestructura,38643.76,2026-09-10,False,False
+CN000421,P0101,E10,F004,Licitación Pública,Obra de rehabilitación vial,31365.87,2026-07-08,False,False
+CN000406,P0030,E17,F012,Comparación de Precios,Adquisición de equipos informáticos,36201.9,2026-09-02,False,False
+CN000368,P0034,E13,F055,Comparación de Precios,Consultoría en ingeniería,144167.76,2026-07-12,False,False
+CN000147,P0071,E12,F021,Contratación Directa,Consultoría en ingeniería,53095.03,2026-08-23,False,False
+CN000251,P0019,E15,F035,Contratación Directa,Servicio de mantenimiento de infraestructura,254977.06,2026-09-19,False,False
+CN000212,P0003,E12,F050,Contratación Directa,Adquisición de materiales de construcción,342234.79,2026-09-04,False,False
+CN000472,P0134,E00,F010,Contratación Directa,Servicio de capacitación,25984.06,2026-09-20,False,False
+CN000276,P0072,E01,F048,Comparación de Precios,Consultoría en ingeniería,18128.4,2026-08-17,False,False
+CN000527,P0040,E11,F007,Comparación de Precios,Adquisición de bienes de oficina,27988.83,2026-07-10,False,False
+CN000389,P0156,E13,F058,Comparación de Precios,Servicio de transporte,8562.61,2026-09-15,False,False
+CN000012,P0084,E07,F036,Contratación Directa,Servicio de capacitación,723635.53,2026-08-08,False,False
+CN000303,P0111,E14,F040,Contratación Directa,Servicio de transporte,31090.18,2026-09-20,False,False
+CN000437,P0110,E06,F039,Comparación de Precios,Suministro de combustible,141605.06,2026-08-24,False,False
+CN000553,P0010,E13,F056,Contratación Directa,Adquisición de bienes de oficina,91418.72,2026-08-07,False,False
+CN000260,P0188,E09,F033,Comparación de Precios,Servicio de mantenimiento de infraestructura,306777.04,2026-07-01,False,False
+CN000498,P0147,E00,F041,Comparación de Precios,Suministro de combustible,71864.2,2026-09-29,False,False
+CN000054,P0204,E06,F006,Contratación Directa,Servicio de transporte,173621.45,2026-07-05,False,False
+CN000582,P0115,E04,F053,Licitación Pública,Adquisición de materiales de construcción,19547.41,2026-09-22,False,False
+CN000150,P0193,E02,F051,Comparación de Precios,Servicio de mantenimiento de infraestructura,50679.16,2026-08-25,False,False
+CN000338,P0137,E12,F050,Concurso Público,Servicio de transporte,76356.11,2026-09-22,False,False
+CN000532,P0216,E00,F038,Contratación Directa,Adquisición de bienes de oficina,37367.46,2026-07-29,False,False
+CN000356,P0187,E00,F010,Comparación de Precios,Adquisición de bienes de oficina,63990.78,2026-09-07,False,False
+CN000106,P0058,E11,F054,Comparación de Precios,Servicio de mantenimiento de infraestructura,25809.02,2026-07-14,False,False
+CN000231,P0002,E08,F028,Licitación Pública,Servicio de transporte,97664.91,2026-09-06,False,False
+CN000237,P0063,E10,F026,Contratación Directa,Servicio de mantenimiento de infraestructura,28645.94,2026-09-24,False,False
+CN000405,P0154,E09,F046,Contratación Directa,Servicio de mantenimiento de infraestructura,85804.95,2026-09-08,False,False
+CN000024,P0014,E11,F007,Comparación de Precios,Servicio de limpieza y vigilancia,50699.08,2026-08-15,False,False
+CN000299,P0176,E00,F041,Contratación Directa,Servicio de mantenimiento de infraestructura,30657.11,2026-07-26,False,False
+CN000377,P0162,E10,F026,Contratación Directa,Servicio de mantenimiento de infraestructura,92004.81,2026-09-05,False,False
+CN000378,P0147,E03,F000,Contratación Directa,Suministro de combustible,86346.57,2026-08-26,False,False
+CN000561,P0075,E12,F050,Contratación Directa,Consultoría en ingeniería,189139.19,2026-07-27,False,False
+CN000082,P0158,E03,F000,Contratación Directa,Suministro de combustible,25850.49,2026-08-01,False,False
+CN000493,P0147,E04,F053,Comparación de Precios,Adquisición de equipos informáticos,45529.23,2026-09-20,False,False
+CN000513,P0108,E14,F029,Comparación de Precios,Servicio de limpieza y vigilancia,67464.99,2026-07-12,False,False
+CN000101,P0032,E05,F009,Comparación de Precios,Adquisición de equipos informáticos,7912.45,2026-07-10,False,False
+CN000076,P0103,E15,F035,Comparación de Precios,Adquisición de materiales de construcción,32121.72,2026-07-20,False,False
+CN000291,P0043,E09,F043,Concurso Público,Adquisición de materiales de construcción,173880.86,2026-08-04,False,False
+CN000282,P0125,E09,F043,Contratación Directa,Obra de rehabilitación vial,27246.06,2026-08-20,False,False
+CN000477,P0040,E08,F020,Contratación Directa,Servicio de capacitación,157718.33,2026-07-18,False,False
+CN000392,P0153,E15,F035,Contratación Directa,Servicio de capacitación,11551.45,2026-09-05,False,False
+CN000112,P0180,E04,F030,Comparación de Precios,Servicio de capacitación,340635.51,2026-08-17,False,False
+CN000430,P0192,E10,F004,Comparación de Precios,Adquisición de equipos informáticos,164544.52,2026-09-28,False,False
+CN000411,P0211,E14,F016,Contratación Directa,Consultoría en ingeniería,7488.92,2026-07-27,False,False
+CN000246,P0180,E09,F027,Comparación de Precios,Consultoría en ingeniería,246741.01,2026-09-29,False,False
+CN000145,P0055,E06,F039,Comparación de Precios,Suministro de combustible,52718.2,2026-08-28,False,False
+CN000283,P0216,E09,F034,Contratación Directa,Servicio de capacitación,179025.58,2026-07-06,False,False
+CN000365,P0193,E10,F026,Comparación de Precios,Servicio de capacitación,39293.96,2026-09-19,False,False
+CN000502,P0145,E13,F056,Comparación de Precios,Servicio de transporte,171551.01,2026-09-27,False,False
+CN000110,P0025,E02,F051,Contratación Directa,Suministro de combustible,63554.24,2026-08-15,False,False
+CN000581,P0147,E12,F021,Contratación Directa,Adquisición de materiales de construcción,236443.84,2026-08-23,False,False
+CN000090,P0173,E11,F007,Comparación de Precios,Adquisición de equipos informáticos,187313.89,2026-07-28,False,False
+CN000205,P0079,E13,F056,Contratación Directa,Suministro de combustible,15211.76,2026-07-29,False,False
+CN000170,P0219,E11,F054,Contratación Directa,Servicio de transporte,194812.87,2026-08-12,False,False
+CN000109,P0176,E11,F007,Adjudicación Simplificada,Servicio de transporte,84598.84,2026-07-09,False,False
+CN000232,P0166,E10,F004,Comparación de Precios,Suministro de combustible,99370.39,2026-08-10,False,False
+CN000056,P0112,E07,F013,Concurso Público,Servicio de mantenimiento de infraestructura,178783.7,2026-09-22,False,False
+CN000241,P0216,E11,F007,Comparación de Precios,Adquisición de equipos informáticos,178884.41,2026-07-14,False,False
+CN000087,P0216,E13,F055,Concurso Público,Servicio de transporte,43789.9,2026-07-21,False,False
+CN000346,P0029,E02,F011,Contratación Directa,Adquisición de equipos informáticos,11270.06,2026-07-21,False,False
+CN000097,P0004,E11,F054,Comparación de Precios,Servicio de limpieza y vigilancia,431945.75,2026-08-07,False,False
+CN000519,P0143,E07,F013,Contratación Directa,Consultoría en ingeniería,214924.28,2026-09-07,False,False
+CN000116,P0193,E14,F029,Contratación Directa,Servicio de capacitación,265543.85,2026-07-15,False,False
+CN000201,P0003,E05,F047,Contratación Directa,Adquisición de bienes de oficina,13075.12,2026-07-22,False,False
+CN000528,P0202,E05,F047,Contratación Directa,Suministro de combustible,75822.73,2026-09-25,False,False
+CN000323,P0087,E03,F000,Contratación Directa,Suministro de combustible,108821.43,2026-08-17,False,False
+CN000461,P0205,E16,F042,Contratación Directa,Servicio de capacitación,449008.64,2026-09-03,False,False
+CN000236,P0202,E04,F019,Contratación Directa,Servicio de limpieza y vigilancia,26511.7,2026-09-14,False,False
+CN000213,P0034,E01,F017,Comparación de Precios,Adquisición de materiales de construcción,95587.25,2026-08-23,False,False
+CN000455,P0088,E14,F040,Contratación Directa,Servicio de mantenimiento de infraestructura,12261.12,2026-09-07,False,False
+CN000403,P0041,E06,F039,Contratación Directa,Adquisición de equipos informáticos,166244.99,2026-07-25,False,False
+CN000442,P0017,E14,F016,Contratación Directa,Servicio de capacitación,15268.4,2026-07-04,False,False
+CN000560,P0067,E11,F049,Contratación Directa,Servicio de transporte,16248.2,2026-09-13,False,False
+CN000468,P0142,E08,F020,Concurso Público,Consultoría en ingeniería,105198.63,2026-07-05,False,False
+CN000458,P0128,E13,F055,Contratación Directa,Adquisición de materiales de construcción,22867.65,2026-09-23,False,False
+CND0002,P0076,E08,F022,Contratación Directa,Consultoría en ingeniería,1421041.7,2026-07-17,True,False
+CN000296,P0098,E05,F009,Comparación de Precios,Adquisición de materiales de construcción,30551.75,2026-07-28,False,False
+CN000225,P0040,E03,F000,Comparación de Precios,Suministro de combustible,58324.79,2026-08-15,False,False
+CN000534,P0207,E06,F006,Comparación de Precios,Servicio de transporte,74020.27,2026-07-02,False,False
+CN000089,P0153,E13,F056,Contratación Directa,Suministro de combustible,19814.91,2026-08-01,False,False
+CN000358,P0032,E03,F000,Comparación de Precios,Obra de rehabilitación vial,38010.74,2026-09-24,False,False
+CN000464,P0055,E08,F020,Comparación de Precios,Servicio de transporte,131486.25,2026-08-22,False,False
+CN000565,P0052,E14,F016,Adjudicación Simplificada,Suministro de combustible,63248.14,2026-08-23,False,False
+CN000585,P0038,E10,F004,Comparación de Precios,Servicio de transporte,156560.71,2026-08-13,False,False
+CN000516,P0148,E04,F053,Contratación Directa,Servicio de limpieza y vigilancia,27410.21,2026-07-12,False,False
+CN000019,P0087,E02,F051,Adjudicación Simplificada,Obra de rehabilitación vial,105623.68,2026-08-29,False,False
+CN000014,P0062,E14,F029,Comparación de Precios,Servicio de capacitación,75125.35,2026-08-23,False,False
+CN000252,P0200,E04,F053,Adjudicación Simplificada,Adquisición de bienes de oficina,152292.26,2026-09-19,False,False
+CN000573,P0145,E05,F009,Contratación Directa,Adquisición de equipos informáticos,11199.31,2026-07-03,False,False
+CN000328,P0212,E02,F044,Concurso Público,Consultoría en ingeniería,64281.4,2026-09-08,False,False
+CN000120,P0070,E17,F003,Contratación Directa,Servicio de capacitación,22905.51,2026-09-12,False,False
+CN000332,P0133,E00,F010,Contratación Directa,Servicio de limpieza y vigilancia,100454.56,2026-07-26,False,False
+CN000285,P0025,E02,F044,Contratación Directa,Adquisición de equipos informáticos,79120.31,2026-07-12,False,False
+CN000333,P0173,E02,F051,Licitación Pública,Obra de rehabilitación vial,11539.32,2026-08-18,False,False
+CN000042,P0070,E10,F004,Contratación Directa,Suministro de combustible,248590.52,2026-08-18,False,False
+CN000196,P0103,E12,F050,Comparación de Precios,Servicio de capacitación,57007.66,2026-07-09,False,False
+CN000469,P0068,E11,F049,Contratación Directa,Servicio de mantenimiento de infraestructura,32669.1,2026-09-21,False,False
+CN000033,P0115,E16,F042,Contratación Directa,Servicio de mantenimiento de infraestructura,302741.99,2026-08-23,False,False
+CN000250,P0113,E14,F016,Comparación de Precios,Servicio de transporte,38038.3,2026-07-26,False,False
+CN000227,P0150,E16,F042,Comparación de Precios,Servicio de capacitación,6762.62,2026-07-15,False,False
+CN000399,P0128,E00,F038,Contratación Directa,Consultoría en ingeniería,7878.24,2026-07-08,False,False
+CN000474,P0035,E11,F054,Contratación Directa,Consultoría en ingeniería,35429.12,2026-09-29,False,False
+CND0000,P0076,E08,F022,Contratación Directa,Consultoría en ingeniería,903152.88,2026-07-11,True,False
+CN000558,P0170,E12,F050,Contratación Directa,Servicio de mantenimiento de infraestructura,31657.06,2026-08-17,False,False
+CN000453,P0053,E09,F043,Licitación Pública,Adquisición de equipos informáticos,58523.06,2026-08-10,False,False
+CN000290,P0088,E13,F055,Licitación Pública,Adquisición de equipos informáticos,21137.35,2026-07-09,False,False
+CN000310,P0060,E08,F014,Contratación Directa,Consultoría en ingeniería,63284.63,2026-09-04,False,False
+CN000016,P0104,E06,F006,Contratación Directa,Suministro de combustible,88257.55,2026-08-22,False,False
+CN000158,P0181,E02,F044,Contratación Directa,Adquisición de materiales de construcción,33381.24,2026-07-03,False,False
+CN000243,P0095,E12,F050,Comparación de Precios,Adquisición de equipos informáticos,20112.59,2026-08-14,False,False
+CN000066,P0080,E08,F022,Concurso Público,Adquisición de bienes de oficina,119765.46,2026-09-02,False,False
+CN000146,P0183,E10,F026,Comparación de Precios,Adquisición de bienes de oficina,16720.07,2026-07-08,False,False
+CN000359,P0053,E05,F052,Comparación de Precios,Servicio de transporte,68155.82,2026-09-18,False,False
+CN000570,P0084,E08,F028,Adjudicación Simplificada,Adquisición de bienes de oficina,27293.61,2026-07-11,False,False
+CN000119,P0194,E10,F004,Adjudicación Simplificada,Suministro de combustible,102193.21,2026-08-30,False,False
+CN000140,P0167,E09,F043,Comparación de Precios,Servicio de mantenimiento de infraestructura,48783.04,2026-09-14,False,False
+CN000065,P0180,E14,F029,Comparación de Precios,Consultoría en ingeniería,7588.62,2026-07-12,False,False
+CN000238,P0127,E06,F039,Contratación Directa,Servicio de mantenimiento de infraestructura,145843.63,2026-09-16,False,False
+CN000009,P0015,E06,F006,Contratación Directa,Obra de rehabilitación vial,286105.11,2026-09-26,False,False
+CN000521,P0186,E17,F003,Contratación Directa,Adquisición de equipos informáticos,88581.61,2026-08-24,False,False
+CN000018,P0165,E15,F035,Adjudicación Simplificada,Adquisición de equipos informáticos,92201.09,2026-09-25,False,False
+CN000408,P0200,E10,F004,Comparación de Precios,Adquisición de equipos informáticos,77646.62,2026-07-25,False,False
+CN000153,P0170,E06,F006,Comparación de Precios,Obra de rehabilitación vial,33772.95,2026-07-24,False,False
+CN000520,P0009,E10,F008,Comparación de Precios,Adquisición de materiales de construcción,64863.11,2026-07-29,False,False
+CN000589,P0023,E07,F023,Contratación Directa,Adquisición de materiales de construcción,33744.35,2026-08-26,False,False
+CN000473,P0114,E02,F044,Comparación de Precios,Adquisición de materiales de construcción,49755.88,2026-08-04,False,False
+CN000256,P0178,E15,F035,Contratación Directa,Servicio de capacitación,112336.18,2026-09-12,False,False
+CN000311,P0148,E08,F020,Comparación de Precios,Adquisición de bienes de oficina,26436.06,2026-08-03,False,False
+CN000441,P0212,E11,F007,Contratación Directa,Adquisición de materiales de construcción,20201.35,2026-07-30,False,False
+CN000304,P0055,E13,F058,Contratación Directa,Servicio de mantenimiento de infraestructura,106169.57,2026-07-31,False,False
+CN000272,P0035,E12,F021,Comparación de Precios,Consultoría en ingeniería,52669.9,2026-09-14,False,False
+CN000550,P0104,E00,F041,Contratación Directa,Adquisición de bienes de oficina,63553.43,2026-07-04,False,False
+CN000413,P0068,E16,F024,Contratación Directa,Servicio de capacitación,14916.94,2026-08-17,False,False
+CN000133,P0046,E08,F020,Contratación Directa,Suministro de combustible,100015.45,2026-07-19,False,False
+CN000031,P0122,E12,F021,Comparación de Precios,Adquisición de materiales de construcción,49703.94,2026-09-01,False,False
+CN000253,P0172,E13,F055,Adjudicación Simplificada,Servicio de mantenimiento de infraestructura,57875.2,2026-09-02,False,False
+CN000270,P0074,E15,F035,Contratación Directa,Servicio de limpieza y vigilancia,459566.42,2026-07-18,False,False
+CN000161,P0219,E15,F035,Comparación de Precios,Adquisición de materiales de construcción,258033.94,2026-09-22,False,False
+CN000339,P0051,E03,F000,Contratación Directa,Servicio de limpieza y vigilancia,42259.7,2026-07-27,False,False
+CN000286,P0005,E00,F038,Comparación de Precios,Servicio de transporte,68472.05,2026-08-21,False,False
+CN000504,P0041,E09,F027,Contratación Directa,Consultoría en ingeniería,40785.3,2026-08-20,False,False
+CN000478,P0139,E10,F004,Adjudicación Simplificada,Consultoría en ingeniería,152895.31,2026-07-21,False,False
+CN000485,P0014,E13,F058,Comparación de Precios,Servicio de mantenimiento de infraestructura,159163.5,2026-07-23,False,False
+CN000341,P0189,E08,F015,Licitación Pública,Obra de rehabilitación vial,172648.43,2026-07-28,False,False
+CN000336,P0042,E15,F035,Comparación de Precios,Adquisición de materiales de construcción,182715.72,2026-08-23,False,False
+CN000151,P0098,E04,F030,Contratación Directa,Servicio de capacitación,111644.07,2026-08-04,False,False
+CN000001,P0060,E04,F019,Contratación Directa,Servicio de capacitación,101181.76,2026-09-18,False,False
+CN000224,P0169,E10,F026,Comparación de Precios,Servicio de capacitación,48726.51,2026-07-11,False,False
+CN000207,P0016,E09,F046,Licitación Pública,Servicio de mantenimiento de infraestructura,3723.75,2026-09-24,False,False
+CN000429,P0217,E05,F047,Comparación de Precios,Adquisición de bienes de oficina,51470.87,2026-09-17,False,False
+CN000117,P0015,E07,F013,Comparación de Precios,Servicio de transporte,19430.03,2026-09-23,False,False
+CN000556,P0136,E00,F041,Contratación Directa,Consultoría en ingeniería,296537.6,2026-08-23,False,False
+CN000388,P0129,E14,F040,Adjudicación Simplificada,Servicio de transporte,29996.33,2026-08-31,False,False
+CN000501,P0160,E13,F056,Licitación Pública,Servicio de capacitación,52936.8,2026-09-09,False,False
+CN000511,P0197,E04,F019,Contratación Directa,Adquisición de equipos informáticos,101494.3,2026-07-10,False,False
+CN000264,P0101,E17,F012,Comparación de Precios,Adquisición de materiales de construcción,23076.8,2026-08-18,False,False
+CN000274,P0128,E11,F049,Comparación de Precios,Adquisición de materiales de construcción,98217.28,2026-08-30,False,False
+CN000407,P0203,E01,F048,Contratación Directa,Servicio de mantenimiento de infraestructura,154130.65,2026-09-11,False,False
+CN000070,P0087,E08,F022,Comparación de Precios,Servicio de transporte,129208.42,2026-09-28,False,False
+CN000128,P0123,E05,F052,Contratación Directa,Servicio de capacitación,24100.61,2026-09-27,False,False
+CN000444,P0047,E10,F004,Contratación Directa,Servicio de mantenimiento de infraestructura,281881.17,2026-09-17,False,False
+CN000497,P0028,E10,F008,Contratación Directa,Servicio de capacitación,45589.81,2026-07-11,False,False
+CN000098,P0061,E15,F035,Contratación Directa,Servicio de capacitación,56966.21,2026-07-20,False,False
+CN000515,P0020,E09,F033,Comparación de Precios,Suministro de combustible,42110.72,2026-07-13,False,False
+CN000021,P0210,E10,F008,Comparación de Precios,Servicio de mantenimiento de infraestructura,123157.18,2026-07-21,False,False
+CN000193,P0071,E10,F026,Contratación Directa,Obra de rehabilitación vial,360969.46,2026-07-23,False,False
+CN000414,P0059,E15,F035,Contratación Directa,Servicio de capacitación,38109.54,2026-09-12,False,False
+CN000005,P0032,E09,F033,Contratación Directa,Suministro de combustible,12152.34,2026-07-09,False,False
+CN000149,P0034,E07,F023,Licitación Pública,Adquisición de equipos informáticos,123479.68,2026-08-29,False,False
+CN000313,P0071,E10,F004,Comparación de Precios,Servicio de capacitación,219247.19,2026-09-22,False,False
+CN000379,P0004,E09,F033,Contratación Directa,Servicio de limpieza y vigilancia,17761.91,2026-07-19,False,False
+CN000135,P0187,E07,F023,Contratación Directa,Servicio de capacitación,13182.5,2026-09-06,False,False
+CN000354,P0102,E09,F043,Comparación de Precios,Adquisición de equipos informáticos,17614.82,2026-08-29,False,False
+CN000345,P0169,E13,F055,Contratación Directa,Consultoría en ingeniería,22131.5,2026-08-17,False,False
+CN000569,P0065,E14,F040,Comparación de Precios,Adquisición de materiales de construcción,30008.24,2026-07-02,False,False
+CN000404,P0115,E17,F003,Comparación de Precios,Servicio de capacitación,58555.07,2026-08-29,False,False
+CN000052,P0049,E08,F022,Contratación Directa,Servicio de limpieza y vigilancia,77852.18,2026-09-08,False,False
+CN000327,P0064,E08,F014,Contratación Directa,Obra de rehabilitación vial,71156.08,2026-07-11,False,False
+CN000198,P0129,E03,F000,Comparación de Precios,Suministro de combustible,122707.86,2026-08-30,False,False
+CN000412,P0137,E14,F040,Contratación Directa,Adquisición de equipos informáticos,147680.73,2026-07-24,False,False
+CN000122,P0003,E11,F007,Contratación Directa,Obra de rehabilitación vial,92396.76,2026-08-09,False,False
+CN000203,P0099,E15,F035,Contratación Directa,Obra de rehabilitación vial,28822.2,2026-09-03,False,False
+CN000067,P0201,E13,F055,Contratación Directa,Adquisición de materiales de construcción,70537.32,2026-09-20,False,False
+CN000223,P0017,E03,F000,Comparación de Precios,Adquisición de materiales de construcción,206297.66,2026-07-04,False,False
+CN000127,P0027,E01,F018,Comparación de Precios,Adquisición de equipos informáticos,55371.28,2026-08-17,False,False
+CN000143,P0137,E12,F050,Contratación Directa,Servicio de transporte,111075.87,2026-07-09,False,False
+CN000326,P0169,E09,F046,Comparación de Precios,Adquisición de materiales de construcción,32474.74,2026-07-07,False,False
+CN000539,P0201,E17,F012,Comparación de Precios,Consultoría en ingeniería,64130.56,2026-07-25,False,False
+CN000350,P0036,E15,F035,Contratación Directa,Servicio de capacitación,40341.26,2026-09-02,False,False
+CN000139,P0020,E03,F000,Comparación de Precios,Obra de rehabilitación vial,147725.52,2026-08-01,False,False
+CN000417,P0165,E14,F029,Comparación de Precios,Obra de rehabilitación vial,79922.67,2026-08-05,False,False
+CN000454,P0093,E13,F058,Comparación de Precios,Adquisición de bienes de oficina,11425.1,2026-09-13,False,False
+CN000218,P0075,E15,F035,Contratación Directa,Adquisición de equipos informáticos,124453.24,2026-09-19,False,False
+CN000557,P0020,E11,F049,Contratación Directa,Servicio de mantenimiento de infraestructura,140462.8,2026-08-31,False,False
+CN000330,P0130,E07,F023,Contratación Directa,Servicio de limpieza y vigilancia,187583.75,2026-08-29,False,False
+CN000157,P0142,E15,F035,Contratación Directa,Servicio de mantenimiento de infraestructura,16530.12,2026-07-29,False,False
+CN000094,P0160,E02,F011,Licitación Pública,Suministro de combustible,62334.07,2026-07-29,False,False
+CN000255,P0026,E04,F030,Contratación Directa,Obra de rehabilitación vial,70063.69,2026-08-15,False,False
+CN000079,P0117,E09,F046,Contratación Directa,Consultoría en ingeniería,605555.15,2026-08-19,False,False
+CN000131,P0172,E10,F004,Comparación de Precios,Adquisición de equipos informáticos,263065.86,2026-07-20,False,False
+CN000226,P0098,E01,F018,Contratación Directa,Servicio de capacitación,110942.25,2026-07-24,False,False
+CN000039,P0038,E16,F002,Comparación de Precios,Servicio de transporte,70404.22,2026-08-31,False,False
+CN000130,P0172,E00,F041,Contratación Directa,Consultoría en ingeniería,41788.6,2026-09-01,False,False
+CN000599,P0064,E02,F025,Contratación Directa,Adquisición de materiales de construcción,10195.53,2026-07-21,False,False
+CN000189,P0090,E04,F053,Contratación Directa,Consultoría en ingeniería,107475.29,2026-08-06,False,False
+CN000219,P0005,E02,F011,Contratación Directa,Servicio de transporte,53340.59,2026-08-24,False,False
+CN000566,P0203,E14,F040,Comparación de Precios,Servicio de transporte,37326.79,2026-09-22,False,False
+CN000402,P0037,E12,F021,Adjudicación Simplificada,Obra de rehabilitación vial,59262.09,2026-08-30,False,False
+CN000248,P0068,E10,F004,Comparación de Precios,Servicio de limpieza y vigilancia,219931.45,2026-07-04,False,False
+CN000038,P0119,E02,F051,Comparación de Precios,Adquisición de bienes de oficina,77440.7,2026-08-14,False,False
+CN000242,P0097,E01,F018,Comparación de Precios,Adquisición de materiales de construcción,87762.74,2026-09-22,False,False
+CN000372,P0078,E08,F020,Comparación de Precios,Servicio de mantenimiento de infraestructura,35429.16,2026-08-19,False,False
+CN000353,P0070,E05,F001,Contratación Directa,Servicio de capacitación,33743.31,2026-09-08,False,False
+CN000543,P0009,E11,F049,Contratación Directa,Adquisición de equipos informáticos,20119.36,2026-07-02,False,False
+CN000138,P0006,E13,F056,Licitación Pública,Adquisición de equipos informáticos,71582.0,2026-08-14,False,False
+CN000022,P0199,E13,F058,Contratación Directa,Adquisición de equipos informáticos,48274.39,2026-08-25,False,False
+CN000503,P0051,E15,F035,Comparación de Precios,Adquisición de equipos informáticos,74521.25,2026-08-03,False,False
+CN000159,P0169,E15,F035,Contratación Directa,Servicio de mantenimiento de infraestructura,18797.97,2026-09-16,False,False
+CN000394,P0068,E17,F012,Contratación Directa,Adquisición de bienes de oficina,12698.89,2026-07-15,False,False
+CN000240,P0132,E13,F058,Comparación de Precios,Servicio de transporte,521062.02,2026-07-26,False,False
+CN000013,P0026,E01,F017,Comparación de Precios,Obra de rehabilitación vial,37115.8,2026-07-13,False,False
+CN000475,P0213,E10,F004,Contratación Directa,Servicio de limpieza y vigilancia,108075.51,2026-08-10,False,False
+CN000525,P0075,E17,F012,Contratación Directa,Adquisición de materiales de construcción,26216.85,2026-07-19,False,False
+CN000314,P0047,E17,F031,Contratación Directa,Servicio de mantenimiento de infraestructura,111977.3,2026-09-09,False,False
+CN000361,P0102,E16,F024,Comparación de Precios,Obra de rehabilitación vial,169990.83,2026-07-24,False,False
+CN000320,P0116,E00,F038,Comparación de Precios,Suministro de combustible,60032.11,2026-08-03,False,False
+CN000355,P0124,E02,F025,Contratación Directa,Adquisición de materiales de construcción,267392.55,2026-08-11,False,False
+CN000034,P0192,E02,F044,Contratación Directa,Suministro de combustible,88660.2,2026-07-05,False,False
+CN000334,P0078,E08,F028,Comparación de Precios,Adquisición de bienes de oficina,79152.91,2026-07-26,False,False
+CN000376,P0186,E11,F007,Contratación Directa,Adquisición de bienes de oficina,22560.0,2026-09-16,False,False
+CN000184,P0160,E14,F016,Contratación Directa,Suministro de combustible,251436.71,2026-08-21,False,False
+CN000423,P0040,E04,F019,Contratación Directa,Adquisición de materiales de construcción,101338.13,2026-09-23,False,False
+CN000325,P0182,E16,F042,Contratación Directa,Suministro de combustible,30396.42,2026-07-04,False,False
+CN000187,P0152,E01,F018,Comparación de Precios,Servicio de capacitación,252871.13,2026-09-15,False,False
+CN000284,P0173,E17,F012,Comparación de Precios,Servicio de mantenimiento de infraestructura,37262.56,2026-09-23,False,False
+CN000391,P0027,E13,F058,Comparación de Precios,Adquisición de equipos informáticos,16477.65,2026-09-15,False,False
+CN000580,P0070,E03,F000,Comparación de Precios,Suministro de combustible,140997.76,2026-09-15,False,False
+CN000165,P0129,E12,F021,Licitación Pública,Adquisición de bienes de oficina,11833.95,2026-09-06,False,False
+CN000347,P0080,E02,F025,Comparación de Precios,Servicio de mantenimiento de infraestructura,15198.83,2026-07-15,False,False
+CN000298,P0145,E15,F035,Contratación Directa,Servicio de mantenimiento de infraestructura,17745.01,2026-07-10,False,False
+CN000535,P0199,E06,F039,Comparación de Precios,Adquisición de materiales de construcción,72976.5,2026-07-23,False,False
+CN000229,P0082,E16,F024,Licitación Pública,Servicio de limpieza y vigilancia,93894.51,2026-09-17,False,False
+CN000041,P0073,E13,F056,Contratación Directa,Consultoría en ingeniería,47214.89,2026-09-18,False,False
+CN000446,P0181,E15,F035,Adjudicación Simplificada,Servicio de mantenimiento de infraestructura,66800.31,2026-09-13,False,False
+CN000447,P0069,E10,F004,Licitación Pública,Suministro de combustible,103885.59,2026-07-12,False,False
+CN000349,P0009,E08,F015,Comparación de Precios,Servicio de capacitación,320291.53,2026-07-01,False,False
+CN000045,P0030,E09,F046,Contratación Directa,Consultoría en ingeniería,24811.57,2026-07-07,False,False
+CN000108,P0169,E12,F021,Adjudicación Simplificada,Consultoría en ingeniería,104869.98,2026-07-05,False,False
+CN000029,P0007,E03,F000,Concurso Público,Adquisición de materiales de construcción,177128.4,2026-09-15,False,False
+CN000181,P0095,E11,F007,Contratación Directa,Adquisición de materiales de construcción,134408.14,2026-09-18,False,False
+CN000419,P0011,E11,F007,Contratación Directa,Servicio de limpieza y vigilancia,64584.51,2026-09-03,False,False
+CN000104,P0036,E17,F031,Adjudicación Simplificada,Obra de rehabilitación vial,108316.2,2026-07-08,False,False
+CN000060,P0125,E14,F016,Comparación de Precios,Adquisición de equipos informáticos,67259.32,2026-08-05,False,False
+CN000083,P0152,E11,F007,Comparación de Precios,Adquisición de materiales de construcción,911025.31,2026-08-25,False,False
+CN000490,P0009,E01,F048,Comparación de Precios,Adquisición de materiales de construcción,103878.65,2026-09-05,False,False
+CN000315,P0146,E17,F031,Contratación Directa,Adquisición de bienes de oficina,516933.98,2026-09-17,False,False
+CN000450,P0138,E13,F058,Contratación Directa,Adquisición de bienes de oficina,37084.51,2026-07-25,False,False
+CN000381,P0210,E14,F016,Contratación Directa,Servicio de transporte,25333.29,2026-09-28,False,False
+CN000422,P0067,E07,F023,Comparación de Precios,Suministro de combustible,52686.26,2026-07-10,False,False
+CN000496,P0063,E16,F002,Contratación Directa,Servicio de capacitación,35298.03,2026-08-03,False,False
+CN000572,P0115,E00,F010,Comparación de Precios,Servicio de capacitación,79308.38,2026-07-26,False,False
+CN000523,P0056,E07,F013,Comparación de Precios,Adquisición de equipos informáticos,98384.77,2026-09-02,False,False
+CN000445,P0144,E11,F049,Contratación Directa,Servicio de transporte,27448.4,2026-07-14,False,False
+CN000000,P0164,E10,F026,Contratación Directa,Suministro de combustible,30189.35,2026-07-09,False,False
+CN000587,P0094,E04,F053,Contratación Directa,Obra de rehabilitación vial,127823.01,2026-09-23,False,False
+CN000457,P0035,E09,F034,Contratación Directa,Adquisición de equipos informáticos,51961.57,2026-09-01,False,False
+CN000488,P0218,E06,F006,Contratación Directa,Servicio de mantenimiento de infraestructura,202909.57,2026-08-17,False,False
+CN000088,P0071,E17,F012,Contratación Directa,Servicio de mantenimiento de infraestructura,26083.01,2026-07-28,False,False
+CN000483,P0077,E09,F027,Contratación Directa,Obra de rehabilitación vial,106952.76,2026-09-25,False,False
+CN000460,P0180,E07,F023,Contratación Directa,Obra de rehabilitación vial,172282.64,2026-09-09,False,False
+CN000077,P0091,E12,F050,Contratación Directa,Consultoría en ingeniería,151935.74,2026-09-15,False,False
+CN000268,P0132,E15,F035,Contratación Directa,Servicio de transporte,79092.66,2026-07-03,False,False
+CN000123,P0102,E12,F050,Comparación de Precios,Adquisición de bienes de oficina,10895.27,2026-07-12,False,False
+CN000297,P0002,E06,F039,Concurso Público,Adquisición de materiales de construcción,141934.83,2026-07-01,False,False
+CN000095,P0109,E06,F039,Contratación Directa,Adquisición de materiales de construcción,187892.0,2026-09-06,False,False
+CN000011,P0180,E14,F029,Contratación Directa,Consultoría en ingeniería,52839.0,2026-07-31,False,False
+CN000114,P0154,E04,F030,Comparación de Precios,Adquisición de bienes de oficina,9884.51,2026-09-03,False,False
+CN000428,P0127,E12,F050,Contratación Directa,Servicio de limpieza y vigilancia,436449.06,2026-08-31,False,False
+CN000257,P0084,E05,F059,Contratación Directa,Servicio de capacitación,57621.71,2026-08-27,False,False
+CN000352,P0129,E11,F007,Contratación Directa,Servicio de capacitación,47370.35,2026-09-05,False,False
+CN000531,P0011,E17,F031,Comparación de Precios,Obra de rehabilitación vial,91440.99,2026-09-19,False,False
+CN000169,P0211,E12,F021,Comparación de Precios,Servicio de capacitación,74150.2,2026-09-07,False,False
+CN000239,P0034,E10,F008,Contratación Directa,Servicio de transporte,17009.58,2026-09-20,False,False
+CN000277,P0028,E06,F039,Adjudicación Simplificada,Servicio de transporte,116163.91,2026-08-09,False,False
+CN000160,P0071,E07,F023,Contratación Directa,Suministro de combustible,187114.29,2026-09-04,False,False
+CN000073,P0113,E14,F016,Comparación de Precios,Adquisición de materiales de construcción,115530.82,2026-07-23,False,False
+CN000529,P0074,E02,F011,Adjudicación Simplificada,Servicio de transporte,91841.49,2026-08-26,False,False
+CN000062,P0213,E06,F039,Contratación Directa,Servicio de mantenimiento de infraestructura,13511.27,2026-09-05,False,False
+CN000492,P0178,E07,F013,Comparación de Precios,Consultoría en ingeniería,22687.03,2026-07-04,False,False
+CN000047,P0173,E03,F000,Comparación de Precios,Adquisición de equipos informáticos,24478.07,2026-07-30,False,False
+CN000594,P0150,E11,F049,Comparación de Precios,Consultoría en ingeniería,267829.19,2026-09-06,False,False
+CN000505,P0206,E02,F051,Contratación Directa,Adquisición de materiales de construcción,9332.72,2026-09-15,False,False
+CN000020,P0050,E09,F034,Contratación Directa,Suministro de combustible,52454.64,2026-08-18,False,False
+CN000424,P0090,E13,F055,Licitación Pública,Adquisición de bienes de oficina,42534.47,2026-07-24,False,False
+CN000192,P0044,E15,F035,Contratación Directa,Adquisición de bienes de oficina,37005.66,2026-09-27,False,False
+CN000215,P0155,E05,F032,Contratación Directa,Servicio de transporte,112251.11,2026-08-30,False,False
+CN000244,P0125,E16,F002,Comparación de Precios,Servicio de transporte,14632.69,2026-09-21,False,False
+CN000363,P0003,E02,F025,Adjudicación Simplificada,Servicio de limpieza y vigilancia,110316.81,2026-09-19,False,False
+CN000059,P0121,E16,F042,Contratación Directa,Servicio de mantenimiento de infraestructura,33483.31,2026-07-20,False,False
+CN000221,P0217,E12,F050,Contratación Directa,Servicio de mantenimiento de infraestructura,56382.99,2026-08-15,False,False
+CN000176,P0014,E04,F053,Comparación de Precios,Adquisición de materiales de construcción,28439.59,2026-07-05,False,False
+CN000449,P0157,E05,F047,Contratación Directa,Adquisición de materiales de construcción,97788.54,2026-09-28,False,False
+CN000055,P0076,E12,F050,Contratación Directa,Servicio de capacitación,15381.76,2026-09-07,False,False
+CN000254,P0062,E17,F012,Contratación Directa,Adquisición de materiales de construcción,80036.85,2026-09-08,False,False
+CN000385,P0064,E09,F043,Comparación de Precios,Servicio de transporte,136088.37,2026-09-19,False,False
+CN000197,P0035,E00,F041,Contratación Directa,Adquisición de equipos informáticos,252408.54,2026-07-30,False,False
+CN000068,P0153,E16,F024,Contratación Directa,Suministro de combustible,28094.03,2026-09-19,False,False
+CN000168,P0169,E06,F006,Contratación Directa,Suministro de combustible,25965.07,2026-07-26,False,False
+CN000185,P0190,E15,F035,Contratación Directa,Adquisición de bienes de oficina,203834.26,2026-08-11,False,False
+CN000035,P0091,E07,F013,Contratación Directa,Adquisición de bienes de oficina,76607.43,2026-07-31,False,False
