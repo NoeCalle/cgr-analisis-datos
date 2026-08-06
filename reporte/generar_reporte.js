@@ -640,6 +640,7 @@ const doc = new Document({
         vineta("Ejecutar Spark sobre un clúster YARN real, no en modo local[*]."),
         vineta("Añadir el módulo de análisis de grafos (proveedor-funcionario) con GraphX, en vez de networkx (usado en la Sección 5 por rapidez de desarrollo)."),
         vineta("Reemplazar el SQLite stand-in por una conexión real a SQL Server (pyodbc/pymssql) y desplegar el .rdl en un servidor SSRS real."),
+        vineta("GraphX/GraphFrames para el módulo de vínculos: se intentó explícitamente (dos rutas distintas — resolución vía Maven en tiempo de ejecución, y un .jar empaquetado en PyPI) y ambas fallaron por falta de acceso a Maven Central desde este entorno y por incompatibilidad binaria (Scala 2.11 vs. 2.13 de Spark 4.2). networkx (Sección 5) no es una simplificación de conveniencia; es la única opción funcional verificada aquí."),
 
         titulo("15. Conclusión"),
         parrafo(
