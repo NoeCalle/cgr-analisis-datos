@@ -353,15 +353,50 @@ const doc = new Document({
 
         new Paragraph({ children: [new PageBreak()] }),
 
-        titulo("5. Diccionario de Datos y Diagrama del Modelo"),
+        titulo("5. Evaluación de Vínculos Proveedor–Funcionario (Análisis de Grafos)"),
+        parrafo(
+          "Cubre el numeral 4.2.4 del TDR: \"Análisis de grafos o redes para mapear y evaluar relaciones entre " +
+          "proveedores y funcionarios (ej. por DNI, RUC, direcciones, teléfonos, etc.)\". A diferencia de los " +
+          "modelos de favoritismo y fraccionamiento, que operan solo sobre datos de SIAF/SEACE, este módulo " +
+          "requiere cruzar con una tercera fuente de datos de contacto (típicamente RENIEC/SUNAT/RNP), que aquí " +
+          "se simula, ya que no forma parte de SIAF ni SEACE por sí solos."
+        ),
+        parrafo(
+          "Se construyó un grafo bipartito con los 220 proveedores y 60 funcionarios simulados, con una arista " +
+          "por cada par que tiene al menos un contrato entre sí (3,020 aristas en total). Cada arista se marca " +
+          "automáticamente si el proveedor y el funcionario comparten el mismo número de teléfono o la misma " +
+          "dirección registrada — la señal típica de una empresa fachada controlada por el propio funcionario o " +
+          "un allegado."
+        ),
+        tabla(
+          ["Métrica", "Valor"],
+          [
+            ["Vínculos impropios sembrados", "5"],
+            ["Aristas marcadas por el algoritmo", "5"],
+            ["Aciertos", "5 de 5 (100%)"],
+          ],
+          [5500, 3300],
+        ),
+        parrafo("", { size: 4 }),
+        imagen("outputs/charts/10_grafo_vinculos.png", 480, 372),
+        piePagina("Figura 7. Red proveedor–funcionario; los 5 vínculos sospechosos (líneas rojas) fueron detectados con 100% de precisión sobre una muestra de contexto de relaciones normales."),
+        parrafo(
+          "Nota: esta señal (coincidencia exacta de teléfono/dirección) es deliberadamente simple y de alta " +
+          "precisión pero baja cobertura — no detecta vínculos encubiertos con datos de contacto distintos " +
+          "(ej. un tercero testaferro). Una versión de producción debería complementarse con análisis de " +
+          "centralidad de red (funcionarios que concentran decisiones sobre pocos proveedores) y con fuzzy " +
+          "matching de direcciones, no solo coincidencia exacta."
+        ),
+
+        titulo("6. Diccionario de Datos y Diagrama del Modelo"),
         parrafo(
           "Cubre el numeral 3.2.g del TDR (\"Elaborar y mantener actualizado el diccionario y diagrama del " +
           "modelo de datos\") y el ítem 8 del checklist del Anexo 3 (documentación de linaje: rastreo del dato " +
           "desde la fuente hasta el modelo final)."
         ),
         imagen("outputs/charts/09_diagrama_modelo_datos.png", 560, 145),
-        piePagina("Figura 6. Diagrama del modelo de datos: tablas fuente (SIAF/SEACE simuladas), relaciones y linaje hacia las tablas derivadas de cada modelo."),
-        subtitulo("5.1. Diccionario de datos"),
+        piePagina("Figura 8. Diagrama del modelo de datos: tablas fuente (SIAF/SEACE simuladas), relaciones y linaje hacia las tablas derivadas de cada modelo."),
+        subtitulo("6.1. Diccionario de datos"),
         tabla(
           ["Tabla.Columna", "Tipo", "Descripción"],
           DICCIONARIO,
@@ -370,13 +405,13 @@ const doc = new Document({
 
         new Paragraph({ children: [new PageBreak()] }),
 
-        titulo("6. Limitaciones del Prototipo"),
+        titulo("7. Limitaciones del Prototipo"),
         vineta("Los datos son 100% sintéticos; no reflejan la distribución real ni la complejidad de casos límite del universo de contrataciones de la CGR."),
-        vineta("No incluye evaluación de vínculos por grafos (numeral 4.2.4 del TDR: relaciones proveedor-funcionario por DNI, RUC, direcciones, teléfonos), que requiere fuentes adicionales no simuladas aquí."),
+        vineta("La señal de vínculos (Sección 5) usa coincidencia exacta de teléfono/dirección; en producción requeriría fuzzy matching y cruce con RENIEC/SUNAT real."),
         vineta("No se probó a escala de big data; el prototipo corre en pandas/scikit-learn sobre una muestra de miles de registros, no millones."),
         vineta("No cubre la integración con SSRS/Power BI, el pipeline de orquestación (Airflow/DAGs) ni el proceso de certificación institucional descritos en el TDR."),
 
-        titulo("7. Ruta de Escalamiento a Producción"),
+        titulo("8. Ruta de Escalamiento a Producción"),
         parrafo(
           "La lógica de features y modelado de este prototipo es directamente portable a Apache Spark MLlib " +
           "(pyspark.ml) sobre el Lakehouse Hadoop descrito en el Anexo 2 del TDR: RandomForestClassifier e " +
@@ -390,14 +425,14 @@ const doc = new Document({
         vineta("Añadir el módulo de análisis de grafos (proveedor-funcionario) con GraphX."),
         vineta("Publicar resultados hacia SQL Server / SSRS para consumo desde Power BI, tal como especifica la arquitectura institucional."),
 
-        titulo("8. Conclusión"),
+        titulo("9. Conclusión"),
         parrafo(
-          "Este prototipo demuestra en código abierto y en un plazo muy corto que los dos casos de uso centrales " +
-          "del TDR —favoritismo y fraccionamiento— son técnicamente alcanzables sin necesidad de comprometer de " +
-          "inmediato una consultoría individual de 180 días y S/. 72,000. El código fuente completo, comentado y " +
-          "versionado está disponible públicamente en el repositorio indicado en la portada, cumpliendo con el " +
-          "espíritu del ítem 6 del checklist de aceptación del Anexo 3 (\"código versionado en Git " +
-          "institucional\")."
+          "Este prototipo demuestra en código abierto y en un plazo muy corto que los tres casos de uso " +
+          "priorizados del TDR —favoritismo, fraccionamiento y vínculos proveedor-funcionario— son técnicamente " +
+          "alcanzables sin necesidad de comprometer de inmediato una consultoría individual de 180 días y S/. " +
+          "72,000. El código fuente completo, comentado y versionado está disponible públicamente en el " +
+          "repositorio indicado en la portada, cumpliendo con el espíritu del ítem 6 del checklist de " +
+          "aceptación del Anexo 3 (\"código versionado en Git institucional\")."
         ),
       ],
     },
