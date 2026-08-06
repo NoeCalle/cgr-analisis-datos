@@ -21,3 +21,12 @@ data_real/main.csv
 data_real/contracts.csv
 data_real/awards.csv
 data_real/parties.csv
+
+# Warehouse local de HMS (metadatos Derby, regenerable)
+outputs/hms_warehouse/
+metastore_db/
+derby.log
+
+# Checkpoint de Spark Streaming (estado interno regenerable)
+outputs/streaming_demo/checkpoint/
+outputs/streaming_demo/origen/
