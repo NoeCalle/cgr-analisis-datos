@@ -1,0 +1,30 @@
+tabla,columna,tipo,descripcion,fuente
+contratos_siaf_seace,id_contrato,string,Identificador único del contrato (simula clave de proceso SEACE).,SEACE (simulado)
+contratos_siaf_seace,id_proveedor,string (FK),Referencia al proveedor adjudicado. Llave foránea a proveedores.id_proveedor.,SEACE (simulado)
+contratos_siaf_seace,id_entidad,string (FK),Entidad pública contratante. Llave foránea a entidades.id_entidad.,SEACE (simulado)
+contratos_siaf_seace,id_funcionario,string (FK),Funcionario responsable del proceso. Llave foránea a funcionarios.id_funcionario.,SIAF (simulado)
+contratos_siaf_seace,modalidad,categórica,"Modalidad de contratación según la Ley de Contrataciones del Estado (Licitación Pública, Adjudicación Simplificada, Contratación Directa, etc.).",SEACE (simulado)
+contratos_siaf_seace,objeto,categórica,"Tipo de bien, servicio u obra contratado.",SEACE (simulado)
+contratos_siaf_seace,monto,numérico (S/.),Monto contractual en soles.,SIAF (simulado)
+contratos_siaf_seace,fecha_contrato,fecha,Fecha de suscripción del contrato.,SEACE (simulado)
+contratos_siaf_seace,es_favoritismo_real,booleano,Etiqueta de validación interna del prototipo (ground truth sintético). No existe en un dataset de producción.,Generado para el prototipo
+contratos_siaf_seace,es_fraccionamiento_real,booleano,Etiqueta de validación interna del prototipo (ground truth sintético). No existe en un dataset de producción.,Generado para el prototipo
+proveedores,id_proveedor,string (PK),Identificador único del proveedor.,RNP / SEACE (simulado)
+proveedores,ruc,string,Registro Único de Contribuyente del proveedor.,SUNAT (simulado)
+proveedores,razon_social,string,Razón social del proveedor.,RNP / SUNAT (simulado)
+entidades,id_entidad,string (PK),Identificador único de la entidad pública.,SEACE (simulado)
+entidades,nombre_entidad,string,Nombre de la entidad pública contratante.,SEACE (simulado)
+funcionarios,id_funcionario,string (PK),Identificador único del funcionario.,SIAF / legajo institucional (simulado)
+funcionarios,dni_funcionario,string,"Documento Nacional de Identidad del funcionario (para futuro cruce de vínculos, numeral 4.2.4).",RENIEC (simulado)
+funcionarios,id_entidad,string (FK),Entidad a la que pertenece el funcionario. Llave foránea a entidades.id_entidad.,Legajo institucional (simulado)
+dataset_favoritismo,id_proveedor / id_entidad,string (FK compuesta),Clave del par proveedor-entidad agregado.,Derivado (feature engineering)
+dataset_favoritismo,n_contratos,numérico,N° de contratos ganados por el proveedor en la entidad.,Derivado
+dataset_favoritismo,monto_total / monto_promedio,numérico (S/.),Monto acumulado y promedio de los contratos del par.,Derivado
+dataset_favoritismo,pct_no_competitiva,numérico [0-1],"Proporción de contratos bajo modalidades poco competitivas (Contratación Directa, Comparación de Precios).",Derivado
+dataset_favoritismo,concentracion_objeto,numérico [0-1],1 − (objetos distintos / n° contratos). Cercano a 1 = siempre el mismo tipo de objeto.,Derivado
+dataset_favoritismo,score_riesgo_favoritismo,numérico [0-1],Salida del modelo Random Forest — probabilidad estimada de favoritismo.,Modelo (salida)
+dataset_fraccionamiento,id_proveedor / id_entidad / objeto,string (FK compuesta),Clave del grupo proveedor-entidad-objeto.,Derivado
+dataset_fraccionamiento,max_contratos_ventana_15d,numérico,Máximo de contratos del grupo dentro de cualquier ventana móvil de 15 días.,Derivado
+dataset_fraccionamiento,pct_montos_bajo_umbral,numérico [0-1],"Proporción de contratos con monto < 95% del umbral de Adjudicación Simplificada (S/. 400,000).",Derivado + regla normativa
+dataset_fraccionamiento,score_anomalia,numérico,Salida del modelo Isolation Forest — score de anomalía (mayor = más atípico).,Modelo (salida)
+dataset_fraccionamiento,cumple_regla_fraccionamiento,booleano,Regla interpretable: ≥3 contratos en ventana de 15 días Y ≥70% de montos bajo el umbral.,"Modelo (salida, regla de negocio)"

@@ -9,6 +9,38 @@ const AZUL = "1F4E79";
 const GRIS_CLARO = "F2F2F2";
 const ROJO = "C0392B";
 
+const DICCIONARIO = [
+  ["contratos_siaf_seace.id_contrato", "string", "Identificador único del contrato (simula clave de proceso SEACE)."],
+  ["contratos_siaf_seace.id_proveedor", "string (FK)", "Referencia al proveedor adjudicado. Llave foránea a proveedores.id_proveedor."],
+  ["contratos_siaf_seace.id_entidad", "string (FK)", "Entidad pública contratante. Llave foránea a entidades.id_entidad."],
+  ["contratos_siaf_seace.id_funcionario", "string (FK)", "Funcionario responsable del proceso. Llave foránea a funcionarios.id_funcionario."],
+  ["contratos_siaf_seace.modalidad", "categórica", "Modalidad de contratación según la Ley de Contrataciones del Estado."],
+  ["contratos_siaf_seace.objeto", "categórica", "Tipo de bien, servicio u obra contratado."],
+  ["contratos_siaf_seace.monto", "numérico (S/.)", "Monto contractual en soles."],
+  ["contratos_siaf_seace.fecha_contrato", "fecha", "Fecha de suscripción del contrato."],
+  ["contratos_siaf_seace.es_favoritismo_real", "booleano", "Etiqueta de validación interna del prototipo (ground truth sintético). No existe en producción."],
+  ["contratos_siaf_seace.es_fraccionamiento_real", "booleano", "Etiqueta de validación interna del prototipo (ground truth sintético). No existe en producción."],
+  ["proveedores.id_proveedor", "string (PK)", "Identificador único del proveedor."],
+  ["proveedores.ruc", "string", "Registro Único de Contribuyente del proveedor."],
+  ["proveedores.razon_social", "string", "Razón social del proveedor."],
+  ["entidades.id_entidad", "string (PK)", "Identificador único de la entidad pública."],
+  ["entidades.nombre_entidad", "string", "Nombre de la entidad pública contratante."],
+  ["funcionarios.id_funcionario", "string (PK)", "Identificador único del funcionario."],
+  ["funcionarios.dni_funcionario", "string", "DNI del funcionario (para futuro cruce de vínculos, numeral 4.2.4)."],
+  ["funcionarios.id_entidad", "string (FK)", "Entidad a la que pertenece el funcionario."],
+  ["dataset_favoritismo.id_proveedor / id_entidad", "string (FK compuesta)", "Clave del par proveedor-entidad agregado."],
+  ["dataset_favoritismo.n_contratos", "numérico", "N° de contratos ganados por el proveedor en la entidad."],
+  ["dataset_favoritismo.monto_total / monto_promedio", "numérico (S/.)", "Monto acumulado y promedio de los contratos del par."],
+  ["dataset_favoritismo.pct_no_competitiva", "numérico [0-1]", "Proporción de contratos bajo modalidades poco competitivas."],
+  ["dataset_favoritismo.concentracion_objeto", "numérico [0-1]", "1 − (objetos distintos / n° contratos). Cercano a 1 = siempre el mismo objeto."],
+  ["dataset_favoritismo.score_riesgo_favoritismo", "numérico [0-1]", "Salida del modelo Random Forest — probabilidad estimada de favoritismo."],
+  ["dataset_fraccionamiento.id_proveedor / id_entidad / objeto", "string (FK compuesta)", "Clave del grupo proveedor-entidad-objeto."],
+  ["dataset_fraccionamiento.max_contratos_ventana_15d", "numérico", "Máximo de contratos del grupo en cualquier ventana móvil de 15 días."],
+  ["dataset_fraccionamiento.pct_montos_bajo_umbral", "numérico [0-1]", "Proporción de contratos con monto < 95% del umbral de Adjudicación Simplificada."],
+  ["dataset_fraccionamiento.score_anomalia", "numérico", "Salida del modelo Isolation Forest — score de anomalía."],
+  ["dataset_fraccionamiento.cumple_regla_fraccionamiento", "booleano", "Regla interpretable: ≥3 contratos en 15 días Y ≥70% de montos bajo el umbral."],
+];
+
 function titulo(text) {
   return new Paragraph({ text, heading: HeadingLevel.HEADING_1, spacing: { before: 300, after: 150 } });
 }
@@ -321,13 +353,30 @@ const doc = new Document({
 
         new Paragraph({ children: [new PageBreak()] }),
 
-        titulo("5. Limitaciones del Prototipo"),
+        titulo("5. Diccionario de Datos y Diagrama del Modelo"),
+        parrafo(
+          "Cubre el numeral 3.2.g del TDR (\"Elaborar y mantener actualizado el diccionario y diagrama del " +
+          "modelo de datos\") y el ítem 8 del checklist del Anexo 3 (documentación de linaje: rastreo del dato " +
+          "desde la fuente hasta el modelo final)."
+        ),
+        imagen("outputs/charts/09_diagrama_modelo_datos.png", 560, 145),
+        piePagina("Figura 6. Diagrama del modelo de datos: tablas fuente (SIAF/SEACE simuladas), relaciones y linaje hacia las tablas derivadas de cada modelo."),
+        subtitulo("5.1. Diccionario de datos"),
+        tabla(
+          ["Tabla.Columna", "Tipo", "Descripción"],
+          DICCIONARIO,
+          [3200, 1500, 5100],
+        ),
+
+        new Paragraph({ children: [new PageBreak()] }),
+
+        titulo("6. Limitaciones del Prototipo"),
         vineta("Los datos son 100% sintéticos; no reflejan la distribución real ni la complejidad de casos límite del universo de contrataciones de la CGR."),
         vineta("No incluye evaluación de vínculos por grafos (numeral 4.2.4 del TDR: relaciones proveedor-funcionario por DNI, RUC, direcciones, teléfonos), que requiere fuentes adicionales no simuladas aquí."),
         vineta("No se probó a escala de big data; el prototipo corre en pandas/scikit-learn sobre una muestra de miles de registros, no millones."),
         vineta("No cubre la integración con SSRS/Power BI, el pipeline de orquestación (Airflow/DAGs) ni el proceso de certificación institucional descritos en el TDR."),
 
-        titulo("6. Ruta de Escalamiento a Producción"),
+        titulo("7. Ruta de Escalamiento a Producción"),
         parrafo(
           "La lógica de features y modelado de este prototipo es directamente portable a Apache Spark MLlib " +
           "(pyspark.ml) sobre el Lakehouse Hadoop descrito en el Anexo 2 del TDR: RandomForestClassifier e " +
@@ -341,7 +390,7 @@ const doc = new Document({
         vineta("Añadir el módulo de análisis de grafos (proveedor-funcionario) con GraphX."),
         vineta("Publicar resultados hacia SQL Server / SSRS para consumo desde Power BI, tal como especifica la arquitectura institucional."),
 
-        titulo("7. Conclusión"),
+        titulo("8. Conclusión"),
         parrafo(
           "Este prototipo demuestra en código abierto y en un plazo muy corto que los dos casos de uso centrales " +
           "del TDR —favoritismo y fraccionamiento— son técnicamente alcanzables sin necesidad de comprometer de " +
