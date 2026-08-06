@@ -567,7 +567,23 @@ const doc = new Document({
           "principio que la poda de particiones: descartar lo más posible, lo antes posible."
         ),
 
-        titulo("12. Ruta de Escalamiento Restante"),
+        titulo("12. Integración SSRS (Ejecutado)"),
+        parrafo(
+          "Cubre el ítem 7 del checklist del Anexo 3: \"Integración para Ecosistema SSRS (SQL Server Reporting " +
+          "Services): Resultados del modelo (predicciones y puntajes de riesgo)\". No hay acceso a un SQL " +
+          "Server real desde este entorno de prueba de concepto; se construyeron los dos artefactos que sí son " +
+          "portables sin esa infraestructura:"
+        ),
+        vineta("Esquema T-SQL válido (ssrs/schema_sql_server.sql) con las tres tablas de resultados, tipos de datos e índices, listo para ejecutarse en el SQL Server institucional descrito en el Anexo 2."),
+        vineta("Publicación real de los 5,523 registros de resultados (2,354 de favoritismo + 149 de fraccionamiento + 3,020 de vínculos) sobre ese mismo esquema, usando SQLite como stand-in local documentado — cambiar el driver de conexión (sqlite3 → pyodbc/pymssql) es el único paso para apuntar a un SQL Server real."),
+        vineta("Un archivo .rdl (Report Definition Language) real y válido — el formato nativo de SSRS — con un dataset parametrizado y una tabla de riesgo, verificado como XML bien formado bajo el namespace oficial de SSRS 2016. No se ejecuta aquí (requiere un servidor SSRS real), pero es el entregable listo para desplegar, no una simulación de su contenido."),
+        parrafo(
+          "La consulta de prueba (equivalente al Dataset compartido que usaría el .rdl, filtrando por " +
+          "score_riesgo ≥ 0.5) devolvió exactamente los 6 proveedores de mayor riesgo — los mismos que " +
+          "aparecen en el ranking de la Sección 3."
+        ),
+
+        titulo("13. Ruta de Escalamiento Restante"),
         parrafo(
           "Con las validaciones de las Secciones 8 y 9, el trabajo pendiente para producción se reduce casi " +
           "exclusivamente a infraestructura y gobernanza de datos:"
@@ -576,20 +592,21 @@ const doc = new Document({
         vineta("Desplegar el DAG en el Airflow productivo de la CGR (ya disponible según el Anexo 2), reemplazando BashOperator por SparkSubmitOperator para las tareas de entrenamiento."),
         vineta("Ejecutar Spark sobre un clúster YARN real, no en modo local[*]."),
         vineta("Añadir el módulo de análisis de grafos (proveedor-funcionario) con GraphX, en vez de networkx (usado en la Sección 5 por rapidez de desarrollo)."),
-        vineta("Publicar resultados hacia SQL Server / SSRS para consumo desde Power BI, tal como especifica la arquitectura institucional."),
+        vineta("Reemplazar el SQLite stand-in por una conexión real a SQL Server (pyodbc/pymssql) y desplegar el .rdl en un servidor SSRS real."),
 
-        titulo("13. Conclusión"),
+        titulo("14. Conclusión"),
         parrafo(
           "Este prototipo demuestra en código abierto y en un plazo muy corto que los tres casos de uso " +
           "priorizados del TDR —favoritismo, fraccionamiento y vínculos proveedor-funcionario— son técnicamente " +
           "alcanzables sin necesidad de comprometer de inmediato una consultoría individual de 180 días y S/. " +
           "72,000. La lógica de modelado fue validada en scikit-learn y en Apache Spark MLlib real (Sección 8), " +
           "orquestada de punta a punta con Apache Airflow real (Sección 9), optimizada mediante búsqueda " +
-          "sistemática de hiperparámetros en ambas plataformas (Sección 10), y extraída siguiendo los " +
-          "estándares SQL institucionales de la CGR (Sección 11) — no solo de forma teórica en ningún punto " +
-          "del pipeline. El código fuente completo, comentado y versionado está disponible públicamente en el " +
-          "repositorio indicado en la portada, cumpliendo con el espíritu del ítem 6 del checklist de " +
-          "aceptación del Anexo 3 (\"código versionado en Git institucional\")."
+          "sistemática de hiperparámetros en ambas plataformas (Sección 10), extraída siguiendo los estándares " +
+          "SQL institucionales de la CGR (Sección 11), y publicada en un esquema listo para SSRS con un " +
+          "reporte .rdl real (Sección 12) — no solo de forma teórica en ningún punto del pipeline. El código " +
+          "fuente completo, comentado y versionado está disponible públicamente en el repositorio indicado en " +
+          "la portada, cumpliendo con el espíritu del ítem 6 del checklist de aceptación del Anexo 3 (\"código " +
+          "versionado en Git institucional\")."
         ),
       ],
     },
