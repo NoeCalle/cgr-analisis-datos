@@ -533,7 +533,41 @@ const doc = new Document({
           "estimadores en vez de 300)."
         ),
 
-        titulo("11. Ruta de Escalamiento Restante"),
+        titulo("11. Estándares Institucionales de Extracción SQL (Ejecutado)"),
+        parrafo(
+          "Cubre el ítem 3 del checklist del Anexo 3: \"Cumplimiento de Reglas Técnicas de la CGR (uso de LEFT " +
+          "JOIN, lógica de 'cortocircuito' y prohibición de Full Table Scans en tablas de hechos)\". En un " +
+          "ecosistema Hadoop/Spark, prohibir el Full Table Scan no se resuelve con índices tradicionales, sino " +
+          "con particionamiento físico: se reescribió la tabla de hechos (contratos) como Parquet particionado " +
+          "por año-mes (42 particiones), lo que permite que Spark descarte particiones completas sin leerlas " +
+          "cuando la consulta filtra por esa columna."
+        ),
+        tabla(
+          ["Verificación", "Resultado"],
+          [
+            ["Particiones totales de la tabla de hechos", "42"],
+            ["Particiones leídas al filtrar por año-mes reciente", "6 de 42 (14%)"],
+            ["Poda de particiones confirmada en el plan físico de Spark", "Sí"],
+            ["LEFT JOIN vs. INNER JOIN (prueba dirigida con huérfano forzado)", "1 fila vs. 0 filas"],
+          ],
+          [5800, 2600],
+        ),
+        parrafo("", { size: 4 }),
+        parrafo(
+          "La prueba de LEFT JOIN se hizo de forma honesta: sobre los datos reales del prototipo, LEFT JOIN e " +
+          "INNER JOIN devuelven el mismo resultado porque la integridad referencial es perfecta por diseño (no " +
+          "hay huérfanos orgánicos que mostrar). Se construyó entonces una prueba dirigida — un contrato con un " +
+          "id_funcionario inexistente en la tabla dimensión — que confirma el comportamiento esperado: LEFT " +
+          "JOIN conserva el contrato (con el campo NULL), INNER JOIN lo descarta silenciosamente. Ese " +
+          "descarte silencioso es exactamente el riesgo de auditoría que motiva la regla del checklist."
+        ),
+        parrafo(
+          "La \"lógica de cortocircuito\" se aplicó ordenando el WHERE con el filtro más selectivo y barato " +
+          "primero (igualdad sobre id_entidad) antes que el filtro de rango sobre monto, siguiendo el mismo " +
+          "principio que la poda de particiones: descartar lo más posible, lo antes posible."
+        ),
+
+        titulo("12. Ruta de Escalamiento Restante"),
         parrafo(
           "Con las validaciones de las Secciones 8 y 9, el trabajo pendiente para producción se reduce casi " +
           "exclusivamente a infraestructura y gobernanza de datos:"
@@ -544,17 +578,18 @@ const doc = new Document({
         vineta("Añadir el módulo de análisis de grafos (proveedor-funcionario) con GraphX, en vez de networkx (usado en la Sección 5 por rapidez de desarrollo)."),
         vineta("Publicar resultados hacia SQL Server / SSRS para consumo desde Power BI, tal como especifica la arquitectura institucional."),
 
-        titulo("12. Conclusión"),
+        titulo("13. Conclusión"),
         parrafo(
           "Este prototipo demuestra en código abierto y en un plazo muy corto que los tres casos de uso " +
           "priorizados del TDR —favoritismo, fraccionamiento y vínculos proveedor-funcionario— son técnicamente " +
           "alcanzables sin necesidad de comprometer de inmediato una consultoría individual de 180 días y S/. " +
           "72,000. La lógica de modelado fue validada en scikit-learn y en Apache Spark MLlib real (Sección 8), " +
-          "orquestada de punta a punta con Apache Airflow real (Sección 9), y optimizada mediante búsqueda " +
-          "sistemática de hiperparámetros en ambas plataformas (Sección 10) — no solo de forma teórica en " +
-          "ningún punto del pipeline. El código fuente completo, comentado y versionado está disponible " +
-          "públicamente en el repositorio indicado en la portada, cumpliendo con el espíritu del ítem 6 del " +
-          "checklist de aceptación del Anexo 3 (\"código versionado en Git institucional\")."
+          "orquestada de punta a punta con Apache Airflow real (Sección 9), optimizada mediante búsqueda " +
+          "sistemática de hiperparámetros en ambas plataformas (Sección 10), y extraída siguiendo los " +
+          "estándares SQL institucionales de la CGR (Sección 11) — no solo de forma teórica en ningún punto " +
+          "del pipeline. El código fuente completo, comentado y versionado está disponible públicamente en el " +
+          "repositorio indicado en la portada, cumpliendo con el espíritu del ítem 6 del checklist de " +
+          "aceptación del Anexo 3 (\"código versionado en Git institucional\")."
         ),
       ],
     },

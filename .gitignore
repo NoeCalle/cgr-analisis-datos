@@ -12,3 +12,6 @@ airflow_home/*.pid
 
 # Parquet particionado (regenerable, muchos archivos pequeños - ruido en git)
 lakehouse/oro/contratos_particionado/
+
+# Base de datos local (stand-in de SQL Server, regenerable)
+ssrs/reportes.db

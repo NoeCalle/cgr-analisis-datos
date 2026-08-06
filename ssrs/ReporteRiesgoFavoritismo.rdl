@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Reporte SSRS (Report Definition Language) — checklist Anexo 3, ítem 7.
+
+  Este .rdl es un artefacto real de SQL Server Reporting Services: se
+  puede abrir en Report Builder o desplegarse a un servidor de reportes,
+  siempre que la cadena de conexión (ver <DataSource>) apunte al SQL
+  Server real de la CGR con el esquema de ssrs/schema_sql_server.sql ya
+  cargado. Aquí NO se ejecuta (no hay un servidor SSRS ni SQL Server
+  disponible en este entorno de prueba de concepto) — es el entregable
+  listo para desplegar, no una simulación de su ejecución.
+-->
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition"
+        xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+
+  <DataSources>
+    <DataSource Name="CGR_SQLServer">
+      <ConnectionProperties>
+        <DataProvider>SQL</DataProvider>
+        <!-- Placeholder — en despliegue real apunta al SQL Server institucional descrito en el Anexo 2 -->
+        <ConnectString>Data Source=SRV-CGR-SQL;Initial Catalog=ModuloAnalisisDatos_1_8_2</ConnectString>
+      </ConnectionProperties>
+      <rd:SecurityType>Integrated</rd:SecurityType>
+    </DataSource>
+  </DataSources>
+
+  <DataSets>
+    <DataSet Name="DatasetFavoritismo">
+      <Query>
+        <DataSourceName>CGR_SQLServer</DataSourceName>
+        <CommandText>
+          SELECT id_proveedor, id_entidad, n_contratos, monto_total, score_riesgo
+          FROM dbo.PrediccionesFavoritismo
+          WHERE score_riesgo &gt;= @UmbralMinimo
+          ORDER BY score_riesgo DESC
+        </CommandText>
+        <QueryParameters>
+          <QueryParameter Name="@UmbralMinimo">
+            <Value>=Parameters!UmbralMinimo.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+      </Query>
+      <Fields>
+        <Field Name="id_proveedor"><DataField>id_proveedor</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="id_entidad"><DataField>id_entidad</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="n_contratos"><DataField>n_contratos</DataField><rd:TypeName>System.Int32</rd:TypeName></Field>
+        <Field Name="monto_total"><DataField>monto_total</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        <Field Name="score_riesgo"><DataField>score_riesgo</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+
+  <ReportParameters>
+    <ReportParameter Name="UmbralMinimo">
+      <DataType>Float</DataType>
+      <DefaultValue><Values><Value>0.5</Value></Values></DefaultValue>
+      <Prompt>Umbral mínimo de riesgo (0-1)</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+
+  <Body>
+    <ReportItems>
+      <Textbox Name="Titulo">
+        <CanGrow>true</CanGrow>
+        <Value>Ranking de Riesgo de Favoritismo — Proyecto Interno 1.8.2</Value>
+        <Style>
+          <FontSize>14pt</FontSize>
+          <FontWeight>Bold</FontWeight>
+        </Style>
+        <Top>0in</Top>
+        <Left>0in</Left>
+        <Height>0.3in</Height>
+        <Width>6.5in</Width>
+      </Textbox>
+
+      <Tablix Name="TablixFavoritismo">
+        <Top>0.4in</Top>
+        <Left>0in</Left>
+        <Height>2.5in</Height>
+        <Width>6.5in</Width>
+        <TablixCorner />
+        <TablixBody>
+          <TablixColumns>
+            <TablixColumn><Width>1.3in</Width></TablixColumn>
+            <TablixColumn><Width>1.3in</Width></TablixColumn>
+            <TablixColumn><Width>1.2in</Width></TablixColumn>
+            <TablixColumn><Width>1.4in</Width></TablixColumn>
+            <TablixColumn><Width>1.3in</Width></TablixColumn>
+          </TablixColumns>
+          <TablixRows>
+            <TablixRow>
+              <Height>0.25in</Height>
+              <TablixCells>
+                <TablixCell><CellContents><Textbox Name="HdrProveedor"><Value>Proveedor</Value><Style><FontWeight>Bold</FontWeight><BackgroundColor>#1F4E79</BackgroundColor><Color>White</Color></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="HdrEntidad"><Value>Entidad</Value><Style><FontWeight>Bold</FontWeight><BackgroundColor>#1F4E79</BackgroundColor><Color>White</Color></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="HdrContratos"><Value>N° Contratos</Value><Style><FontWeight>Bold</FontWeight><BackgroundColor>#1F4E79</BackgroundColor><Color>White</Color></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="HdrMonto"><Value>Monto Total (S/.)</Value><Style><FontWeight>Bold</FontWeight><BackgroundColor>#1F4E79</BackgroundColor><Color>White</Color></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="HdrScore"><Value>Score de Riesgo</Value><Style><FontWeight>Bold</FontWeight><BackgroundColor>#1F4E79</BackgroundColor><Color>White</Color></Style></Textbox></CellContents></TablixCell>
+              </TablixCells>
+            </TablixRow>
+            <TablixRow>
+              <Height>0.22in</Height>
+              <TablixCells>
+                <TablixCell><CellContents><Textbox Name="TxtProveedor"><Value>=Fields!id_proveedor.Value</Value></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TxtEntidad"><Value>=Fields!id_entidad.Value</Value></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TxtContratos"><Value>=Fields!n_contratos.Value</Value></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TxtMonto"><Value>=FormatCurrency(Fields!monto_total.Value)</Value></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TxtScore"><Value>=FormatPercent(Fields!score_riesgo.Value)</Value><Style><BackgroundColor>=IIF(Fields!score_riesgo.Value >= 0.8, "#F8CBCB", "White")</BackgroundColor></Style></Textbox></CellContents></TablixCell>
+              </TablixCells>
+            </TablixRow>
+          </TablixRows>
+        </TablixBody>
+        <TablixRowHierarchy>
+          <TablixMembers>
+            <TablixMember />
+            <TablixMember>
+              <Group Name="DetalleFavoritismo">
+                <GroupExpressions>
+                  <GroupExpression>=Fields!id_proveedor.Value &amp; Fields!id_entidad.Value</GroupExpression>
+                </GroupExpressions>
+              </Group>
+              <SortExpressions>
+                <SortExpression>
+                  <Value>=Fields!score_riesgo.Value</Value>
+                  <Direction>Descending</Direction>
+                </SortExpression>
+              </SortExpressions>
+            </TablixMember>
+          </TablixMembers>
+        </TablixRowHierarchy>
+        <TablixColumnHierarchy>
+          <TablixMembers>
+            <TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember />
+          </TablixMembers>
+        </TablixColumnHierarchy>
+        <DataSetName>DatasetFavoritismo</DataSetName>
+      </Tablix>
+    </ReportItems>
+    <Height>3in</Height>
+  </Body>
+
+  <Width>6.5in</Width>
+  <Page>
+    <PageHeight>11in</PageHeight>
+    <PageWidth>8.5in</PageWidth>
+    <LeftMargin>0.5in</LeftMargin>
+    <RightMargin>0.5in</RightMargin>
+    <TopMargin>0.5in</TopMargin>
+    <BottomMargin>0.5in</BottomMargin>
+  </Page>
+
+</Report>
