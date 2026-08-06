@@ -583,7 +583,54 @@ const doc = new Document({
           "aparecen en el ranking de la Sección 3."
         ),
 
-        titulo("13. Ruta de Escalamiento Restante"),
+        titulo("13. Autoevaluación y Autoentrenamiento (Ejecutado)"),
+        parrafo(
+          "Cierra el último pendiente identificado, cubriendo el objetivo específico 3.2.c del TDR: " +
+          "\"Incorporar mecanismos de autoevaluación y, cuando sea pertinente, de autoentrenamiento para " +
+          "permitir la actualización continua de los modelos... asegurando que los algoritmos se mantengan " +
+          "precisos, pertinentes y adaptados a la evolución de los patrones de contratación.\""
+        ),
+        parrafo(
+          "El mecanismo combina dos señales independientes — cualquiera dispara reentrenamiento: (1) deriva de " +
+          "datos, medida con Population Stability Index (PSI) sobre variables clave, comparando la " +
+          "distribución de entrenamiento contra la de los contratos más recientes; y (2) degradación de " +
+          "desempeño, midiendo si el modelo actual sigue detectando casos de favoritismo ya confirmados por " +
+          "auditores (la retroalimentación humana que menciona el TDR)."
+        ),
+        parrafo(
+          "Se validó con dos escenarios simulados de \"próximo trimestre\": uno con la misma distribución de " +
+          "entrenamiento (no debería disparar nada) y otro con una deriva real (salto de modalidades " +
+          "competitivas a no competitivas, y dos casos de favoritismo con un perfil distinto al aprendido — " +
+          "pocos contratos de monto muy alto, en vez de muchos contratos pequeños)."
+        ),
+        imagen("outputs/charts/12_dag_monitoreo.png", 420, 65),
+        piePagina("Figura 10. DAG de monitoreo (schedule mensual) — genera el lote más reciente y evalúa si corresponde reentrenar."),
+        tabla(
+          ["Escenario", "PSI máximo", "Recall sobre casos nuevos", "¿Disparó reentrenamiento?"],
+          [
+            ["Normal (sin deriva)", "0.186", "—", "No"],
+            ["Con deriva", "1.608", "1.00", "Sí"],
+          ],
+          [2600, 1800, 2400, 2000],
+        ),
+        parrafo("", { size: 4 }),
+        parrafo(
+          "Hallazgo relevante: en el escenario con deriva, el modelo actual todavía detectaba correctamente " +
+          "los 2 casos nuevos (recall = 1.00) — si la decisión dependiera solo de desempeño, no se habría " +
+          "disparado ninguna alerta. Fue la señal de PSI (1.608, muy por encima del umbral de 0.25) la que " +
+          "detectó que la población de contratos había cambiado, independientemente de que el modelo, por " +
+          "ahora, siguiera acertando. Esa es exactamente la razón de tener ambas señales: el desempeño puede " +
+          "verse bien por casualidad mientras el terreno ya cambió debajo del modelo."
+        ),
+        parrafo(
+          "El DAG completo (generación del lote → autoevaluación → reentrenamiento condicional) corrió de " +
+          "punta a punta con Apache Airflow real (`airflow dags test`), en 12.2 segundos, con estado " +
+          "\"success\" — igual que el DAG principal de la Sección 9. Cada decisión queda registrada en " +
+          "outputs/log_reentrenamiento.csv con marca de tiempo, señales evaluadas y motivo, para que ningún " +
+          "reentrenamiento ocurra de forma silenciosa o no auditable."
+        ),
+
+        titulo("14. Ruta de Escalamiento Restante"),
         parrafo(
           "Con las validaciones de las Secciones 8 y 9, el trabajo pendiente para producción se reduce casi " +
           "exclusivamente a infraestructura y gobernanza de datos:"
@@ -594,19 +641,20 @@ const doc = new Document({
         vineta("Añadir el módulo de análisis de grafos (proveedor-funcionario) con GraphX, en vez de networkx (usado en la Sección 5 por rapidez de desarrollo)."),
         vineta("Reemplazar el SQLite stand-in por una conexión real a SQL Server (pyodbc/pymssql) y desplegar el .rdl en un servidor SSRS real."),
 
-        titulo("14. Conclusión"),
+        titulo("15. Conclusión"),
         parrafo(
           "Este prototipo demuestra en código abierto y en un plazo muy corto que los tres casos de uso " +
           "priorizados del TDR —favoritismo, fraccionamiento y vínculos proveedor-funcionario— son técnicamente " +
           "alcanzables sin necesidad de comprometer de inmediato una consultoría individual de 180 días y S/. " +
-          "72,000. La lógica de modelado fue validada en scikit-learn y en Apache Spark MLlib real (Sección 8), " +
-          "orquestada de punta a punta con Apache Airflow real (Sección 9), optimizada mediante búsqueda " +
-          "sistemática de hiperparámetros en ambas plataformas (Sección 10), extraída siguiendo los estándares " +
-          "SQL institucionales de la CGR (Sección 11), y publicada en un esquema listo para SSRS con un " +
-          "reporte .rdl real (Sección 12) — no solo de forma teórica en ningún punto del pipeline. El código " +
-          "fuente completo, comentado y versionado está disponible públicamente en el repositorio indicado en " +
-          "la portada, cumpliendo con el espíritu del ítem 6 del checklist de aceptación del Anexo 3 (\"código " +
-          "versionado en Git institucional\")."
+          "72,000. Cada pieza de la arquitectura fue validada con ejecución real, no solo de forma teórica: " +
+          "modelado en scikit-learn y Apache Spark MLlib (Sección 8), orquestación con Apache Airflow " +
+          "(Sección 9), optimización sistemática de hiperparámetros en ambas plataformas (Sección 10), " +
+          "extracción bajo los estándares SQL institucionales de la CGR (Sección 11), publicación lista para " +
+          "SSRS (Sección 12), y un mecanismo de autoevaluación y autoentrenamiento que distingue correctamente " +
+          "cuándo el modelo necesita actualizarse (Sección 13). El código fuente completo, comentado y " +
+          "versionado está disponible públicamente en el repositorio indicado en la portada, cumpliendo con " +
+          "el espíritu del ítem 6 del checklist de aceptación del Anexo 3 (\"código versionado en Git " +
+          "institucional\")."
         ),
       ],
     },
