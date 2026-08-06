@@ -1,3 +1,11 @@
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
+
+# Entorno virtual de Airflow (pesado, no debe versionarse)
+.venv_airflow/
+# Metadatos/estado local de Airflow (base de datos, logs)
+airflow_home/airflow.db
+airflow_home/logs/
+airflow_home/*.cfg
+airflow_home/*.pid

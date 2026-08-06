@@ -409,7 +409,8 @@ const doc = new Document({
         vineta("Los datos son 100% sintéticos; no reflejan la distribución real ni la complejidad de casos límite del universo de contrataciones de la CGR."),
         vineta("La señal de vínculos (Sección 5) usa coincidencia exacta de teléfono/dirección; en producción requeriría fuzzy matching y cruce con RENIEC/SUNAT real."),
         vineta("No se probó a escala de big data; el prototipo corre en pandas/scikit-learn sobre una muestra de miles de registros, no millones."),
-        vineta("No cubre la integración con SSRS/Power BI, el pipeline de orquestación (Airflow/DAGs) ni el proceso de certificación institucional descritos en el TDR."),
+        vineta("No cubre la integración con SSRS/Power BI ni el proceso de certificación institucional descritos en el TDR."),
+        vineta("El DAG de Airflow (Sección 9) usa BashOperator invocando procesos Python locales; en producción las tareas de entrenamiento usarían SparkSubmitOperator sobre el clúster YARN de la CGR."),
 
         titulo("8. Validación en Apache Spark MLlib (Ejecutado)"),
         parrafo(
@@ -456,26 +457,68 @@ const doc = new Document({
         vineta("Validación cruzada rigurosa vía pyspark.ml.tuning.CrossValidator (aquí se evaluó sobre el conjunto completo de entrenamiento, no con un esquema k-fold estratificado nativo de Spark)."),
         vineta("Orquestación con Airflow, integración SSRS/Power BI y despliegue en ambientes de certificación — ver limitaciones."),
 
-        titulo("9. Ruta de Escalamiento Restante"),
+        titulo("9. Orquestación con Apache Airflow (Ejecutado)"),
         parrafo(
-          "Con la validación de la Sección 8, el trabajo pendiente para producción se reduce a infraestructura " +
-          "y gobernanza de datos, no a portar la lógica de modelado — eso ya se ejecutó en Spark MLlib real:"
+          "Cubre el numeral 6 del TDR (\"Orquestación de Procesos ETL (DAGs): Diseñar, desarrollar y probar los " +
+          "Directed Acyclic Graphs (DAGs)\"). Se instaló Apache Airflow 3.3.0 en un entorno aislado, se " +
+          "construyó un DAG con las 9 etapas del pipeline respetando el linaje real de los datos, y se ejecutó " +
+          "de punta a punta con el comando `airflow dags test` — no es un diagrama teórico, es una corrida real " +
+          "sobre el motor de ejecución de Airflow."
         ),
-        vineta("Conectar la ingesta real a las capas Plata/Oro del Lakehouse (reemplazando el CSV local por lectura del Delta Lake sobre Hadoop, según el Anexo 2 del TDR)."),
-        vineta("Orquestar el pipeline con Airflow (ya disponible en la plataforma de la CGR según el Anexo 2)."),
-        vineta("Ejecutar sobre un clúster YARN real, no en modo local[*]."),
+        imagen("outputs/charts/11_dag_airflow.png", 560, 130),
+        piePagina("Figura 9. Grafo del DAG modulo_analisis_datos_1_8_2 — 9 tareas con 3 ramas paralelas tras la publicación de la capa Plata."),
+        parrafo(
+          "El DAG respeta el linaje real: genera los datos → los publica en la capa Bronce (ingesta cruda) → " +
+          "limpieza y feature engineering → publica en la capa Plata (refinado) → entrena ambos modelos y " +
+          "analiza vínculos en paralelo → publica resultados en la capa Oro (nivel de negocio) → genera la " +
+          "documentación final. Las capas Bronce/Plata/Oro se simulan como carpetas locales (`lakehouse/`), " +
+          "organizadas según la arquitectura del Anexo 2 del TDR — en producción serían tablas Delta Lake sobre " +
+          "Hadoop, no carpetas de archivos."
+        ),
+        tabla(
+          ["Tarea", "Estado", "Duración"],
+          [
+            ["generar_datos", "success", "12.6 s"],
+            ["cargar_capa_bronce", "success", "0.1 s"],
+            ["preprocesamiento_y_features", "success", "2.8 s"],
+            ["publicar_capa_plata", "success", "0.1 s"],
+            ["entrenar_modelo_favoritismo", "success", "16.3 s"],
+            ["entrenar_modelo_fraccionamiento", "success", "2.9 s"],
+            ["analizar_vinculos_proveedor_funcionario", "success", "1.6 s"],
+            ["publicar_capa_oro", "success", "0.1 s"],
+            ["generar_diccionario_y_diagrama", "success", "0.6 s"],
+          ],
+          [5200, 1800, 1800],
+        ),
+        parrafo("", { size: 4 }),
+        parrafo(
+          "Resultado: 9/9 tareas completadas con estado \"success\", corrida completa en 38.5 segundos. En " +
+          "producción, las tareas de entrenamiento (hoy procesos Python locales invocados vía BashOperator) se " +
+          "reemplazarían por SparkSubmitOperator apuntando al clúster YARN de la CGR — el DAG y su lógica de " +
+          "dependencias no cambian, solo el operador que ejecuta cada tarea."
+        ),
+
+        titulo("10. Ruta de Escalamiento Restante"),
+        parrafo(
+          "Con las validaciones de las Secciones 8 y 9, el trabajo pendiente para producción se reduce casi " +
+          "exclusivamente a infraestructura y gobernanza de datos:"
+        ),
+        vineta("Conectar la ingesta real a las capas Plata/Oro del Lakehouse (reemplazando las carpetas locales por lectura/escritura del Delta Lake sobre Hadoop, según el Anexo 2 del TDR)."),
+        vineta("Desplegar el DAG en el Airflow productivo de la CGR (ya disponible según el Anexo 2), reemplazando BashOperator por SparkSubmitOperator para las tareas de entrenamiento."),
+        vineta("Ejecutar Spark sobre un clúster YARN real, no en modo local[*]."),
         vineta("Añadir el módulo de análisis de grafos (proveedor-funcionario) con GraphX, en vez de networkx (usado en la Sección 5 por rapidez de desarrollo)."),
         vineta("Publicar resultados hacia SQL Server / SSRS para consumo desde Power BI, tal como especifica la arquitectura institucional."),
 
-        titulo("10. Conclusión"),
+        titulo("11. Conclusión"),
         parrafo(
           "Este prototipo demuestra en código abierto y en un plazo muy corto que los tres casos de uso " +
           "priorizados del TDR —favoritismo, fraccionamiento y vínculos proveedor-funcionario— son técnicamente " +
           "alcanzables sin necesidad de comprometer de inmediato una consultoría individual de 180 días y S/. " +
           "72,000, y que la lógica de modelado ya fue validada tanto en scikit-learn como en Apache Spark " +
-          "MLlib real (Sección 8), no solo de forma teórica. El código fuente completo, comentado y versionado " +
-          "está disponible públicamente en el repositorio indicado en la portada, cumpliendo con el espíritu " +
-          "del ítem 6 del checklist de aceptación del Anexo 3 (\"código versionado en Git institucional\")."
+          "MLlib real (Sección 8), orquestada de punta a punta con Apache Airflow real (Sección 9), no solo de " +
+          "forma teórica. El código fuente completo, comentado y versionado está disponible públicamente en el " +
+          "repositorio indicado en la portada, cumpliendo con el espíritu del ítem 6 del checklist de " +
+          "aceptación del Anexo 3 (\"código versionado en Git institucional\")."
         ),
       ],
     },
