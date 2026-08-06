@@ -630,6 +630,41 @@ const doc = new Document({
           "reentrenamiento ocurra de forma silenciosa o no auditable."
         ),
 
+        titulo("Anexo A. Prueba con Datos Reales de SEACE (fuera del alcance del TDR)"),
+        parrafo(
+          "El TDR no exige esta prueba — todo el análisis anterior usa datos sintéticos, que es lo que el " +
+          "alcance requiere. Se incluye este anexo porque, adicionalmente, se obtuvo acceso a datos " +
+          "verdaderos de contrataciones públicas (no de la CGR, sino del portal de datos abiertos de la OECE, " +
+          "estándar OCDS, licencia CC BY 4.0) y se corrió el pipeline sobre ellos, para dejar registro de qué " +
+          "tan bien se comporta la metodología fuera de un entorno sintético controlado."
+        ),
+        tabla(
+          ["Dato", "Valor"],
+          [
+            ["Fuente", "data.open-contracting.org — OECE Perú, año 2022"],
+            ["Contratos reales procesados", "47,442"],
+            ["Proveedores reales (RUC)", "25,535"],
+            ["Entidades compradoras reales", "2,732"],
+            ["Monto total analizado", "S/. 32,241 millones"],
+          ],
+          [4200, 4600],
+        ),
+        parrafo("", { size: 4 }),
+        subtitulo("Adaptaciones metodológicas honestas"),
+        vineta("Sin ground truth: a diferencia del dataset sintético, no existe una etiqueta real de \"esto fue favoritismo\". El modelo de favoritismo pasó de ser un clasificador supervisado a un score de riesgo no supervisado (Isolation Forest) — una lista de candidatos para revisión humana, no una predicción validada."),
+        vineta("Fraccionamiento se aplicó sin cambios (la regla del umbral legal no depende de etiquetas)."),
+        vineta("Vínculos se adaptó a nivel proveedor-entidad (no proveedor-funcionario): SEACE abierto registra organizaciones, no funcionarios públicos individuales."),
+        subtitulo("Hallazgos honestos (incluye un error propio, corregido)"),
+        vineta("Se detectó y corrigió un artefacto real: contratos con consorcios de varias empresas se estaban contando una vez por cada integrante, inflando artificialmente las métricas de concentración. Se corrigió representando cada consorcio como una sola entidad compuesta."),
+        vineta("Se encontró un falso positivo genuino: un programa de investigación científica paga a evaluadores individuales por lotes (montos de S/. 600-2,600), lo que el detector de consorcios confundía con concentración sospechosa. Se dejó anotado explícitamente en vez de ocultarlo."),
+        vineta("Los patrones de mayor score de riesgo corresponden a consorcios de gran magnitud (decenas de millones de soles) en entidades grandes de infraestructura y salud — consorcios son legales, pero la concentración amerita revisión de auditor, que es exactamente el uso previsto por el TDR."),
+        vineta("El chequeo de vínculos por teléfono compartido dio 0 coincidencias sobre 35,832 pares proveedor-entidad reales — un resultado negativo genuino (no hay evidencia de esa señal específica en este año), no una falla del código."),
+        parrafo(
+          "Código y resultados completos en el repositorio (src/cargar_datos_reales_seace.py, " +
+          "src/modelo_real.py, outputs/*_REAL.csv). Los datos crudos no se versionan por tamaño (~245 MB); " +
+          "el repositorio documenta cómo reproducirlos desde la fuente pública original."
+        ),
+
         titulo("14. Ruta de Escalamiento Restante"),
         parrafo(
           "Con las validaciones de las Secciones 8 y 9, el trabajo pendiente para producción se reduce casi " +
