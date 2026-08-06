@@ -237,16 +237,26 @@ const doc = new Document({
           "valor de esta prueba de concepto es demostrar que la arquitectura de features y modelado es correcta " +
           "y detecta lo que efectivamente está presente en los datos."
         ),
-        subtitulo("3.1. Interpretabilidad para auditores"),
+        subtitulo("3.1. Interpretabilidad para auditores (SHAP)"),
         parrafo(
           "El checklist de aceptación del TDR (Anexo 3, ítem 5) exige artefactos de explicabilidad tipo " +
-          "\"caja blanca\". Se generó la importancia de variables del modelo, que confirma que las señales más " +
-          "fuertes son el número de contratos ganados, la concentración en un solo tipo de objeto contractual y " +
-          "el monto total acumulado — variables directamente interpretables y auditables por un no especialista " +
-          "en ciencia de datos."
+          "\"caja blanca\" — específicamente valores SHAP, LIME o Feature Importance. Se implementaron valores " +
+          "SHAP (TreeExplainer) sobre el modelo, que ofrecen dos niveles de explicación: (1) un resumen global " +
+          "de cómo cada variable empuja el riesgo hacia arriba o hacia abajo en todo el conjunto de datos, y " +
+          "(2) una explicación individual por caso, que es lo que un auditor necesita para sustentar un " +
+          "hallazgo puntual ante un proveedor específico."
         ),
-        imagen("outputs/charts/05_importancia_favoritismo.png", 460, 288),
-        piePagina("Figura 3. Importancia de variables del modelo de favoritismo (artefacto de explicabilidad)."),
+        imagen("outputs/charts/07_shap_summary_favoritismo.png", 460, 316),
+        piePagina("Figura 3. Impacto SHAP por variable — vista global (rojo = valor alto de la variable)."),
+        parrafo(
+          "La Figura 4 muestra la explicación individual del caso de mayor riesgo real (proveedor P0000 en la " +
+          "entidad E15): el modelo parte de un riesgo base de 0.48 y lo eleva a 0.97 principalmente por el " +
+          "número de contratos ganados (+0.14), la concentración en un solo tipo de objeto contractual (+0.11) " +
+          "y el monto total acumulado (+0.11). Esta desagregación es la que un auditor puede citar directamente " +
+          "en un informe de hallazgo."
+        ),
+        imagen("outputs/charts/08_shap_waterfall_caso.png", 460, 340),
+        piePagina("Figura 4. Explicación SHAP individual del caso de mayor riesgo (proveedor P0000, entidad E15)."),
 
         subtitulo("3.2. Top de pares proveedor-entidad por riesgo"),
         tabla(
@@ -292,7 +302,7 @@ const doc = new Document({
           "primer día."
         ),
         imagen("outputs/charts/06_deteccion_fraccionamiento.png", 460, 288),
-        piePagina("Figura 4. Casos reales sembrados (rojo) vs. score de anomalía y señales de ventana temporal."),
+        piePagina("Figura 5. Casos reales sembrados (rojo) vs. score de anomalía y señales de ventana temporal."),
 
         subtitulo("4.1. Grupos marcados por la regla interpretable"),
         tabla(
