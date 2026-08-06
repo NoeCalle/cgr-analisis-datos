@@ -40,7 +40,15 @@ def detectar_anomalias(df):
     contaminacion = min(max(n_reales / len(df), 0.02), 0.15)  # estimado razonable
 
     modelo = IsolationForest(
-        n_estimators=300, contamination=contaminacion, random_state=42,
+        # Hiperparámetros confirmados por búsqueda sistemática en grilla
+        # (ver src/tuning_fraccionamiento.py, 36 combinaciones evaluadas
+        # por recall@k contra los casos sembrados): el recall se estanca
+        # en 0.375 (3/8) para toda combinación con max_samples=1.0,
+        # independientemente de n_estimators o contamination — evidencia
+        # de que la limitación es del algoritmo sobre estas features, no
+        # de una mala elección de hiperparámetros. Se usa la configuración
+        # más liviana entre las empatadas (100 en vez de 300 árboles).
+        n_estimators=100, contamination=contaminacion, random_state=42,
     )
     modelo.fit(X_scaled)
 

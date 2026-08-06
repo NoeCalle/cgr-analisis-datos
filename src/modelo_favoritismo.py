@@ -49,7 +49,13 @@ def entrenar_y_validar(df):
           f"({y.mean()*100:.2f}%)")
 
     modelo = RandomForestClassifier(
-        n_estimators=300, max_depth=6, class_weight="balanced",
+        # Hiperparámetros determinados por búsqueda sistemática en grilla
+        # (ver src/tuning_favoritismo.py): 60 combinaciones evaluadas con
+        # validación cruzada estratificada; estas 3 alcanzan el mismo
+        # AUC-PR (1.00) que la configuración original (300 árboles,
+        # profundidad 6) con ~65% menos tiempo de entrenamiento — se
+        # prefiere la más liviana entre las empatadas.
+        n_estimators=100, max_depth=3, min_samples_leaf=1, class_weight="balanced",
         random_state=42, n_jobs=-1,
     )
 
