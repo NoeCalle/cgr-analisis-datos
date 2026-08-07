@@ -1,10 +1,12 @@
 """
 Búsqueda sistemática de hiperparámetros — Modelo de Favoritismo.
 
-Usa la misma matriz de features del modelo final. Contratación Directa y
-Comparación de Precios permanecen separadas. En el pipeline orquestado consume
-la capa Plata; `data/` es un fallback explícito para ejecución standalone.
+Genera `outputs/tuning_favoritismo_resumen.json`; el modelo final lee ese
+archivo cuando existe, evitando separar la evidencia de tuning de la
+configuración realmente entrenada.
 """
+
+import json
 
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
@@ -31,10 +33,6 @@ def main():
     X = df[FEATURES]
     y = df["label_favoritismo_real"].astype(int)
 
-    print(
-        f"Grilla: {len(PARAM_GRID['n_estimators'])} x {len(PARAM_GRID['max_depth'])} x "
-        f"{len(PARAM_GRID['min_samples_leaf'])} combinaciones; CV estratificada 3-fold."
-    )
     cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
     base = RandomForestClassifier(class_weight="balanced", random_state=42, n_jobs=-1)
     grid = GridSearchCV(base, PARAM_GRID, scoring="average_precision", cv=cv, n_jobs=-1, refit=True)
@@ -49,10 +47,23 @@ def main():
         n_estimators=300, max_depth=6, class_weight="balanced", random_state=42
     )
     score_manual = cross_val_score(manual, X, y, cv=cv, scoring="average_precision").mean()
-    print(f"Mejores hiperparámetros: {grid.best_params_}")
+
+    best = dict(grid.best_params_)
+    resumen = {
+        "features": FEATURES,
+        "metrica_seleccion": "average_precision (AUC-PR)",
+        "cv": "StratifiedKFold(n_splits=3, shuffle=True, random_state=42)",
+        "mejor_configuracion": best,
+        "mejor_auc_pr_cv": float(grid.best_score_),
+        "baseline_300_6_auc_pr_cv": float(score_manual),
+        "advertencia": "resultado sobre ground truth sintético; no estima desempeño productivo",
+    }
+    with open("outputs/tuning_favoritismo_resumen.json", "w", encoding="utf-8") as f:
+        json.dump(resumen, f, ensure_ascii=False, indent=2)
+
+    print(f"Mejores hiperparámetros: {best}")
     print(f"Mejor AUC-PR (CV): {grid.best_score_:.4f}")
-    print(f"Baseline histórico 300/6: AUC-PR = {score_manual:.4f}")
-    return grid.best_params_, grid.best_score_
+    return best, grid.best_score_
 
 
 if __name__ == "__main__":
