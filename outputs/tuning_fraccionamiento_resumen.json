@@ -1,5 +1,6 @@
 {
   "diseno": "holdout final separado antes del tuning; validaciones repetidas solo en desarrollo",
+  "metrica_seleccion": "AUC-PR media en validaciones repetidas",
   "n_total": 180,
   "positivos_total": 8,
   "n_desarrollo": 112,
@@ -8,7 +9,8 @@
     "n_estimators": 100,
     "max_samples": 0.5,
     "contamination": "auto",
-    "recall_validacion_medio": 0.2
+    "auc_pr_validacion_medio": 0.4019047619047619,
+    "recall_at_k_validacion_medio": 0.2
   },
   "metricas_holdout_final": {
     "recall_at_k": 0.0,
@@ -22,5 +24,5 @@
     "anomalias_predichas": 17
   },
   "advertencia": "benchmark sintético con pocos positivos; no estima desempeño productivo",
-  "proveniencia": "GitHub Actions run 31226413894, artifact model-selection-evidence"
+  "proveniencia": "GitHub Actions run 31226730510, artifact model-selection-evidence"
 }
