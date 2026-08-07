@@ -40,3 +40,6 @@ lakehouse_delta/
 
 # Dependencias de Node.js (instalables vía reporte/package.json + npm install)
 node_modules/
+
+# Archivos de checksum auto-generados por Spark/Hadoop (puro ruido, sin valor)
+*.crc

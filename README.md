@@ -64,18 +64,39 @@ estuvieran resueltos.
 
 ## Estructura del repositorio
 
+Separado en **código fuente** (lo que se ejecuta) y **artefactos /
+evidencia** (lo que ese código produjo, versionado para que los
+resultados sean revisables sin tener que re-ejecutar todo):
+
 ```
-data/                   Datos sintéticos (contratos, proveedores, entidades, funcionarios)
-data_real/              Pipeline sobre datos reales de SEACE (Anexo A) — ver su propio README
-src/                     Scripts principales (generación, EDA, preprocesamiento, modelos, autoevaluación)
-src/spark/               Versiones en Apache Spark real (MLlib, GraphFrames, Delta Lake, estándares SQL, streaming, HMS)
-airflow_home/dags/       Los 2 DAGs de Airflow (pipeline principal + monitoreo/reentrenamiento)
-ssrs/                    Esquema T-SQL y reporte .rdl para SSRS
-jars/                    GraphFrames, Delta Lake y el intento de Hadoop minicluster (descargados de Maven Central)
-outputs/                 Gráficos, modelos entrenados, rankings de riesgo, logs
-reporte/                 Reporte técnico consolidado (.docx) y su script generador
-reporte/productos_formales/  Los 7 productos formales del Anexo 01, como documentos separados
+CÓDIGO FUENTE
+  src/                     Scripts principales (generación, EDA, preprocesamiento, modelos, autoevaluación)
+  src/spark/               Versiones en Apache Spark real (MLlib, GraphFrames, Delta Lake, estándares SQL, streaming, HMS)
+  airflow_home/dags/       Los 2 DAGs de Airflow (pipeline principal + monitoreo/reentrenamiento)
+  reporte/generar_*.js     Scripts que generan los .docx (no los .docx en sí)
+  ssrs/schema_sql_server.sql   Esquema T-SQL (definición, no un artefacto generado)
+
+DEPENDENCIAS BINARIAS (no artefactos del proyecto, pero versionadas por
+la misma razón que los datos reales: sin ellas, nadie puede reproducir
+sin repetir el mismo problema de acceso a Maven Central)
+  jars/                    GraphFrames, Delta Lake y el intento de Hadoop minicluster — ver jars/README.md
+
+ARTEFACTOS / EVIDENCIA (generados por el código de arriba; se pueden
+borrar y regenerar corriendo los scripts correspondientes)
+  data/                    Datos sintéticos generados (contratos, proveedores, entidades, funcionarios)
+  data_real/*.csv          Salida del pipeline sobre datos reales de SEACE — ver su propio README
+  outputs/                 Gráficos, modelos entrenados (.joblib), rankings de riesgo, logs
+  reporte/*.docx           Reporte técnico consolidado y los 7 productos formales, ya generados
+  reporte/productos_formales/  Los 7 productos formales del Anexo 01, como documentos separados
+  ssrs/*.rdl               Reporte SSRS ya generado
 ```
+
+Nota de honestidad (revisión externa, agosto 2026): el repositorio no
+está reorganizado en carpetas físicas separadas (ej. `artefactos/` vs
+`codigo/`) — habría significado mover muchas rutas ya verificadas contra
+las últimas correcciones, con riesgo de romper algo sin poder
+re-verificar todo a tiempo. Esta tabla es la separación conceptual
+explícita que faltaba, no una reestructuración física.
 
 ## Cómo reproducir
 
