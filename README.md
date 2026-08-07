@@ -20,11 +20,10 @@ hallazgos, imputaciones ni determinaciones automáticas de irregularidad.
 
 ### ✅ P0 — Integridad OCDS y normativa: cerrado
 
-En agosto de 2026 se re-auditó el repositorio contra el TDR y se corrigió la
-parte más crítica del pipeline real:
+La parte más crítica del pipeline real fue reconstruida y validada:
 
 - relación OCDS correcta: `Contract -> Award -> Supplier`;
-- clave analítica del contrato: `OCID::contract.id`;
+- clave analítica: `OCID::contract.id`;
 - adjudicatarios tomados de `awards_suppliers.csv`, sin mezclar suppliers de
   distintas adjudicaciones del mismo proceso;
 - consorcios preservados según la identidad adjudicataria publicada;
@@ -35,7 +34,7 @@ parte más crítica del pipeline real:
 - tests de regresión de integridad y normativa;
 - artefactos reales identificables antiguos retirados del repositorio público.
 
-La regeneración P0 sobre los crudos OCDS utilizados produjo:
+Regeneración P0 sobre los crudos OCDS utilizados:
 
 | Métrica | Resultado |
 |---|---:|
@@ -48,48 +47,96 @@ La regeneración P0 sobre los crudos OCDS utilizados produjo:
 | Categoría `services` | 18,584 |
 | Categoría `works` | 5,040 |
 
-El detalle agregado, hashes SHA-256 de las fuentes y comparación con la
-ejecución antigua están en `outputs/validacion_p0_datos_reales.json`.
+El detalle agregado y hashes SHA-256 están en
+`outputs/validacion_p0_datos_reales.json`. La cifra anterior de 47,442
+contratos ya no es válida; sus rankings `*_REAL.csv` fueron retirados.
 
-La cifra anterior de 47,442 contratos **ya no es válida** y los rankings
-`*_REAL.csv` derivados de esa ejecución fueron retirados.
+### ✅ P1 — Núcleo técnico de modelado/reproducibilidad: cerrado
 
-### 🟡 P1 — Modelado, validación y reproducibilidad: en implementación
+El núcleo técnico del plan P1 ya está integrado y validado automáticamente:
 
-Correcciones ya integradas en `main`:
+- Contratación Directa y Comparación de Precios son features separadas.
+- El dataset sintético incorpora **hard negatives** para evitar métricas
+  artificialmente perfectas por separación trivial.
+- La categoría contractual sintética también es estructurada
+  (`goods/services/works`).
+- Favoritismo compara ejecutablemente Regresión Logística, Random Forest y
+  Gradient Boosting con las mismas predicciones out-of-fold.
+- El tuning seleccionado se persiste en JSON y el modelo final consume esa
+  configuración.
+- Fraccionamiento separa un **holdout final antes del tuning**; AUC-PR es la
+  métrica primaria de selección por el fuerte desbalance.
+- Autoevaluación usa holdout independiente y produce un modelo **candidato**,
+  sin promoción automática.
+- Los modelos consumen Plata; reporting consume Oro.
+- Airflow usa el Python del proyecto, separado del entorno de Airflow.
+- GitHub Actions reconstruye el dataset, publica Plata, ejecuta comparación y
+  tuning y verifica los artefactos en cada push/PR.
+- `run_manifest.json` permite registrar commit, versiones, hashes, parámetros y
+  evidencia de una ejecución completa.
 
-- Contratación Directa y Comparación de Precios son features separadas; no se
-  etiquetan como una única categoría “no competitiva”.
-- Favoritismo y fraccionamiento consumen preferentemente datasets de la capa
-  **Plata** del PoC.
-- Los rankings para reporting se publican en **Oro**.
-- Tuning de favoritismo persiste la configuración seleccionada y el modelo
-  final la consume.
-- Tuning de fraccionamiento reserva un **holdout final antes del tuning**.
-- Autoevaluación usa un recall mínimo explícito y separa un holdout del lote
-  nuevo; un reentrenamiento produce un **modelo candidato**, sin promoción
-  automática.
-- Airflow usa un Python de proyecto separado del virtualenv de Airflow.
-- `outputs/run_manifest.json` registra commit, versiones, hashes, tuning y
-  artefactos de una ejecución.
-- GitHub Actions ejecuta pruebas de regresión en cada push/PR.
+#### Evidencia vigente — Favoritismo
 
-Los artefactos sintéticos versionados que fueron generados antes de estas
-correcciones deben regenerarse antes de volver a citar sus métricas en los
-Productos 1–7. La documentación formal se actualizará al final de P1 para que
-lea evidencia generada automáticamente y no números escritos a mano.
+Comparación out-of-fold sobre **2,328 pares proveedor-entidad**, con 6 casos
+positivos sintéticos difíciles:
+
+| Modelo | AUC-PR | AUC-ROC | Precision | Recall | F1 |
+|---|---:|---:|---:|---:|---:|
+| **Random Forest** | **0.755** | 0.999 | 0.571 | 0.667 | **0.615** |
+| Regresión Logística | 0.621 | 0.995 | 0.333 | 0.667 | 0.444 |
+| Gradient Boosting | 0.418 | 0.749 | 0.429 | 0.500 | 0.462 |
+
+Random Forest sigue siendo el candidato mejor sustentado, pero ya no se
+presenta un AUC-PR artificial de 1.00. La comparación reproducible está en
+`outputs/comparacion_modelos_favoritismo.json`.
+
+Tuning Random Forest:
+
+- configuración seleccionada: `n_estimators=100`, `max_depth=3`,
+  `min_samples_leaf=1`;
+- AUC-PR medio en CV de tuning: **0.844**;
+- la configuración histórica 300 árboles / profundidad 6 obtiene el mismo
+  AUC-PR, por lo que se conserva la alternativa más liviana.
+
+#### Evidencia vigente — Fraccionamiento
+
+El benchmark independiente deja visible una limitación importante del modelo
+estadístico puro:
+
+- dataset: 180 grupos, 8 positivos sintéticos;
+- desarrollo: 112 grupos / 5 positivos;
+- holdout final: 68 grupos / 3 positivos;
+- mejor validación repetida: AUC-PR medio **0.402**;
+- holdout final: AUC-ROC **0.856**, AUC-PR **0.171**, precision **0.176**,
+  recall **1.000**, F1 **0.300**, recall@K **0.000**.
+
+Esto no se oculta: Isolation Forest identifica una región amplia de anomalías,
+pero su precisión/ranking es débil en este benchmark. La regla interpretable y
+la revisión humana siguen siendo complementos importantes; ninguna de ellas
+convierte automáticamente una señal en un hallazgo jurídico.
+
+La evidencia está en `outputs/tuning_fraccionamiento_resumen.json` y
+`outputs/tuning_fraccionamiento_resultados.csv`.
+
+### 🟡 P1 documental — pendiente de regeneración
+
+Los `.docx` actuales fueron generados antes de parte de las correcciones P0/P1.
+Se conservan como evidencia histórica, pero **no son la versión final vigente**.
+El siguiente cierre es regenerar Productos 1–7 y el reporte consolidado a partir
+de los JSON/manifiestos actuales, eliminando métricas, umbrales y afirmaciones
+obsoletas escritas a mano.
 
 ## Correspondencia resumida con el TDR
 
 | Área TDR | Estado PoC |
 |---|---|
 | EDA y calidad de datos | Implementado |
-| Feature engineering | Implementado / endurecido en P1 |
-| Favoritismo supervisado | Random Forest + CV + SHAP |
-| Fraccionamiento no supervisado | Isolation Forest + regla interpretable + holdout de evaluación |
+| Feature engineering | Implementado y endurecido |
+| Favoritismo supervisado | Comparación OOF + RF + tuning + SHAP |
+| Fraccionamiento no supervisado | Isolation Forest + holdout + señal interpretable |
 | Spark MLlib | Implementado en modo local; clúster institucional pendiente |
 | Grafos | networkx + GraphFrames en escenario sintético |
-| Airflow DAGs | Implementados; entorno reproducible endurecido en P1 |
+| Airflow DAGs | Implementados; Python de proyecto separado |
 | Bronce / Plata / Oro | Simulación local funcional; Lakehouse CGR pendiente |
 | Autoevaluación/reentrenamiento | Modelo candidato + revisión humana requerida |
 | SSRS | Esquema T-SQL + RDL + SQLite stand-in; servidor institucional pendiente |
@@ -115,8 +162,6 @@ tests/                        Pruebas de regresión
 
 ## Reproducir el entorno Python
 
-Se recomienda separar el entorno del proyecto del entorno de Airflow:
-
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install --upgrade pip
@@ -125,11 +170,7 @@ python3 -m venv .venv
 python3 -m venv .venv_airflow
 .venv_airflow/bin/pip install "apache-airflow==3.3.0" \
   --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-3.3.0/constraints-3.12.txt"
-```
 
-Para Airflow:
-
-```bash
 export PROYECTO_DIR="$PWD"
 export CGR_PROJECT_PYTHON="$PWD/.venv/bin/python"
 export AIRFLOW_HOME="$PWD/airflow_home"
@@ -141,16 +182,8 @@ export AIRFLOW_HOME="$PWD/airflow_home"
 .venv/bin/pytest -q
 ```
 
-Cubren, entre otros:
-
-- `Contract -> Award -> Supplier`;
-- claves `OCID::contract.id`;
-- consorcios/adjudicatarios por award;
-- topes normativos 2018–2026;
-- cambio de régimen 22/04/2025;
-- prioridad de `mainProcurementCategory`;
-- separación Contratación Directa vs. Comparación de Precios;
-- holdout independiente para reentrenamiento.
+GitHub Actions añade además un smoke end-to-end de generación sintética,
+preprocesamiento, Plata y selección de modelos.
 
 ## Pipeline sintético orquestado
 
@@ -158,14 +191,11 @@ Cubren, entre otros:
 .venv_airflow/bin/airflow dags test modulo_analisis_datos_1_8_2
 ```
 
-Flujo conceptual:
-
 ```text
 fuentes -> Bronce -> preprocesamiento/features -> Plata
-                       |                     |
-                       |-> tuning favoritismo -> modelo
-                       |-> tuning fraccionamiento -> modelo
-                       |-> grafos
+                    |-> comparar modelos favoritismo -> tuning -> modelo
+                    |-> tuning fraccionamiento + holdout -> modelo
+                    |-> grafos
                                       ↓
                                      Oro
                                       ↓
@@ -174,20 +204,11 @@ fuentes -> Bronce -> preprocesamiento/features -> Plata
                                  documentación
 ```
 
-Los scripts también pueden ejecutarse individualmente. En ese caso las
-funciones de `src/rutas_datos.py` permiten un fallback explícito a `data/` o
-`outputs/`, mostrando una advertencia para distinguirlo del flujo del DAG.
-
 ## Datos reales OCDS/OECE
 
-Los crudos y derivados identificables no se publican en este repo. Para
-reproducir localmente la validación, seguir `data_real/README.md` con:
-
-- `main.csv`
-- `contracts.csv`
-- `awards.csv`
-- `awards_suppliers.csv`
-- `parties.csv`
+Los crudos y derivados identificables no se publican. Para reproducir la
+validación local, seguir `data_real/README.md` con `main.csv`, `contracts.csv`,
+`awards.csv`, `awards_suppliers.csv` y `parties.csv`.
 
 Los rankings reales se generan localmente, pero están ignorados por Git para
 evitar publicar asociaciones entre proveedores reales y señales estadísticas
@@ -195,15 +216,15 @@ fuera de contexto.
 
 ## Documentación formal
 
-Los `.docx` existentes en `reporte/` y `reporte/productos_formales/` fueron
-generados antes de parte de las correcciones P0/P1. Se conservan como evidencia
-histórica del desarrollo, pero **no deben considerarse todavía la versión final
-actualizada**. Se regenerarán al cerrar P1 usando `run_manifest.json` y los
-resultados nuevos.
+Los documentos actuales en `reporte/` y `reporte/productos_formales/` son
+históricos. La versión final del PoC se regenerará desde la evidencia actual y
+mantendrá explícitamente como **pendientes institucionales**: Datamart real,
+Hadoop/YARN productivo, Git institucional, SQL Server/SSRS real, DEV/QA/PROD,
+certificación, incidencias de ambientes, marcha blanca y transferencia formal.
 
 ## Licencia
 
 El código está bajo licencia MIT. Los datos públicos de OECE/OCP conservan su
 licencia de origen (CC BY 4.0 cuando corresponda). Si el prototipo evolucionara
-a un encargo contractual, los activos generados bajo dicho encargo deberían
+a un encargo contractual, los activos generados bajo dicho encargo deberán
 separarse y regirse por las cláusulas de propiedad/confidencialidad del TDR.
