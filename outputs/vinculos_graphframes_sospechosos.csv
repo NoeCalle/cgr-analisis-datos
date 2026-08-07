@@ -1,0 +1,6 @@
+dst,src,n_contratos,monto_total,tel_prov,dir_prov,tel_func,dir_func,vinculo_sospechoso
+F051,P0055,2,26441.370000000003,917995444,"Av. Javier Prado 198, Miraflores",917995444,"Av. Los Álamos 539, San Isidro",True
+F056,P0073,2,51048.94,974160183,"Calle Las Camelias 547, Miraflores",974160183,"Av. La Marina 879, Barranco",True
+F012,P0199,2,120219.73,973658384,"Av. Arequipa 514, Magdalena",973658384,"Calle Las Camelias 869, San Borja",True
+F048,P0014,2,184941.19,954980810,"Av. Arequipa 455, Magdalena",944286633,"Av. Arequipa 455, Magdalena",True
+F048,P0059,3,169359.21000000002,944286633,"Av. Javier Prado 677, Pueblo Libre",944286633,"Av. Arequipa 455, Magdalena",True

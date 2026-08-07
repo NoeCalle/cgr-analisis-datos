@@ -30,3 +30,6 @@ derby.log
 # Checkpoint de Spark Streaming (estado interno regenerable)
 outputs/streaming_demo/checkpoint/
 outputs/streaming_demo/origen/
+
+# Checkpoints de GraphFrames (connectedComponents, regenerable)
+/tmp/graphframes_checkpoints/
