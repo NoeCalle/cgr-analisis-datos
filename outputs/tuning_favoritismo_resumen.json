@@ -1,0 +1,26 @@
+{
+  "features": [
+    "n_contratos",
+    "monto_total",
+    "monto_promedio",
+    "n_objetos_unicos",
+    "pct_contratacion_directa",
+    "pct_comparacion_precios",
+    "n_funcionarios_distintos",
+    "dias_actividad",
+    "concentracion_objeto",
+    "contratos_por_mes",
+    "monto_por_funcionario"
+  ],
+  "metrica_seleccion": "average_precision (AUC-PR)",
+  "cv": "StratifiedKFold(n_splits=3, shuffle=True, random_state=42)",
+  "mejor_configuracion": {
+    "max_depth": 3,
+    "min_samples_leaf": 1,
+    "n_estimators": 100
+  },
+  "mejor_auc_pr_cv": 0.8444444444444444,
+  "baseline_300_6_auc_pr_cv": 0.8444444444444444,
+  "advertencia": "resultado sobre ground truth sintético; no estima desempeño productivo",
+  "proveniencia": "GitHub Actions run 31226413894, artifact model-selection-evidence"
+}
