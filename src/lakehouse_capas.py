@@ -1,14 +1,12 @@
 """
-Simulación de capas del Lakehouse — Anexo 2 del TDR ("Arquitectura de la
-Plataforma de Minería de Datos"): Bronce (ingesta cruda e histórica),
-Plata (filtrado, limpiado y refinado), Oro (nivel de negocio, agregación).
+Capas locales Bronce/Plata/Oro — simulación arquitectónica del Anexo 2.
 
-En producción esto NO son carpetas locales sino tablas Delta Lake sobre
-Hadoop, gestionadas por HMS/MySQL (ver Anexo 2). Aquí se simula la
-organización física en tres carpetas para poder orquestar el pipeline con
-Airflow de forma honesta: cada tarea del DAG lee de una capa y escribe en
-la siguiente, igual que lo haría un DAG real, sin pretender que esto ES
-el Lakehouse de la CGR.
+No pretende ser el Lakehouse institucional. La mejora P1 hace que las capas
+sean funcionales dentro del PoC:
+- Bronce: fuentes sintéticas sin transformar.
+- Plata: contratos limpiados, features y dimensiones necesarias.
+- Modelos: consumen preferentemente datasets de Plata.
+- Oro: rankings/señales listos para integración y reporting.
 """
 
 import shutil
@@ -24,52 +22,72 @@ def preparar_carpetas():
         capa.mkdir(parents=True, exist_ok=True)
 
 
+def _copiar_si_existe(origen: Path, destino: Path) -> bool:
+    if not origen.exists():
+        return False
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(origen, destino)
+    return True
+
+
 def cargar_a_bronce():
-    """Ingesta cruda e histórica — copia tal cual, sin transformar."""
+    """Ingesta cruda: copia sin transformación."""
     preparar_carpetas()
-    for f in ["contratos_siaf_seace.csv", "proveedores.csv", "entidades.csv", "funcionarios.csv"]:
-        origen = Path("data") / f
-        if origen.exists():
-            shutil.copy(origen, BRONCE / f)
-    print(f"Capa Bronce: {len(list(BRONCE.glob('*.csv')))} archivos cargados (ingesta cruda).")
+    nombres = [
+        "contratos_siaf_seace.csv", "proveedores.csv", "entidades.csv", "funcionarios.csv"
+    ]
+    copiados = sum(
+        _copiar_si_existe(Path("data") / nombre, BRONCE / nombre)
+        for nombre in nombres
+    )
+    print(f"Capa Bronce: {copiados}/{len(nombres)} fuentes publicadas sin transformar.")
 
 
 def mover_a_plata():
-    """Filtrado, limpiado y refinado — el dataset ya procesado por
-    src/preprocesamiento.py (imputación, outliers, encoding)."""
+    """Publica los datos limpios/features que deben consumir los modelos."""
     preparar_carpetas()
-    origen = Path("data/contratos_procesados.csv")
-    if not origen.exists():
+    archivos = [
+        ("data/contratos_procesados.csv", "contratos_procesados.csv"),
+        ("data/dataset_favoritismo.csv", "dataset_favoritismo.csv"),
+        ("data/dataset_fraccionamiento.csv", "dataset_fraccionamiento.csv"),
+        # Dimensiones del PoC; en CGR serían tablas Plata institucionales.
+        ("data/proveedores.csv", "proveedores.csv"),
+        ("data/entidades.csv", "entidades.csv"),
+        ("data/funcionarios.csv", "funcionarios.csv"),
+    ]
+    faltantes = []
+    for origen, destino in archivos:
+        if not _copiar_si_existe(Path(origen), PLATA / destino):
+            faltantes.append(origen)
+    if faltantes:
         raise FileNotFoundError(
-            "data/contratos_procesados.csv no existe — ejecutar src/preprocesamiento.py antes de esta tarea."
+            "No se puede publicar Plata; faltan artefactos esperados: " + ", ".join(faltantes)
         )
-    shutil.copy(origen, PLATA / "contratos_procesados.csv")
-    print("Capa Plata: contratos_procesados.csv (limpio, sin nulos, sin outliers extremos) publicado.")
+    print(f"Capa Plata: {len(archivos)} datasets limpios/features/dimensiones publicados.")
 
 
 def mover_a_oro():
-    """Nivel de negocio, agregación — los datasets de features por caso de
-    uso y los rankings de riesgo, listos para consumo (equivalente a SSRS/
-    Power BI en producción)."""
+    """Publica únicamente salidas de negocio/modelo para consumo downstream."""
     preparar_carpetas()
     archivos = [
-        ("data/dataset_favoritismo.csv", "dataset_favoritismo.csv"),
-        ("data/dataset_fraccionamiento.csv", "dataset_fraccionamiento.csv"),
         ("outputs/ranking_riesgo_favoritismo.csv", "ranking_riesgo_favoritismo.csv"),
         ("outputs/ranking_riesgo_fraccionamiento.csv", "ranking_riesgo_fraccionamiento.csv"),
         ("outputs/ranking_vinculos_proveedor_funcionario.csv", "ranking_vinculos_proveedor_funcionario.csv"),
     ]
-    copiados = 0
+    faltantes = []
     for origen, destino in archivos:
-        p = Path(origen)
-        if p.exists():
-            shutil.copy(p, ORO / destino)
-            copiados += 1
-    print(f"Capa Oro: {copiados}/{len(archivos)} datasets de negocio publicados (listos para SSRS/Power BI).")
+        if not _copiar_si_existe(Path(origen), ORO / destino):
+            faltantes.append(origen)
+    if faltantes:
+        raise FileNotFoundError(
+            "No se puede publicar Oro; faltan salidas esperadas: " + ", ".join(faltantes)
+        )
+    print(f"Capa Oro: {len(archivos)} salidas de negocio publicadas.")
 
 
 if __name__ == "__main__":
     import sys
+
     accion = sys.argv[1] if len(sys.argv) > 1 else "todo"
     if accion in ("bronce", "todo"):
         cargar_a_bronce()
