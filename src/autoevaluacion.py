@@ -3,13 +3,10 @@ Autoevaluación y autoentrenamiento — objetivo específico 3.2.c del TDR.
 
 Correcciones P1:
 - Contratación Directa y Comparación de Precios son features separadas.
-- El disparador de desempeño se define como umbral absoluto de recall mínimo
-  (0.80), no como una supuesta "caída de 20 puntos" sin baseline.
-- Un modelo reentrenado se evalúa sobre un holdout del lote nuevo que NO se
-  incorpora al entrenamiento del candidato.
-- El modelo nuevo se guarda como CANDIDATO; no reemplaza automáticamente al
-  modelo productivo. La promoción requiere revisión/aprobación, dejando una
-  trazabilidad más adecuada para un contexto de auditoría.
+- El disparador de desempeño usa recall mínimo absoluto (0.80).
+- El candidato se evalúa en un holdout del lote nuevo no usado al entrenarlo.
+- El candidato NO reemplaza automáticamente al modelo vigente.
+- El baseline histórico para PSI/reentrenamiento se consume desde Plata.
 """
 
 from datetime import datetime, timezone
@@ -19,6 +16,8 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
+
+from rutas_datos import entrada_plata
 
 FEATURES_PSI = [
     "monto_total", "pct_contratacion_directa", "pct_comparacion_precios",
@@ -41,7 +40,6 @@ def calcular_psi(dist_entrenamiento, dist_nueva, n_bins=10):
     breakpoints = np.unique(breakpoints)
     if len(breakpoints) < 2:
         return 0.0
-
     freq_train = np.histogram(dist_entrenamiento, bins=breakpoints)[0] / len(dist_entrenamiento)
     freq_new = np.histogram(dist_nueva, bins=breakpoints)[0] / len(dist_nueva)
     freq_train = np.clip(freq_train, 1e-4, None)
@@ -67,7 +65,6 @@ def construir_features(df_contratos):
         fecha_max=("fecha_contrato", "max"),
         label_favoritismo_real=("es_favoritismo_real", "max"),
     ).reset_index()
-
     grp["dias_actividad"] = (grp["fecha_max"] - grp["fecha_min"]).dt.days.clip(lower=1)
     grp["concentracion_objeto"] = 1 - (grp["n_objetos_unicos"] / grp["n_contratos"])
     grp["contratos_por_mes"] = grp["n_contratos"] / (grp["dias_actividad"] / 30)
@@ -84,7 +81,6 @@ def evaluar_deriva(df_train, df_nuevo):
 
 
 def evaluar_recall_ranking(modelo, df_eval):
-    """Recall@K sobre casos etiquetados por feedback de auditor."""
     positivos = df_eval[df_eval["label_favoritismo_real"].astype(bool)]
     if len(positivos) == 0:
         return None
@@ -92,51 +88,33 @@ def evaluar_recall_ranking(modelo, df_eval):
     temp = df_eval.copy()
     temp["score"] = proba
     n_pos = len(positivos)
-    top = temp.nlargest(n_pos, "score")
-    return float(top["label_favoritismo_real"].astype(int).sum() / n_pos)
+    return float(temp.nlargest(n_pos, "score")["label_favoritismo_real"].astype(int).sum() / n_pos)
 
 
 def dividir_lote_para_reentrenamiento(df_nuevo):
-    """Separa datos nuevos de actualización y holdout independiente."""
     y = df_nuevo["label_favoritismo_real"].astype(int)
-    # Stratify solo si ambas clases tienen suficientes observaciones.
     counts = y.value_counts()
     stratify = y if len(counts) == 2 and counts.min() >= 2 else None
     if len(df_nuevo) < 4:
         return df_nuevo.copy(), None
-    train_new, holdout = train_test_split(
-        df_nuevo,
-        test_size=0.30,
-        random_state=42,
-        stratify=stratify,
+    return train_test_split(
+        df_nuevo, test_size=0.30, random_state=42, stratify=stratify
     )
-    return train_new, holdout
 
 
 def entrenar_candidato(df_train_original, df_nuevo_train):
     combinado = pd.concat([df_train_original, df_nuevo_train], ignore_index=True)
     modelo = RandomForestClassifier(
-        n_estimators=100,
-        max_depth=3,
-        min_samples_leaf=1,
-        class_weight="balanced",
-        random_state=42,
-        n_jobs=-1,
+        n_estimators=100, max_depth=3, min_samples_leaf=1,
+        class_weight="balanced", random_state=42, n_jobs=-1,
     )
     modelo.fit(combinado[FEATURES_MODELO], combinado["label_favoritismo_real"].astype(int))
     return modelo, len(combinado)
 
 
 def registrar_decision(
-    escenario,
-    psi_resultados,
-    psi_max,
-    recall_antes,
-    disparo,
-    motivo,
-    n_datos_post=None,
-    recall_holdout_post=None,
-    candidato_generado=False,
+    escenario, psi_resultados, psi_max, recall_antes, disparo, motivo,
+    n_datos_post=None, recall_holdout_post=None, candidato_generado=False,
 ):
     entrada = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -157,7 +135,6 @@ def registrar_decision(
     nuevo = pd.DataFrame([entrada])
     try:
         existente = pd.read_csv(LOG_PATH)
-        # Permitir evolución de esquema del log sin perder histórico.
         log = pd.concat([existente, nuevo], ignore_index=True, sort=False)
     except FileNotFoundError:
         log = nuevo
@@ -172,7 +149,6 @@ def evaluar_lote(escenario, modelo_actual, df_train_features):
 
     psi_resultados, psi_max = evaluar_deriva(df_train_features, df_nuevo)
     recall_antes = evaluar_recall_ranking(modelo_actual, df_nuevo)
-
     dispara_drift = psi_max > UMBRAL_PSI
     dispara_recall = recall_antes is not None and recall_antes < UMBRAL_RECALL_MINIMO
     disparo = dispara_drift or dispara_recall
@@ -184,8 +160,7 @@ def evaluar_lote(escenario, modelo_actual, df_train_features):
         motivos.append(f"recall {recall_antes:.2f} < mínimo {UMBRAL_RECALL_MINIMO:.2f}")
     motivo = "; ".join(motivos) if motivos else "sin señales que requieran reentrenamiento"
 
-    n_post = None
-    recall_holdout = None
+    n_post = recall_holdout = None
     candidato = False
     if disparo:
         nuevo_train, holdout = dividir_lote_para_reentrenamiento(df_nuevo)
@@ -195,35 +170,25 @@ def evaluar_lote(escenario, modelo_actual, df_train_features):
         candidato = True
         if holdout is not None:
             recall_holdout = evaluar_recall_ranking(modelo_candidato, holdout)
-        print(f"Candidato generado: {ruta}")
-        print("No se promueve automáticamente: requiere revisión/aprobación.")
+        print(f"Candidato generado: {ruta}; no se promueve automáticamente.")
     else:
         print(f"Sin acción: {motivo}")
 
     registrar_decision(
-        escenario,
-        psi_resultados,
-        psi_max,
-        recall_antes,
-        disparo,
-        motivo,
-        n_post,
-        recall_holdout,
-        candidato,
+        escenario, psi_resultados, psi_max, recall_antes, disparo, motivo,
+        n_post, recall_holdout, candidato,
     )
     return disparo
 
 
 def main():
     modelo = joblib.load("outputs/models/modelo_favoritismo_rf.joblib")
-    train = pd.read_csv("data/dataset_favoritismo.csv")
-
+    train = pd.read_csv(entrada_plata("dataset_favoritismo.csv"))
     normal = evaluar_lote("normal", modelo, train)
     drift = evaluar_lote("con_drift", modelo, train)
-
     print(f"\nLote normal → disparo: {normal}")
     print(f"Lote con drift → disparo: {drift}")
-    print(f"Registro de decisiones: {LOG_PATH}")
+    print(f"Registro: {LOG_PATH}")
 
 
 if __name__ == "__main__":
