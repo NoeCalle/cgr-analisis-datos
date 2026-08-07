@@ -4,6 +4,10 @@ Búsqueda sistemática de hiperparámetros — Modelo de Favoritismo.
 Genera `outputs/tuning_favoritismo_resumen.json`; el modelo final lee ese
 archivo cuando existe, evitando separar la evidencia de tuning de la
 configuración realmente entrenada.
+
+El CSV versionado excluye tiempos de ejecución (`mean_fit_time`) porque dependen
+del hardware/carga del runner y producirían diffs aunque la selección y las
+métricas sean idénticas.
 """
 
 import json
@@ -39,7 +43,7 @@ def main():
     grid.fit(X, y)
 
     resultados = pd.DataFrame(grid.cv_results_).sort_values("mean_test_score", ascending=False)
-    resultados[["params", "mean_test_score", "std_test_score", "mean_fit_time"]].to_csv(
+    resultados[["params", "mean_test_score", "std_test_score"]].to_csv(
         "outputs/tuning_favoritismo_resultados.csv", index=False
     )
 
