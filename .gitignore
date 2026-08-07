@@ -20,6 +20,7 @@ ssrs/reportes.db
 data_real/main.csv
 data_real/contracts.csv
 data_real/awards.csv
+data_real/awards_suppliers.csv
 data_real/parties.csv
 
 # Warehouse local de HMS (metadatos Derby, regenerable)
