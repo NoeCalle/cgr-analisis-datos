@@ -114,6 +114,18 @@ airflow dags test monitoreo_reentrenamiento_1_8_2
 - **`data_real/README.md`** — cómo reproducir la validación con datos reales de SEACE.
 - **`jars/README.md`** — de dónde salieron los `.jar` de GraphFrames/Delta Lake/Hadoop y por qué hicieron falta.
 
+## Licencia
+
+El código de este repositorio está bajo licencia **MIT** (ver
+[`LICENSE`](LICENSE)) — cualquiera, incluida la CGR, puede usarlo, copiarlo,
+modificarlo y redistribuirlo libremente, sin restricciones ni necesidad de
+pedir permiso.
+
+Esto es distinto de la licencia de los **datos** en `data_real/`, que son
+de la OECE bajo **CC BY 4.0** (requiere atribución) — ver
+`data_real/README.md`. El código y los datos reales tienen licencias
+separadas porque tienen dueños distintos.
+
 ## Nota sobre los datos
 
 Los datasets en `data/` son **sintéticos**, generados para fines de
