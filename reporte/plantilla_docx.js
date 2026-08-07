@@ -64,13 +64,14 @@ function tabla(headers, rows, widths) {
 }
 
 function portada(numeroProducto, nombreProducto) {
+  const etiqueta = numeroProducto === "TÉCNICO" ? "REPORTE TÉCNICO" : `PRODUCTO N° ${numeroProducto}`;
   return {
     properties: { page: { size: A4 } },
     children: [
       new Paragraph({ text: "", spacing: { before: 1400 } }),
       new Paragraph({
         alignment: AlignmentType.CENTER,
-        children: [new TextRun({ text: `PRODUCTO N° ${numeroProducto}`, bold: true, size: 26, color: AZUL })],
+        children: [new TextRun({ text: etiqueta, bold: true, size: 26, color: AZUL })],
       }),
       new Paragraph({
         alignment: AlignmentType.CENTER, spacing: { before: 150, after: 300 },
