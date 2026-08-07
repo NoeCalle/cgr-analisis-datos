@@ -1,7 +1,8 @@
 """
-Pipeline de análisis sobre datos REALES de SEACE (79,127 contratos reales,
-2018-2024, año de descarga 2022 con contratos de ejecución que se
-extienden en el tiempo).
+Pipeline de análisis sobre datos REALES de SEACE (47,442 contratos reales
+tras deduplicar consorcios — ver cargar_datos_reales_seace.py, función
+construir_contratos), año de descarga 2022, con contratos de ejecución
+que se extienden en el tiempo.
 
 Diferencias metodológicas honestas frente al pipeline sintético
 (src/modelo_favoritismo.py, src/modelo_fraccionamiento.py):
