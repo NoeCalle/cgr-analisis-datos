@@ -18,6 +18,9 @@ joblib==1.5.3
 shap==0.52.0
 networkx==3.6.1
 
+# --- Pruebas de regresión ---
+pytest==9.0.2
+
 # --- Apache Spark y extensiones ---
 pyspark==4.1.1
 pyarrow==25.0.0
