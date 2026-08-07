@@ -1,12 +1,13 @@
 """
 Modelo de detección de Favoritismo — Tercer/Cuarto Producto del TDR.
 
-Random Forest con validación cruzada estratificada y explicabilidad SHAP.
-Corrección P1: Contratación Directa y Comparación de Precios se modelan como
-variables separadas y, dentro del flujo orquestado, el modelo consume la capa
-Plata del PoC. `data/` queda solo como fallback explícito para ejecución
-standalone.
+Random Forest con validación cruzada y explicabilidad SHAP. Consume la capa
+Plata del PoC y, cuando existe, usa la configuración seleccionada por
+`src/tuning_favoritismo.py` en `outputs/tuning_favoritismo_resumen.json`.
 """
+
+import json
+from pathlib import Path
 
 import joblib
 import matplotlib
@@ -27,36 +28,49 @@ FEATURES = [
     "n_funcionarios_distintos", "dias_actividad", "concentracion_objeto",
     "contratos_por_mes", "monto_por_funcionario",
 ]
+DEFAULT_PARAMS = {"n_estimators": 100, "max_depth": 3, "min_samples_leaf": 1}
+TUNING_PATH = Path("outputs/tuning_favoritismo_resumen.json")
 
 
 def cargar():
     return pd.read_csv(entrada_plata("dataset_favoritismo.csv"))
 
 
-def entrenar_y_validar(df):
+def parametros_seleccionados():
+    if not TUNING_PATH.exists():
+        print(f"ADVERTENCIA: no existe {TUNING_PATH}; se usan defaults documentados {DEFAULT_PARAMS}.")
+        return DEFAULT_PARAMS.copy()
+    with TUNING_PATH.open(encoding="utf-8") as f:
+        data = json.load(f)
+    params = data.get("mejor_configuracion", {})
+    requeridos = {"n_estimators", "max_depth", "min_samples_leaf"}
+    if not requeridos.issubset(params):
+        raise ValueError(f"Resumen de tuning incompleto: faltan {sorted(requeridos - set(params))}")
+    print(f"Configuración leída de tuning: {params}")
+    return params
+
+
+def entrenar_y_validar(df, params):
     X = df[FEATURES]
     y = df["label_favoritismo_real"].astype(int)
-    print(f"Casos positivos (favoritismo sembrado): {y.sum()} / {len(y)} ({y.mean()*100:.2f}%)")
+    print(f"Casos positivos sembrados: {y.sum()} / {len(y)} ({y.mean()*100:.2f}%)")
 
     modelo = RandomForestClassifier(
-        n_estimators=100, max_depth=3, min_samples_leaf=1,
-        class_weight="balanced", random_state=42, n_jobs=-1,
+        **params,
+        class_weight="balanced",
+        random_state=42,
+        n_jobs=-1,
     )
-
     cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
     y_proba_cv = cross_val_predict(modelo, X, y, cv=cv, method="predict_proba")[:, 1]
     y_pred_cv = (y_proba_cv >= 0.5).astype(int)
 
-    print("\n--- Métricas de validación cruzada (3-fold) ---")
+    print("\n--- Métricas CV del modelo seleccionado ---")
     print(classification_report(y, y_pred_cv, target_names=["Normal", "Favoritismo"], zero_division=0))
-    try:
-        auc_roc = roc_auc_score(y, y_proba_cv)
-        print(f"AUC-ROC: {auc_roc:.3f}")
-    except ValueError:
-        auc_roc = None
+    auc_roc = roc_auc_score(y, y_proba_cv)
     precision, recall, _ = precision_recall_curve(y, y_proba_cv)
     auc_pr = auc(recall, precision)
-    print(f"AUC-PR: {auc_pr:.3f}")
+    print(f"AUC-ROC: {auc_roc:.3f} | AUC-PR: {auc_pr:.3f}")
 
     modelo.fit(X, y)
     return modelo, auc_roc, auc_pr
@@ -66,7 +80,7 @@ def graficar_importancia(modelo, feature_names):
     importancias = pd.Series(modelo.feature_importances_, index=feature_names).sort_values()
     fig, ax = plt.subplots(figsize=(8, 5))
     importancias.plot(kind="barh", ax=ax)
-    ax.set_title("Importancia de variables — Modelo de Favoritismo\n(Gini, vista agregada)")
+    ax.set_title("Importancia de variables — Modelo de Favoritismo")
     ax.set_xlabel("Importancia (Gini)")
     plt.tight_layout()
     plt.savefig("outputs/charts/05_importancia_favoritismo.png", dpi=130)
@@ -97,7 +111,6 @@ def explicar_con_shap(modelo, df):
     plt.tight_layout()
     plt.savefig("outputs/charts/08_shap_waterfall_caso.png", dpi=130)
     plt.close()
-    print(f"\nArtefactos SHAP generados para {caso['id_proveedor']} / {caso['id_entidad']}")
     return shap_values
 
 
@@ -106,27 +119,21 @@ def generar_ranking_riesgo(modelo, df):
     df["score_riesgo_favoritismo"] = modelo.predict_proba(df[FEATURES])[:, 1]
     ranking = df.sort_values("score_riesgo_favoritismo", ascending=False)
     ranking.to_csv("outputs/ranking_riesgo_favoritismo.csv", index=False)
-    top10 = ranking[[
-        "id_proveedor", "id_entidad", "n_contratos",
-        "pct_contratacion_directa", "pct_comparacion_precios",
-        "concentracion_objeto", "score_riesgo_favoritismo", "label_favoritismo_real",
-    ]].head(10)
-    print("\n--- Top 10 pares proveedor-entidad por score de riesgo ---")
-    print(top10.to_string(index=False))
     n_reales = int(df["label_favoritismo_real"].sum())
-    aciertos = ranking.head(n_reales)["label_favoritismo_real"].sum()
-    print(f"\nSanity check sintético: {aciertos}/{n_reales} casos sembrados dentro del top-{n_reales}.")
+    aciertos = int(ranking.head(n_reales)["label_favoritismo_real"].sum())
+    print(f"Sanity check sintético top-{n_reales}: {aciertos}/{n_reales}.")
     return ranking
 
 
 def main():
     df = cargar()
-    modelo, _, _ = entrenar_y_validar(df)
+    params = parametros_seleccionados()
+    modelo, _, _ = entrenar_y_validar(df, params)
     graficar_importancia(modelo, FEATURES)
     explicar_con_shap(modelo, df)
     generar_ranking_riesgo(modelo, df)
     joblib.dump(modelo, "outputs/models/modelo_favoritismo_rf.joblib")
-    print("\nModelo guardado en outputs/models/modelo_favoritismo_rf.joblib")
+    print("Modelo guardado en outputs/models/modelo_favoritismo_rf.joblib")
 
 
 if __name__ == "__main__":
