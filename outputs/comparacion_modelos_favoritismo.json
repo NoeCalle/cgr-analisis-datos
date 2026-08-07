@@ -1,0 +1,48 @@
+{
+  "diseno": "predicciones out-of-fold, StratifiedKFold 3-fold, mismas particiones para todos",
+  "features": [
+    "n_contratos",
+    "monto_total",
+    "monto_promedio",
+    "n_objetos_unicos",
+    "pct_contratacion_directa",
+    "pct_comparacion_precios",
+    "n_funcionarios_distintos",
+    "dias_actividad",
+    "concentracion_objeto",
+    "contratos_por_mes",
+    "monto_por_funcionario"
+  ],
+  "n_registros": 2328,
+  "positivos": 6,
+  "criterio_primario": "AUC-PR por desbalance severo",
+  "resultados": [
+    {
+      "modelo": "RandomForest",
+      "auc_pr": 0.7554945054945055,
+      "auc_roc": 0.9989233419465977,
+      "precision": 0.5714285714285714,
+      "recall": 0.6666666666666666,
+      "f1": 0.6153846153846154
+    },
+    {
+      "modelo": "RegresionLogistica",
+      "auc_pr": 0.6211419753086419,
+      "auc_roc": 0.99519092736147,
+      "precision": 0.3333333333333333,
+      "recall": 0.6666666666666666,
+      "f1": 0.4444444444444444
+    },
+    {
+      "modelo": "GradientBoosting",
+      "auc_pr": 0.41795532646048106,
+      "auc_roc": 0.7492463393626184,
+      "precision": 0.42857142857142855,
+      "recall": 0.5,
+      "f1": 0.46153846153846156
+    }
+  ],
+  "mejor_candidato": "RandomForest",
+  "advertencia": "comparación sobre benchmark sintético; no estima desempeño productivo",
+  "proveniencia": "GitHub Actions run 31226413894, artifact model-selection-evidence"
+}
