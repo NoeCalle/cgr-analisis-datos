@@ -1,23 +1,13 @@
 """
 Pipeline de análisis sobre datos REALES de SEACE/OECE.
 
-IMPORTANTE: los conteos históricos del repositorio (por ejemplo, 47,442
-contratos) corresponden a una ejecución previa. Desde la corrección P0 de
-integridad OCDS, el dataset debe regenerarse mediante
-src/cargar_datos_reales_seace.py antes de considerar vigentes los rankings
-*_REAL.csv. La nueva carga respeta Contract -> Award -> Supplier y usa
-OCID::contract.id como clave analítica.
+Los resultados son señales estadísticas para priorización de revisión; no son
+hallazgos ni determinaciones de irregularidad.
 
-Diferencias metodológicas honestas frente al pipeline sintético:
-
-  1. FAVORITISMO: no hay ground truth real. Se usa un score de riesgo NO
-     SUPERVISADO como priorización para revisión por auditor, no como hallazgo.
-  2. FRACCIONAMIENTO: se aplica una SEÑAL de compras repetitivas en ventana
-     corta y montos cercanos al límite del procedimiento simplificado/abreviado.
-     El motor normativo se parametriza por año, régimen y categoría contractual;
-     la señal NO determina jurídicamente que exista fraccionamiento.
-  3. VÍNCULOS: no hay funcionarios individuales en SEACE abierto. Se adapta a
-     nivel organizacional proveedor-entidad con la información pública disponible.
+Integridad P0: Contract -> Award -> Supplier, clave OCID::contract.id.
+Corrección P1: Contratación Directa y Comparación de Precios se mantienen como
+variables diferentes; no se agrupan bajo una etiqueta binaria de "no
+competitiva".
 """
 
 import numpy as np
@@ -27,29 +17,26 @@ from sklearn.preprocessing import StandardScaler
 
 from umbrales_normativos import obtener_umbral
 
-MODALIDADES_NO_COMPETITIVAS = {
-    "Contratación Directa", "Comparación de Precios", "Adjudicación Selectiva",
-    "Procedimiento Especial de Contratación", "Régimen Especial",
-}
-
 
 def cargar():
     return pd.read_csv("data_real/contratos_reales.csv", parse_dates=["fecha_contrato"])
 
 
 # ---------------------------------------------------------------------------
-# FAVORITISMO (no supervisado)
+# FAVORITISMO (no supervisado, señal de priorización)
 # ---------------------------------------------------------------------------
 def features_favoritismo_real(df):
     df = df.copy()
-    df["no_competitiva"] = df["modalidad"].isin(MODALIDADES_NO_COMPETITIVAS)
+    df["es_contratacion_directa"] = df["modalidad"].eq("Contratación Directa")
+    df["es_comparacion_precios"] = df["modalidad"].eq("Comparación de Precios")
 
     grp = df.groupby(["id_proveedor", "id_entidad"]).agg(
         n_contratos=("id_contrato", "count"),
         monto_total=("monto", "sum"),
         monto_promedio=("monto", "mean"),
         n_objetos_unicos=("objeto", "nunique"),
-        pct_no_competitiva=("no_competitiva", "mean"),
+        pct_contratacion_directa=("es_contratacion_directa", "mean"),
+        pct_comparacion_precios=("es_comparacion_precios", "mean"),
         fecha_min=("fecha_contrato", "min"),
         fecha_max=("fecha_contrato", "max"),
     ).reset_index()
@@ -62,16 +49,16 @@ def features_favoritismo_real(df):
 
 
 def score_favoritismo_real(feats):
-    cols = ["n_contratos", "monto_total", "monto_promedio", "pct_no_competitiva",
-            "concentracion_objeto", "contratos_por_mes"]
+    cols = [
+        "n_contratos", "monto_total", "monto_promedio",
+        "pct_contratacion_directa", "pct_comparacion_precios",
+        "concentracion_objeto", "contratos_por_mes",
+    ]
     X = StandardScaler().fit_transform(feats[cols])
     modelo = IsolationForest(n_estimators=200, contamination=0.02, random_state=42)
     modelo.fit(X)
     feats = feats.copy()
     feats["score_riesgo"] = -modelo.decision_function(X)
-
-    # Heurística contextual: pagos de muy bajo monto pueden corresponder a
-    # personas/evaluadores agrupados por la fuente y necesitan interpretación.
     feats["posible_pago_individual_agrupado"] = feats["monto_promedio"] < 5000
     return feats.sort_values("score_riesgo", ascending=False)
 
@@ -99,9 +86,6 @@ def features_fraccionamiento_real(df):
                 max_n_ventana = len(ventana)
                 max_monto_ventana = ventana["monto"].sum()
 
-        # La categoría estructurada OCDS tiene prioridad sobre el texto libre.
-        # Si el CSV fue generado con una versión antigua y no contiene
-        # categoria_principal, el motor usa su fallback textual conservador.
         if "categoria_principal" in g.columns:
             umbrales_fila = g.apply(
                 lambda r: obtener_umbral(
@@ -112,9 +96,7 @@ def features_fraccionamiento_real(df):
                 axis=1,
             )
         else:
-            umbrales_fila = g["fecha_contrato"].apply(
-                lambda f: obtener_umbral(f, objeto=obj)
-            )
+            umbrales_fila = g["fecha_contrato"].apply(lambda f: obtener_umbral(f, objeto=obj))
 
         pct_bajo_umbral = (g["monto"] < umbrales_fila * 0.95).mean()
         filas.append({
@@ -131,7 +113,6 @@ def features_fraccionamiento_real(df):
 
 
 def aplicar_regla_fraccionamiento(feats):
-    """Marca una señal de priorización; no constituye hallazgo jurídico."""
     feats = feats.copy()
     feats["cumple_regla_fraccionamiento"] = (
         (feats["max_contratos_ventana_15d"] >= 3)
@@ -144,8 +125,11 @@ def aplicar_regla_fraccionamiento(feats):
 # VÍNCULOS (adaptado a nivel organizacional — SIN funcionarios individuales)
 # ---------------------------------------------------------------------------
 def vinculos_organizacionales(df):
-    proveedores = pd.read_csv("data_real/proveedores_reales.csv")
-    entidades = pd.read_csv("data_real/entidades_reales.csv")
+    proveedores = pd.read_csv("data_real/proveedores_reales.csv", dtype={"id_proveedor": "string"})
+    entidades = pd.read_csv("data_real/entidades_reales.csv", dtype={"id_entidad": "string"})
+    df = df.copy()
+    df["id_proveedor"] = df["id_proveedor"].astype("string")
+    df["id_entidad"] = df["id_entidad"].astype("string")
 
     pares = df.groupby(["id_proveedor", "id_entidad"]).agg(
         n_contratos=("id_contrato", "count"), monto_total=("monto", "sum"),
@@ -156,16 +140,15 @@ def vinculos_organizacionales(df):
     tel_ent = entidades.set_index("id_entidad")["telefono"]
     dir_ent = entidades.set_index("id_entidad")["direccion"]
 
-    pares["comparte_telefono"] = pares.apply(
-        lambda r: pd.notna(tel_prov.get(r["id_proveedor"]))
-        and tel_prov.get(r["id_proveedor"]) == tel_ent.get(r["id_entidad"]),
-        axis=1,
-    )
-    pares["comparte_direccion"] = pares.apply(
-        lambda r: pd.notna(dir_prov.get(r["id_proveedor"]))
-        and dir_prov.get(r["id_proveedor"]) == dir_ent.get(r["id_entidad"]),
-        axis=1,
-    )
+    def coincide(a, b):
+        return pd.notna(a) and pd.notna(b) and str(a).strip() == str(b).strip()
+
+    pares["comparte_telefono"] = [
+        coincide(tel_prov.get(p), tel_ent.get(e)) for p, e in zip(pares["id_proveedor"], pares["id_entidad"])
+    ]
+    pares["comparte_direccion"] = [
+        coincide(dir_prov.get(p), dir_ent.get(e)) for p, e in zip(pares["id_proveedor"], pares["id_entidad"])
+    ]
     pares["senal_organizacional"] = pares["comparte_telefono"] | pares["comparte_direccion"]
     return pares
 
@@ -174,55 +157,30 @@ def main():
     print("Cargando contratos reales regenerados...")
     df = cargar()
     print(
-        f"{len(df):,} contratos analíticos, {df['id_proveedor'].nunique():,} proveedores/consorcios, "
+        f"{len(df):,} contratos analíticos, {df['id_proveedor'].nunique():,} adjudicatarios, "
         f"{df['id_entidad'].nunique():,} entidades\n"
     )
 
-    print("=" * 60)
-    print("FAVORITISMO (score de riesgo no supervisado)")
-    print("=" * 60)
-    feats_fav = features_favoritismo_real(df)
-    print(f"Pares proveedor-entidad con ≥2 contratos: {len(feats_fav):,}")
-    ranking_fav = score_favoritismo_real(feats_fav)
-    ranking_fav.to_csv("outputs/ranking_riesgo_favoritismo_REAL.csv", index=False)
-    print("\nTop 15 pares proveedor-entidad por score de riesgo (señal, no hallazgo):")
-    print(
-        ranking_fav[
-            ["id_proveedor", "id_entidad", "n_contratos", "monto_total",
-             "pct_no_competitiva", "concentracion_objeto", "score_riesgo"]
-        ].head(15).to_string(index=False)
-    )
+    fav = score_favoritismo_real(features_favoritismo_real(df))
+    fav.to_csv("outputs/ranking_riesgo_favoritismo_REAL.csv", index=False)
+    print(f"Pares proveedor-entidad con ≥2 contratos: {len(fav):,}")
+    print(fav[[
+        "id_proveedor", "id_entidad", "n_contratos", "monto_total",
+        "pct_contratacion_directa", "pct_comparacion_precios",
+        "concentracion_objeto", "score_riesgo",
+    ]].head(15).to_string(index=False))
 
-    print("\n" + "=" * 60)
-    print("POSIBLE FRACCIONAMIENTO (señal normativa para revisión)")
-    print("=" * 60)
-    feats_frac = aplicar_regla_fraccionamiento(features_fraccionamiento_real(df))
-    print(f"Grupos proveedor-entidad-objeto con ≥2 contratos: {len(feats_frac):,}")
-    marcados = feats_frac[feats_frac["cumple_regla_fraccionamiento"]]
-    print(f"Grupos priorizados por la señal: {len(marcados):,}")
-    feats_frac.sort_values("max_contratos_ventana_15d", ascending=False).to_csv(
+    frac = aplicar_regla_fraccionamiento(features_fraccionamiento_real(df))
+    frac.sort_values("max_contratos_ventana_15d", ascending=False).to_csv(
         "outputs/ranking_riesgo_fraccionamiento_REAL.csv", index=False
     )
-    print("\nTop 15 señales priorizadas:")
-    print(
-        marcados.sort_values("max_contratos_ventana_15d", ascending=False)[
-            ["id_proveedor", "id_entidad", "objeto", "n_contratos_grupo",
-             "max_contratos_ventana_15d", "pct_montos_bajo_umbral", "monto_total_grupo"]
-        ].head(15).to_string(index=False)
-    )
+    print(f"\nGrupos proveedor-entidad-objeto con ≥2 contratos: {len(frac):,}")
+    print(f"Grupos priorizados por señal: {int(frac['cumple_regla_fraccionamiento'].sum()):,}")
 
-    print("\n" + "=" * 60)
-    print("VÍNCULOS (adaptado a nivel organizacional, sin funcionarios)")
-    print("=" * 60)
     vinculos = vinculos_organizacionales(df)
     vinculos.to_csv("outputs/ranking_vinculos_organizacionales_REAL.csv", index=False)
-    marcados_v = vinculos[vinculos["senal_organizacional"]]
-    print(
-        f"Pares proveedor-entidad con teléfono/dirección compartidos: "
-        f"{len(marcados_v)} de {len(vinculos):,}"
-    )
-    if len(marcados_v):
-        print(marcados_v.head(15).to_string(index=False))
+    print(f"Pares proveedor-entidad evaluados para vínculos: {len(vinculos):,}")
+    print(f"Señales por teléfono/dirección compartidos: {int(vinculos['senal_organizacional'].sum()):,}")
 
 
 if __name__ == "__main__":
