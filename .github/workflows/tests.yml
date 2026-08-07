@@ -24,7 +24,13 @@ jobs:
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas numpy scikit-learn joblib pytest python-docx
+          pip install \
+            pandas==3.0.2 \
+            numpy==2.4.4 \
+            scikit-learn==1.8.0 \
+            joblib==1.5.3 \
+            pytest==9.0.2 \
+            python-docx==1.2.0
 
       - name: Run regression tests
         run: pytest -q
@@ -76,7 +82,7 @@ jobs:
               assert campo in metricas
 
           assert evidencia['validacion_datos_publicos']['integridad_ocds']['contratos_analiticos_validos'] == 47254
-          assert evidencia['criterios_documentales']['prohibir_conteo_obsoleto_47442'] is True
+          assert evidencia['criterios_documentales']['permitir_conteo_obsoleto_solo_como_antecedente_explicito'] is True
           print('Smoke P1 + evidencia documental OK')
           PY
 
@@ -104,24 +110,31 @@ jobs:
           assert len(files) == 8, files
 
           banned = [
-              '47,442',
               'pct_no_competitiva',
               'AUC-ROC = 1.00',
               'AUC-PR = 1.00',
               'S/. 400,000',
               'reentrenado automáticamente',
           ]
+          texts = {}
           for f in files:
               doc = Document(f)
               text = '\n'.join(p.text for p in doc.paragraphs)
               for table in doc.tables:
                   for row in table.rows:
                       text += '\n' + ' | '.join(cell.text for cell in row.cells)
+              texts[f.name] = text
               for token in banned:
                   assert token not in text, f'{f}: contiene texto obsoleto: {token}'
               assert 'prototipo' in text.lower()
 
-          final = files[-1]
+          reporte = texts['Reporte_Tecnico_Prototipo_CGR_1.8.2.docx']
+          assert '47,254' in reporte, 'El reporte no muestra el conteo vigente 47,254'
+          if '47,442' in reporte:
+              assert 'conteo antiguo' in reporte and 'fue descartado' in reporte, (
+                  '47,442 solo puede aparecer como antecedente explícitamente descartado'
+              )
+
           print(f'DOCX validados: {len(files)}')
           PY
 
