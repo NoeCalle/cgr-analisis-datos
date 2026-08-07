@@ -10,21 +10,21 @@ auditores durante la ejecución de los servicios de control”, con énfasis en:
 
 - priorización de señales de posible favoritismo;
 - priorización de señales de posible fraccionamiento;
-- análisis de vínculos proveedor–funcionario en el escenario sintético;
+- análisis de vínculos proveedor–funcionario en escenario sintético;
 - Spark MLlib, Airflow, Lakehouse Bronce/Plata/Oro, SSRS y MLOps como PoC.
 
 Las salidas de riesgo son **señales para revisión de auditor**. No constituyen
 hallazgos, imputaciones ni determinaciones automáticas de irregularidad.
 
-## Estado del plan de cierre de brechas
+## Estado del cierre de brechas
 
 ### ✅ P0 — Integridad OCDS y normativa: cerrado
 
-La parte más crítica del pipeline real fue reconstruida y validada:
+La parte más crítica del pipeline de datos públicos fue reconstruida y validada:
 
 - relación OCDS correcta: `Contract -> Award -> Supplier`;
 - clave analítica: `OCID::contract.id`;
-- adjudicatarios tomados de `awards_suppliers.csv`, sin mezclar suppliers de
+- adjudicatarios obtenidos de `awards_suppliers.csv`, sin mezclar suppliers de
   distintas adjudicaciones del mismo proceso;
 - consorcios preservados según la identidad adjudicataria publicada;
 - `mainProcurementCategory` (`goods/services/works`) tiene prioridad para el
@@ -47,13 +47,14 @@ Regeneración P0 sobre los crudos OCDS utilizados:
 | Categoría `services` | 18,584 |
 | Categoría `works` | 5,040 |
 
-El detalle agregado y hashes SHA-256 están en
-`outputs/validacion_p0_datos_reales.json`. La cifra anterior de 47,442
-contratos ya no es válida; sus rankings `*_REAL.csv` fueron retirados.
+El detalle agregado y los hashes SHA-256 están en
+`outputs/validacion_p0_datos_reales.json`. El conteo anterior de 47,442 se
+conserva únicamente como antecedente explícitamente descartado; sus rankings
+`*_REAL.csv` fueron retirados.
 
 ### ✅ P1 — Núcleo técnico de modelado/reproducibilidad: cerrado
 
-El núcleo técnico del plan P1 ya está integrado y validado automáticamente:
+El núcleo técnico está integrado y cubierto por CI:
 
 - Contratación Directa y Comparación de Precios son features separadas.
 - El dataset sintético incorpora **hard negatives** para evitar métricas
@@ -70,24 +71,33 @@ El núcleo técnico del plan P1 ya está integrado y validado automáticamente:
   sin promoción automática.
 - Los modelos consumen Plata; reporting consume Oro.
 - Airflow usa el Python del proyecto, separado del entorno de Airflow.
-- GitHub Actions reconstruye el dataset, publica Plata, ejecuta comparación y
-  tuning y verifica los artefactos en cada push/PR.
-- `run_manifest.json` permite registrar commit, versiones, hashes, parámetros y
-  evidencia de una ejecución completa.
+- GitHub Actions reconstruye los datos sintéticos, publica Plata, ejecuta
+  comparación/tuning y valida evidencia/documentación en cada push/PR.
+- `run_manifest.json` registra commit, versiones, hashes, parámetros y
+  artefactos de una ejecución completa.
 
 #### Evidencia vigente — Favoritismo
+
+Las métricas siguientes se reproducen con las versiones declaradas por el
+proyecto (`pandas 3.0.2`, `numpy 2.4.4`, `scikit-learn 1.8.0`). Fijar estas
+versiones eliminó una variación detectada cuando CI instalaba automáticamente
+versiones más nuevas.
 
 Comparación out-of-fold sobre **2,328 pares proveedor-entidad**, con 6 casos
 positivos sintéticos difíciles:
 
 | Modelo | AUC-PR | AUC-ROC | Precision | Recall | F1 |
 |---|---:|---:|---:|---:|---:|
-| **Random Forest** | **0.755** | 0.999 | 0.571 | 0.667 | **0.615** |
-| Regresión Logística | 0.621 | 0.995 | 0.333 | 0.667 | 0.444 |
-| Gradient Boosting | 0.418 | 0.749 | 0.429 | 0.500 | 0.462 |
+| **Random Forest** | **0.671** | 0.999 | **0.667** | 0.333 | 0.444 |
+| Regresión Logística | 0.621 | 0.995 | 0.333 | **0.667** | 0.444 |
+| Gradient Boosting | 0.418 | 0.749 | 0.429 | 0.500 | **0.462** |
 
-Random Forest sigue siendo el candidato mejor sustentado, pero ya no se
-presenta un AUC-PR artificial de 1.00. La comparación reproducible está en
+Random Forest mantiene el mayor AUC-PR y sigue siendo el candidato preferido
+del PoC para ranking probabilístico e interpretabilidad con SHAP. El F1 no se
+usa como criterio primario de selección porque el objetivo es priorización bajo
+desbalance severo, no clasificación binaria a umbral 0.5.
+
+La comparación reproducible está en
 `outputs/comparacion_modelos_favoritismo.json`.
 
 Tuning Random Forest:
@@ -95,8 +105,10 @@ Tuning Random Forest:
 - configuración seleccionada: `n_estimators=100`, `max_depth=3`,
   `min_samples_leaf=1`;
 - AUC-PR medio en CV de tuning: **0.844**;
-- la configuración histórica 300 árboles / profundidad 6 obtiene el mismo
-  AUC-PR, por lo que se conserva la alternativa más liviana.
+- la configuración 300 árboles / profundidad 6 obtiene el mismo AUC-PR, por lo
+  que se conserva la alternativa más liviana;
+- el CSV de grilla excluye `mean_fit_time`, porque el tiempo de ejecución varía
+  entre máquinas y no debe generar diffs en un artefacto reproducible.
 
 #### Evidencia vigente — Fraccionamiento
 
@@ -110,21 +122,31 @@ estadístico puro:
 - holdout final: AUC-ROC **0.856**, AUC-PR **0.171**, precision **0.176**,
   recall **1.000**, F1 **0.300**, recall@K **0.000**.
 
-Esto no se oculta: Isolation Forest identifica una región amplia de anomalías,
-pero su precisión/ranking es débil en este benchmark. La regla interpretable y
-la revisión humana siguen siendo complementos importantes; ninguna de ellas
-convierte automáticamente una señal en un hallazgo jurídico.
+Isolation Forest identifica una región amplia de anomalías, pero su precisión y
+ranking de positivos son débiles en este benchmark. La regla interpretable y la
+revisión humana siguen siendo complementos; ninguna señal se convierte
+automáticamente en un hallazgo jurídico.
 
 La evidencia está en `outputs/tuning_fraccionamiento_resumen.json` y
 `outputs/tuning_fraccionamiento_resultados.csv`.
 
-### 🟡 P1 documental — pendiente de regeneración
+### ✅ P1 documental — generación automática integrada
 
-Los `.docx` actuales fueron generados antes de parte de las correcciones P0/P1.
-Se conservan como evidencia histórica, pero **no son la versión final vigente**.
-El siguiente cierre es regenerar Productos 1–7 y el reporte consolidado a partir
-de los JSON/manifiestos actuales, eliminando métricas, umbrales y afirmaciones
-obsoletas escritas a mano.
+Los Productos 1–7 y el reporte técnico ya no mantienen cifras independientes
+escritas a mano. El flujo es:
+
+1. `src/generar_evidencia_documental.py` construye
+   `outputs/evidencia_documental.json` a partir de datasets y JSON vigentes.
+2. `reporte/evidencia.js` expone esa fuente a los generadores Node.
+3. `reporte/generar_productos_formales.js` genera Productos 1–7.
+4. `reporte/generar_reporte.js` genera el reporte técnico consolidado.
+5. GitHub Actions abre los DOCX con `python-docx`, busca afirmaciones obsoletas
+   y publica la documentación regenerada como artifact de CI.
+
+La documentación distingue explícitamente lo demostrado por el PoC de las
+dependencias institucionales: Datamart CGR, DEV/QA/PROD, Git/CI institucional,
+SQL Server/SSRS/SSAS/Power BI institucionales, HDFS/YARN distribuido,
+certificación funcional, marcha blanca y transferencia formal.
 
 ## Correspondencia resumida con el TDR
 
@@ -139,8 +161,8 @@ obsoletas escritas a mano.
 | Airflow DAGs | Implementados; Python de proyecto separado |
 | Bronce / Plata / Oro | Simulación local funcional; Lakehouse CGR pendiente |
 | Autoevaluación/reentrenamiento | Modelo candidato + revisión humana requerida |
-| SSRS | Esquema T-SQL + RDL + SQLite stand-in; servidor institucional pendiente |
-| Linaje/diccionario | Diccionario, diagrama y run manifest |
+| SSRS | Esquema T-SQL + RDL; servidor institucional pendiente |
+| Linaje/diccionario | Diccionario, diagrama, run manifest y evidencia documental |
 | DEV/QA/PROD, Git institucional, certificación | Dependencia institucional CGR |
 | Transferencia formal / marcha blanca | Dependencia contractual/institucional |
 
@@ -182,8 +204,8 @@ export AIRFLOW_HOME="$PWD/airflow_home"
 .venv/bin/pytest -q
 ```
 
-GitHub Actions añade además un smoke end-to-end de generación sintética,
-preprocesamiento, Plata y selección de modelos.
+GitHub Actions añade un smoke end-to-end de generación sintética,
+preprocesamiento, Plata, selección de modelos y documentación.
 
 ## Pipeline sintético orquestado
 
@@ -201,8 +223,13 @@ fuentes -> Bronce -> preprocesamiento/features -> Plata
                                       ↓
                               run_manifest.json
                                       ↓
+                         evidencia_documental.json
+                                      ↓
                                  documentación
 ```
+
+Los DOCX requieren Node.js y se generan/validan en GitHub Actions; el DAG de
+Airflow deja lista la evidencia machine-readable que consumen los generadores.
 
 ## Datos reales OCDS/OECE
 
@@ -216,11 +243,19 @@ fuera de contexto.
 
 ## Documentación formal
 
-Los documentos actuales en `reporte/` y `reporte/productos_formales/` son
-históricos. La versión final del PoC se regenerará desde la evidencia actual y
-mantendrá explícitamente como **pendientes institucionales**: Datamart real,
-Hadoop/YARN productivo, Git institucional, SQL Server/SSRS real, DEV/QA/PROD,
-certificación, incidencias de ambientes, marcha blanca y transferencia formal.
+Para regenerar localmente después de producir la evidencia:
+
+```bash
+python src/generar_evidencia_documental.py
+cd reporte
+npm ci
+npm run all
+```
+
+GitHub Actions ejecuta el mismo flujo y valida que los DOCX no reintroduzcan
+variables, métricas o afirmaciones obsoletas. El conteo histórico 47,442 solo se
+permite si está explícitamente presentado como antecedente descartado; el valor
+vigente debe ser 47,254.
 
 ## Licencia
 
