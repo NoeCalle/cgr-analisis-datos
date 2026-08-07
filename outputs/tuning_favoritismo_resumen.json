@@ -21,6 +21,5 @@
   },
   "mejor_auc_pr_cv": 0.8444444444444444,
   "baseline_300_6_auc_pr_cv": 0.8444444444444444,
-  "advertencia": "resultado sobre ground truth sintético; no estima desempeño productivo",
-  "proveniencia": "GitHub Actions run 31226413894, artifact model-selection-evidence"
+  "advertencia": "resultado sobre ground truth sintético; no estima desempeño productivo"
 }
