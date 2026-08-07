@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  pytest:
+  pytest-and-smoke:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -28,3 +28,42 @@ jobs:
 
       - name: Run regression tests
         run: pytest -q
+
+      - name: Rebuild synthetic data and publish Plata
+        run: |
+          python src/generar_datos.py
+          python src/preprocesamiento.py
+          python src/lakehouse_capas.py bronce
+          python src/lakehouse_capas.py plata
+
+      - name: Run model-selection smoke tests
+        run: |
+          python src/tuning_favoritismo.py
+          python src/tuning_fraccionamiento.py
+
+      - name: Validate P1 artifacts
+        run: |
+          python - <<'PY'
+          import json
+          import pandas as pd
+
+          fav = pd.read_csv('lakehouse/plata/dataset_favoritismo.csv')
+          frac = pd.read_csv('lakehouse/plata/dataset_fraccionamiento.csv')
+
+          assert 'pct_contratacion_directa' in fav.columns
+          assert 'pct_comparacion_precios' in fav.columns
+          assert 'pct_no_competitiva' not in fav.columns
+          assert fav['label_favoritismo_real'].sum() > 0
+          assert frac['label_fraccionamiento_real'].sum() > 0
+
+          with open('outputs/tuning_favoritismo_resumen.json', encoding='utf-8') as f:
+              fav_tuning = json.load(f)
+          with open('outputs/tuning_fraccionamiento_resumen.json', encoding='utf-8') as f:
+              frac_tuning = json.load(f)
+
+          assert fav_tuning['mejor_configuracion']
+          metricas = frac_tuning['metricas_holdout_final']
+          for campo in ['recall_at_k', 'auc_roc', 'auc_pr', 'precision', 'recall', 'f1']:
+              assert campo in metricas
+          print('Smoke P1 OK')
+          PY
