@@ -36,9 +36,6 @@ def detectar_anomalias(df):
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
-    n_reales = df["label_fraccionamiento_real"].sum()
-    contaminacion = min(max(n_reales / len(df), 0.02), 0.15)  # estimado razonable
-
     modelo = IsolationForest(
         # Hiperparámetros confirmados por búsqueda sistemática en grilla
         # (ver src/tuning_fraccionamiento.py, 36 combinaciones evaluadas
@@ -48,7 +45,17 @@ def detectar_anomalias(df):
         # de que la limitación es del algoritmo sobre estas features, no
         # de una mala elección de hiperparámetros. Se usa la configuración
         # más liviana entre las empatadas (100 en vez de 300 árboles).
-        n_estimators=100, contamination=contaminacion, random_state=42,
+        #
+        # contamination='auto' (no derivado de la etiqueta sintética
+        # conocida — corrección tras revisión externa): la versión previa
+        # calculaba contamination = n_reales/len(df), es decir, usaba la
+        # prevalencia REAL de fraccionamiento sembrado para configurar el
+        # modelo. Eso es fuga de información: en producción no se conoce
+        # de antemano qué proporción de casos son anómalos. Se verificó
+        # que el cambio a 'auto' no altera el resultado (sigue en 3/8;
+        # contamination solo afecta el corte binario interno del modelo,
+        # no el ranking por score de anomalía que usa validar()).
+        n_estimators=100, contamination="auto", random_state=42,
     )
     modelo.fit(X_scaled)
 

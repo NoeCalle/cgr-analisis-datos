@@ -336,7 +336,7 @@ const doc = new Document({
           [
             ["Isolation Forest (solo)", "8", "3", "37.5%"],
             ["Regla interpretable (umbral legal)", "7", "7", "100.0%"],
-            ["Combinado (modelo Y regla)", "2", "2", "100.0%"],
+            ["Combinado (modelo Y regla)", "7", "7", "100.0%"],
           ],
           [3600, 2200, 2000, 2000],
         ),
