@@ -1,8 +1,7 @@
 """Genera `outputs/run_manifest.json` con trazabilidad de la ejecución.
 
-Objetivo: que parámetros, versiones, hashes y resultados referenciados por la
-documentación provengan de evidencia machine-readable y no de números copiados
-a mano. Es un PoC local del linaje/documentación exigidos por el TDR.
+Parámetros, versiones, hashes y resultados quedan en evidencia machine-readable
+para que la documentación no dependa de números copiados manualmente.
 """
 
 from __future__ import annotations
@@ -22,13 +21,16 @@ ARCHIVOS_TRAZADOS = [
     "lakehouse/plata/contratos_procesados.csv",
     "lakehouse/plata/dataset_favoritismo.csv",
     "lakehouse/plata/dataset_fraccionamiento.csv",
+    "outputs/comparacion_modelos_favoritismo.json",
     "outputs/tuning_favoritismo_resumen.json",
     "outputs/tuning_fraccionamiento_resumen.json",
     "outputs/ranking_riesgo_favoritismo.csv",
     "outputs/ranking_riesgo_fraccionamiento.csv",
     "outputs/ranking_vinculos_proveedor_funcionario.csv",
 ]
-PAQUETES = ["pandas", "numpy", "scikit-learn", "shap", "pyspark"]
+PAQUETES = [
+    "pandas", "numpy", "scikit-learn", "shap", "pyspark", "delta-spark", "graphframes-py"
+]
 
 
 def sha256(ruta: Path) -> str:
@@ -77,7 +79,7 @@ def main():
         }
 
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "generado_utc": datetime.now(timezone.utc).isoformat(),
         "git_commit": git_sha(),
         "entorno": versiones(),
@@ -86,6 +88,9 @@ def main():
             "salida_reporting": "lakehouse/oro",
             "nota": "simulación local; no equivale al Lakehouse institucional CGR",
         },
+        "comparacion_modelos_favoritismo": cargar_json_relativo(
+            "outputs/comparacion_modelos_favoritismo.json"
+        ),
         "tuning_favoritismo": cargar_json_relativo("outputs/tuning_favoritismo_resumen.json"),
         "tuning_fraccionamiento": cargar_json_relativo("outputs/tuning_fraccionamiento_resumen.json"),
         "validacion_p0_datos_reales": cargar_json_relativo("outputs/validacion_p0_datos_reales.json"),
