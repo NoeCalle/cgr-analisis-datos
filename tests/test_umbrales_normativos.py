@@ -15,6 +15,13 @@ from umbrales_normativos import (
 )
 
 
+def test_topes_historicos_presentes_en_dataset_real():
+    for anio in (2018, 2019, 2020, 2021):
+        assert obtener_umbral(f"{anio}-06-01", categoria_principal="goods") == 400_000
+        assert obtener_umbral(f"{anio}-06-01", categoria_principal="services") == 400_000
+        assert obtener_umbral(f"{anio}-06-01", categoria_principal="works") == 1_800_000
+
+
 def test_topes_verificados_2022_2026():
     assert obtener_umbral("2022-06-01", categoria_principal="goods") == 400_000
     assert obtener_umbral("2022-06-01", categoria_principal="works") == 2_800_000
@@ -33,13 +40,11 @@ def test_cambio_de_regimen_22_abril_2025():
     assert obtener_regimen("2025-04-22") == "Ley 32069"
 
 
-def test_categoria_odcs_tiene_prioridad_sobre_texto_libre():
-    # El texto contiene "infraestructura", pero OCDS dice explícitamente service.
+def test_categoria_ocds_tiene_prioridad_sobre_texto_libre():
     assert not es_categoria_obra(
         "Servicio de mantenimiento de infraestructura",
         categoria_principal="services",
     )
-    # Y si OCDS declara works, esa clasificación prevalece incluso con texto pobre.
     assert es_categoria_obra("Mantenimiento general", categoria_principal="works")
 
 
