@@ -6,7 +6,11 @@ Flujo P1:
       -> comparar algoritmos favoritismo -> tuning RF -> entrenar favoritismo
       -> tuning fraccionamiento con holdout -> entrenar fraccionamiento
       -> análisis de vínculos
-  -> Oro -> run manifest -> documentación
+  -> Oro -> run manifest -> evidencia documental -> diccionario/diagrama
+
+Los DOCX formales se generan y validan adicionalmente en GitHub Actions porque
+requieren Node.js/docx. Airflow conserva la evidencia machine-readable que los
+DOCX consumen.
 
 Airflow vive en un virtualenv separado, pero las tareas usan el Python del
 proyecto (`.venv/bin/python`) o `CGR_PROJECT_PYTHON`.
@@ -90,6 +94,10 @@ with DAG(
     generar_manifest = BashOperator(
         task_id="generar_run_manifest", bash_command=comando("src/generar_run_manifest.py")
     )
+    generar_evidencia = BashOperator(
+        task_id="generar_evidencia_documental",
+        bash_command=comando("src/generar_evidencia_documental.py"),
+    )
     documentar = BashOperator(
         task_id="generar_diccionario_y_diagrama",
         bash_command=comando("src/generar_diccionario_diagrama.py"),
@@ -100,4 +108,4 @@ with DAG(
     mover_plata >> tuning_fraccionamiento >> entrenar_fraccionamiento
     mover_plata >> analizar_vinculos
     [entrenar_favoritismo, entrenar_fraccionamiento, analizar_vinculos] >> mover_oro
-    mover_oro >> generar_manifest >> documentar
+    mover_oro >> generar_manifest >> generar_evidencia >> documentar
