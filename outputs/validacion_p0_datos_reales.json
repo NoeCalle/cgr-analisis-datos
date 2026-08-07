@@ -42,11 +42,18 @@
     "parties.csv": "f3e42d1a88b69cb538c4a81fe24c6eb792b4861c9b2847c62d3c150c5bf5de5c",
     "sources.csv": "743b02a67fd1ee49c3438763351fd9a5a64accb787011239c389daef59250a78"
   },
-  "pendientes_p1": [
-    "Revisar modelado de competitividad de modalidades, especialmente Comparación de Precios.",
-    "Mejorar validación independiente y tuning de fraccionamiento.",
-    "Corregir evaluación post-reentrenamiento y gate de promoción de modelos.",
-    "Alinear consumo real Plata/Oro y entorno Airflow.",
-    "Regenerar documentación formal desde evidencia automática."
+  "estado_posterior_p0": {
+    "competitividad_modalidades": "corregida: Contratación Directa y Comparación de Precios se modelan por separado",
+    "validacion_fraccionamiento": "corregida: holdout final separado antes del tuning y selección por AUC-PR",
+    "autoevaluacion": "corregida: holdout post-actualización y modelo candidato sin promoción automática",
+    "plata_oro_airflow": "corregido: modelos consumen Plata, reporting Oro y Airflow usa Python de proyecto",
+    "documentacion_formal": "generación automática desde evidencia_documental.json incorporada a CI"
+  },
+  "pendientes_institucionales": [
+    "ground truth real etiquetado y validado por auditores",
+    "despliegue en Datamart/Lakehouse y ambientes DEV/QA/PROD de la CGR",
+    "certificación funcional, marcha blanca y transferencia formal",
+    "operación de SQL Server/SSRS/SSAS/Power BI institucional",
+    "validación de desempeño distribuido sobre HDFS/YARN institucional"
   ]
 }
