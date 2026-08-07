@@ -388,6 +388,21 @@ const doc = new Document({
           "matching de direcciones, no solo coincidencia exacta."
         ),
 
+        subtitulo("5.1. Validación con Spark GraphFrames real (no solo networkx)"),
+        parrafo(
+          "El análisis anterior se construyó con networkx porque GraphFrames no lograba resolverse sin acceso " +
+          "a Maven Central desde este entorno (ver Anexo B). Se obtuvieron los .jar exactos — " +
+          "io.graphframes:graphframes-spark4_2.13:0.10.0, compilados específicamente para Spark 4.x con Scala " +
+          "2.13 — desde una máquina con internet sin restricciones, y se cargaron manualmente vía spark.jars. " +
+          "El resultado corre sobre Spark GraphFrames real, no una simulación:"
+        ),
+        vineta("Los mismos 5 de 5 vínculos sospechosos sembrados fueron detectados — confirmación cruzada entre networkx y GraphFrames."),
+        vineta("PageRank identificó a los funcionarios más centrales de la red de contratación (no solo el que más contratos tiene, sino su posición relativa dentro de la red completa) — exactamente la mejora que la nota anterior señalaba como pendiente."),
+        vineta("Connected Components agrupó los 280 nodos (proveedores + funcionarios) en un solo componente conectado — en una red real con más entidades, esta técnica permitiría aislar comunidades de contratación independientes entre sí."),
+        parrafo(
+          "Código en src/spark/vinculos_graphframes.py; resultados en outputs/vinculos_graphframes_*.csv."
+        ),
+
         titulo("6. Diccionario de Datos y Diagrama del Modelo"),
         parrafo(
           "Cubre el numeral 3.2.g del TDR (\"Elaborar y mantener actualizado el diccionario y diagrama del " +
@@ -685,7 +700,7 @@ const doc = new Document({
             ["Parquet", "Completo"],
             ["Python / SQL / Scala / R / Java", "Completo — los 5 verificados"],
             ["Spark MLlib", "Completo"],
-            ["Spark GraphX", "Bloqueado — requiere Maven"],
+            ["Spark GraphX", "Completo (ver Sección 5 — GraphFrames real)"],
             ["Hadoop YARN / HDFS", "Bloqueado — sin paquete disponible en este entorno"],
             ["Apache Airflow", "Completo"],
             ["SQL Server / SSRS", "Parcial — esquema real, SQLite como stand-in"],
@@ -696,7 +711,7 @@ const doc = new Document({
         ),
         parrafo("", { size: 4 }),
         subtitulo("Tres tipos de bloqueo, no uno solo"),
-        vineta("Red del entorno de prueba: Hadoop/YARN, HDFS, GraphX y Delta Lake requieren descargar un .jar o tarball desde Maven Central o Apache, dominios fuera de la lista de salida permitida aquí. Con acceso a internet sin restricciones (ej. un servidor de la CGR), esto no es un límite técnico real."),
+        vineta("Red del entorno de prueba: Hadoop/YARN, HDFS y Delta Lake requieren descargar un .jar o tarball desde Maven Central o Apache, dominios fuera de la lista de salida permitida aquí. GraphX/GraphFrames tenía el mismo bloqueo, pero se resolvió (ver Sección 5) descargando los .jar correctos fuera de este entorno y cargándolos manualmente — la misma solución aplicaría a Delta Lake si se repite el proceso."),
         vineta("Sistema operativo: SSAS es tecnología exclusiva de Windows Server; no existe equivalente en Linux."),
         vineta("Licencia/cuenta: Power BI y un SQL Server real requieren una cuenta o licencia — no hay forma de \"instalarlos gratis\" en ningún entorno. Quedan fuera de alcance por decisión, no por límite técnico."),
 
@@ -732,9 +747,8 @@ const doc = new Document({
         vineta("Conectar la ingesta real a las capas Plata/Oro del Lakehouse (reemplazando las carpetas locales por lectura/escritura del Delta Lake sobre Hadoop, según el Anexo 2 del TDR)."),
         vineta("Desplegar el DAG en el Airflow productivo de la CGR (ya disponible según el Anexo 2), reemplazando BashOperator por SparkSubmitOperator para las tareas de entrenamiento."),
         vineta("Ejecutar Spark sobre un clúster YARN real, no en modo local[*]."),
-        vineta("Añadir el módulo de análisis de grafos (proveedor-funcionario) con GraphX, en vez de networkx (usado en la Sección 5 por rapidez de desarrollo)."),
         vineta("Reemplazar el SQLite stand-in por una conexión real a SQL Server (pyodbc/pymssql) y desplegar el .rdl en un servidor SSRS real."),
-        vineta("GraphX/GraphFrames para el módulo de vínculos: se intentó explícitamente (dos rutas distintas — resolución vía Maven en tiempo de ejecución, y un .jar empaquetado en PyPI) y ambas fallaron por falta de acceso a Maven Central desde este entorno y por incompatibilidad binaria (Scala 2.11 vs. 2.13 de Spark 4.2). networkx (Sección 5) no es una simplificación de conveniencia; es la única opción funcional verificada aquí."),
+        vineta("GraphX/GraphFrames para el módulo de vínculos: se intentó dos veces y falló por falta de acceso a Maven Central desde este entorno. Se resolvió obteniendo los .jar correctos (io.graphframes:graphframes-spark4_2.13:0.10.0) desde una máquina con internet sin restricciones y cargándolos manualmente — ver Sección 5. La red de este entorno sigue siendo la limitación real; se puede resolver caso por caso, no de forma automática."),
 
         titulo("15. Conclusión"),
         parrafo(
