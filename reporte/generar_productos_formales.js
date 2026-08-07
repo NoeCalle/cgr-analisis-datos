@@ -452,12 +452,15 @@ const p7 = documento(7, "Informe Final", "Informe Final", [
     "MLlib, Spark GraphX (vía GraphFrames), Airflow, Delta Lake y CDC/CDF."
   ),
   parrafo(
-    "Hadoop YARN/HDFS queda fuera de alcance por una razón de fondo, no por falta de intento: ambos " +
-    "requieren múltiples máquinas físicas distintas conectadas en red para aportar su beneficio real " +
-    "(replicación tolerante a fallos, reparto de recursos entre nodos) — algo que un entorno de un solo " +
-    "contenedor no puede ofrecer sin importar cuánto código se agregue. Se investigó la utilidad oficial " +
-    "hadoop-client-minicluster (la que usa el propio equipo de Hadoop para pruebas), pero requiere un " +
-    "segundo archivo de 40-70 MB que excede el límite de subida de este entorno."
+    "Hadoop YARN/HDFS queda pendiente por una combinación de límites de tamaño de archivo, no por " +
+    "imposibilidad técnica de correr en una sola máquina: Apache documenta explícitamente un modo " +
+    "pseudo-distribuido (single-node) para HDFS/YARN. Se investigó la utilidad oficial " +
+    "hadoop-client-minicluster (la que usa el propio equipo de Hadoop para pruebas, 27.1 MB, obtenida), " +
+    "pero requiere un segundo archivo (hadoop-client-runtime, 40-70 MB) que excede el límite de subida de " +
+    "este entorno; el tarball binario completo (554 MB) también. Lo que sí es una limitación de fondo: el " +
+    "beneficio característico de HDFS/YARN en producción (replicación tolerante a fallos, reparto de " +
+    "recursos entre nodos) requiere, por diseño, varias máquinas físicas distintas — algo que ni siquiera " +
+    "un modo pseudo-distribuido completado en este entorno demostraría."
   ),
   parrafo(
     "SQL Server real, SSAS y Power BI quedan fuera de alcance por decisión — requieren licencia o cuenta, y " +

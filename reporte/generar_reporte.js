@@ -710,7 +710,7 @@ const doc = new Document({
             ["Python / SQL / Scala / R / Java", "Completo — los 5 verificados"],
             ["Spark MLlib", "Completo"],
             ["Spark GraphX", "Completo (ver Sección 5 — GraphFrames real)"],
-            ["Hadoop YARN / HDFS", "Fuera de alcance por naturaleza (ver explicación abajo, no un bloqueo de librería)"],
+            ["Hadoop YARN / HDFS", "Pendiente por límite de tamaño de archivo, no por imposibilidad técnica (ver explicación abajo)"],
             ["Apache Airflow", "Completo"],
             ["SQL Server / SSRS", "Parcial — esquema real, SQLite como stand-in"],
             ["Modelo Tabular (SSAS)", "Fuera de alcance — solo Windows Server"],
@@ -721,7 +721,7 @@ const doc = new Document({
         parrafo("", { size: 4 }),
         subtitulo("Tres tipos de bloqueo, no uno solo"),
         vineta("Red del entorno de prueba: GraphX/GraphFrames y Delta Lake requerían descargar un .jar desde Maven Central, dominio fuera de la lista de salida permitida aquí — y ambos se resolvieron (ver Sección 5 y evidencia abajo) descargando los .jar correctos fuera de este entorno y cargándolos manualmente."),
-        vineta("Hadoop YARN/HDFS es un caso distinto y no simulable con el mismo truco — ver explicación dedicada más abajo."),
+        vineta("Hadoop YARN/HDFS quedó pendiente por límites de tamaño de archivo (no por imposibilidad técnica de correr en una sola máquina — Apache documenta modo pseudo-distribuido) — ver explicación dedicada más abajo."),
         vineta("Sistema operativo: SSAS es tecnología exclusiva de Windows Server; no existe equivalente en Linux."),
         vineta("Licencia/cuenta: Power BI y un SQL Server real requieren una cuenta o licencia — no hay forma de \"instalarlos gratis\" en ningún entorno. Quedan fuera de alcance por decisión, no por límite técnico."),
 
@@ -777,25 +777,30 @@ const doc = new Document({
         subtitulo("Por qué Hadoop YARN/HDFS es un caso distinto (no un bloqueo de librería)"),
         parrafo(
           "A diferencia de GraphFrames y Delta Lake, que fallaban por no poder descargar un .jar específico " +
-          "— un problema de red, resuelto obteniendo el archivo correcto por fuera — Hadoop YARN y HDFS no son " +
-          "primariamente una librería que falte, sino una arquitectura que requiere múltiples máquinas físicas " +
-          "distintas conectadas en red. Se investigó explícitamente una alternativa liviana " +
-          "(org.apache.hadoop:hadoop-client-minicluster, 27.1 MB, la utilidad interna que el propio equipo de " +
-          "Hadoop usa para sus pruebas automatizadas) y se obtuvo el archivo, pero requiere además " +
-          "hadoop-client-runtime — un segundo .jar que empaqueta todas las dependencias de Hadoop (netty, " +
-          "guava, jetty, protobuf) y normalmente pesa 40-70 MB, de nuevo por encima del límite de archivo de " +
-          "este entorno."
+          "— un problema de red, resuelto obteniendo el archivo correcto por fuera — Hadoop YARN y HDFS no se " +
+          "completaron por una combinación de restricciones de tamaño de archivo, no por imposibilidad " +
+          "técnica de correr en una sola máquina. Aclaración importante: Apache documenta explícitamente un " +
+          "modo \"pseudo-distribuido\" (single-node) en el que HDFS y YARN corren sobre una sola máquina — " +
+          "esto es técnicamente viable y no requiere múltiples servidores físicos. Se investigó una " +
+          "alternativa liviana (org.apache.hadoop:hadoop-client-minicluster, 27.1 MB, la utilidad interna que " +
+          "el propio equipo de Hadoop usa para sus pruebas automatizadas) y se obtuvo el archivo, pero " +
+          "requiere además hadoop-client-runtime — un segundo .jar que empaqueta todas las dependencias de " +
+          "Hadoop (netty, guava, jetty, protobuf) y normalmente pesa 40-70 MB, de nuevo por encima del " +
+          "límite de archivo de este entorno. El tarball binario completo (que sí incluye los scripts para " +
+          "correr en modo pseudo-distribuido real, no solo las clases de prueba MiniDFSCluster/" +
+          "MiniYARNCluster) pesa 554 MB, igualmente inalcanzable aquí."
         ),
         parrafo(
-          "Más importante que el límite de tamaño: HDFS reparte y replica bloques de datos entre nodos " +
-          "distintos para tolerar la caída de una máquina, y YARN reparte CPU/memoria entre esos mismos nodos. " +
-          "Ambos beneficios dependen, por diseño, de que existan varias máquinas físicas separadas — algo que " +
-          "este entorno de prueba de concepto (un único contenedor) no tiene y no puede simular con más código. " +
-          "Incluso si se lograra instalar MiniDFSCluster/MiniYARNCluster, esas clases están explícitamente " +
-          "diseñadas por Apache para pruebas unitarias, no para demostrar distribución real — no habrían " +
-          "probado nada que Spark en modo local[*] no demuestre ya. Esta es la única pieza del Anexo 2 que " +
-          "queda genuinamente fuera de alcance de este entorno, y solo se puede cerrar con acceso a los " +
-          "servidores reales de la CGR."
+          "Lo que sí es una limitación real de fondo, independiente del tamaño de archivo: el beneficio " +
+          "característico de HDFS/YARN en producción — tolerancia a fallos vía replicación de bloques entre " +
+          "máquinas físicas distintas, y reparto de CPU/memoria entre esos mismos nodos — depende, por " +
+          "diseño, de que existan varias máquinas separadas. Un modo pseudo-distribuido de un solo nodo " +
+          "(que no se llegó a completar aquí) demostraría que los procesos de HDFS/YARN corren y se " +
+          "comunican correctamente, pero no demostraría ese beneficio de tolerancia a fallos ni de reparto " +
+          "real de carga entre máquinas — para eso sí hacen falta servidores físicos distintos, como los de " +
+          "la CGR. Esta es la pieza del Anexo 2 que queda pendiente de este entorno: no por ser " +
+          "técnicamente imposible en una sola máquina, sino porque no se logró descargar el paquete " +
+          "completo dentro del límite de tamaño de archivo disponible aquí."
         ),
         parrafo(
           "Lo que sí cubre el mismo rol funcional dentro de este prototipo: Spark real (Sección 8) es el motor " +

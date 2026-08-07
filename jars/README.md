@@ -35,5 +35,12 @@ clases base (`org.apache.hadoop.conf.Configuration`, etc.), que viven en
 de nuevo por encima del límite de subida de archivos de este entorno
 (30 MB). Ver `src/spark/hadoop_mini/TestMiniCluster.java` para el código
 que se alcanzó a escribir, y el reporte técnico (Anexo B, Producto 7
-Sección 11) para la explicación completa de por qué Hadoop YARN/HDFS
-requiere máquinas físicas reales y no es simulable solo con más código.
+Sección 11) para la explicación completa.
+
+Aclaración: esto NO significa que HDFS/YARN sean imposibles de correr en
+una sola máquina — Apache documenta explícitamente un modo
+pseudo-distribuido (single-node) para exactamente ese caso. Lo que faltó
+fue el archivo, no la viabilidad técnica. Lo que sí es una limitación de
+fondo, independiente del tamaño de archivo, es que el beneficio real de
+HDFS/YARN en producción (replicación tolerante a fallos, reparto de
+recursos entre nodos) requiere varias máquinas físicas distintas.

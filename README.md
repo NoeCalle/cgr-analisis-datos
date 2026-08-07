@@ -55,7 +55,7 @@ CGR) — ver `data_real/`.
 
 | Componente | Motivo |
 |---|---|
-| Hadoop YARN / HDFS | Requiere múltiples máquinas físicas reales en red — no es simulable en un solo entorno, sin importar cuánto código se agregue. Se investigó `hadoop-client-minicluster` (la utilidad oficial de pruebas de Hadoop) pero el jar complementario excede el límite de archivo de este entorno. |
+| Hadoop YARN / HDFS | No se completó una instalación pseudo-distribuida (single-node) por límites de tamaño de archivo, no por imposibilidad técnica — Apache documenta ese modo explícitamente. Se investigó `hadoop-client-minicluster` (27.1 MB, obtenido) pero requiere un segundo archivo de 40-70 MB que excede el límite de subida de este entorno; el tarball completo (554 MB) también. El beneficio real de producción (replicación tolerante a fallos, reparto de recursos entre nodos) sí requiere máquinas físicas distintas — eso no cambia con más código. |
 | SQL Server real, SSAS, Power BI | Requieren licencia o cuenta — fuera de alcance por decisión, ya que el prototipo se construye enteramente con herramientas de licencia abierta. |
 
 Ambos casos están documentados con honestidad técnica en el reporte
