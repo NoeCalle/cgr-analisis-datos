@@ -1,0 +1,26 @@
+{
+  "diseno": "holdout final separado antes del tuning; validaciones repetidas solo en desarrollo",
+  "n_total": 180,
+  "positivos_total": 8,
+  "n_desarrollo": 112,
+  "positivos_desarrollo": 5,
+  "mejor_configuracion": {
+    "n_estimators": 100,
+    "max_samples": 0.5,
+    "contamination": "auto",
+    "recall_validacion_medio": 0.2
+  },
+  "metricas_holdout_final": {
+    "recall_at_k": 0.0,
+    "auc_roc": 0.8564102564102564,
+    "auc_pr": 0.17086247086247086,
+    "precision": 0.17647058823529413,
+    "recall": 1.0,
+    "f1": 0.3,
+    "n_test": 68,
+    "positivos_test": 3,
+    "anomalias_predichas": 17
+  },
+  "advertencia": "benchmark sintético con pocos positivos; no estima desempeño productivo",
+  "proveniencia": "GitHub Actions run 31226413894, artifact model-selection-evidence"
+}
