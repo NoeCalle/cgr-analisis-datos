@@ -6,7 +6,11 @@ es parametrizar una SEÑAL DE ALERTA para priorización de revisión por auditor
 usando la cuantía que separa el procedimiento general del procedimiento
 simplificado/abreviado según año, régimen y tipo de contratación.
 
-Fuentes oficiales verificadas (OECE/OSCE/MEF):
+Fuentes verificadas (OSCE/OECE/MEF):
+  - 2018: bienes/servicios S/ 400,000; obras S/ 1,800,000.
+  - 2019: bienes/servicios S/ 400,000; obras S/ 1,800,000.
+  - 2020: bienes/servicios S/ 400,000; obras S/ 1,800,000.
+  - 2021: bienes/servicios S/ 400,000; obras S/ 1,800,000.
   - 2022: bienes/servicios S/ 400,000; obras S/ 2,800,000.
   - 2023: bienes/servicios S/ 480,000; obras S/ 2,800,000.
   - 2024: bienes/servicios S/ 480,000; obras S/ 2,800,000.
@@ -15,6 +19,10 @@ Fuentes oficiales verificadas (OECE/OSCE/MEF):
     mantienen, pero cambian los procedimientos (p. ej. licitación/concurso
     público abreviado en lugar de adjudicación simplificada).
   - 2026: bienes/servicios S/ 485,000; obras S/ 5,000,000, bajo Ley 32069.
+
+La inclusión 2018-2021 es necesaria porque la publicación OCDS usada como
+prueba real, aunque segmentada principalmente en 2022, contiene contratos
+firmados desde 2018. No se aproxima silenciosamente un año desconocido.
 
 En producción institucional esta tabla debe versionarse como dato maestro
 normativo y validarse cuando se publique cada Ley de Presupuesto anual.
@@ -26,10 +34,11 @@ import pandas as pd
 
 FECHA_VIGENCIA_LEY_32069 = pd.Timestamp("2025-04-22")
 
-# Cuantía superior del procedimiento simplificado/abreviado para el régimen
-# general. Es una señal para análisis, NO una definición jurídica completa de
-# fraccionamiento.
 UMBRALES_PROCEDIMIENTO_SIMPLIFICADO_ABREVIADO = {
+    2018: {"bienes_servicios": 400_000.0, "obras": 1_800_000.0},
+    2019: {"bienes_servicios": 400_000.0, "obras": 1_800_000.0},
+    2020: {"bienes_servicios": 400_000.0, "obras": 1_800_000.0},
+    2021: {"bienes_servicios": 400_000.0, "obras": 1_800_000.0},
     2022: {"bienes_servicios": 400_000.0, "obras": 2_800_000.0},
     2023: {"bienes_servicios": 480_000.0, "obras": 2_800_000.0},
     2024: {"bienes_servicios": 480_000.0, "obras": 2_800_000.0},
@@ -76,10 +85,6 @@ def es_categoria_obra(objeto: str | None, categoria_principal=None) -> bool:
     Prioridad:
       1) categoría estructurada OCDS (`mainProcurementCategory`), si existe;
       2) fallback conservador por texto para datos sintéticos/no estructurados.
-
-    El fallback evita usar la palabra genérica "infraestructura" porque una
-    descripción como "Servicio de mantenimiento de infraestructura" no es, por
-    sí sola, evidencia suficiente para clasificar el contrato como obra.
     """
     categoria = normalizar_categoria_principal(categoria_principal)
     if categoria is not None:
@@ -118,8 +123,6 @@ def obtener_umbral(fecha, objeto=None, categoria_principal=None) -> float:
     """Devuelve la cuantía superior aplicable a la señal de alerta.
 
     No se aproxima silenciosamente un año desconocido con el año más cercano.
-    Si falta parametrización se falla explícitamente para impedir que una regla
-    desactualizada genere alertas con apariencia de validez normativa.
     """
     anio = pd.Timestamp(fecha).year
     if anio not in UMBRALES_PROCEDIMIENTO_SIMPLIFICADO_ABREVIADO:
