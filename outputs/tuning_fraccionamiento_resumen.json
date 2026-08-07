@@ -23,6 +23,5 @@
     "positivos_test": 3,
     "anomalias_predichas": 17
   },
-  "advertencia": "benchmark sintético con pocos positivos; no estima desempeño productivo",
-  "proveniencia": "GitHub Actions run 31226730510, artifact model-selection-evidence"
+  "advertencia": "benchmark sintético con pocos positivos; no estima desempeño productivo"
 }
