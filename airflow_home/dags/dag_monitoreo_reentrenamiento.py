@@ -1,41 +1,53 @@
 """
-DAG de Monitoreo y Reentrenamiento — objetivo específico 3.2.c del TDR
-("Estrategias de Sostenibilidad del Modelo"). Se ejecuta de forma
-independiente del DAG de entrenamiento inicial (dag_modulo_analisis_datos.py):
-este correría de forma periódica (@monthly) sobre la plataforma de la CGR,
-evaluando si los nuevos contratos ingresados justifican un reentrenamiento.
+DAG de monitoreo — objetivo específico 3.2.c del TDR.
+
+El reentrenamiento genera un MODELO CANDIDATO y nunca lo promueve de forma
+automática. La eventual promoción requiere revisión/aprobación institucional.
+Airflow se ejecuta en su entorno propio, mientras las tareas usan el Python del
+proyecto definido por CGR_PROJECT_PYTHON o `.venv/bin/python`.
 """
 
 from datetime import datetime
 import os
+import shlex
+
 from airflow import DAG
 from airflow.providers.standard.operators.bash import BashOperator
 
-# Ver dag_modulo_analisis_datos.py para la explicación de este cálculo
-# (corrección tras revisión externa: ya no está hardcodeada).
 PROYECTO = os.environ.get(
     "PROYECTO_DIR",
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
 )
-PY = "python3"
+PY = os.environ.get("CGR_PROJECT_PYTHON", os.path.join(PROYECTO, ".venv", "bin", "python"))
+
+
+def comando(script):
+    proyecto = shlex.quote(PROYECTO)
+    python = shlex.quote(PY)
+    return (
+        f"test -x {python} || (echo 'Python de proyecto no encontrado: {PY}. "
+        "Crear .venv o definir CGR_PROJECT_PYTHON.' >&2; exit 2); "
+        f"cd {proyecto} && {python} {shlex.quote(script)}"
+    )
+
 
 with DAG(
     dag_id="monitoreo_reentrenamiento_1_8_2",
-    description="Autoevaluación (PSI + degradación de recall) y reentrenamiento condicional — numeral 3.2.c del TDR",
+    description="PSI + recall mínimo; genera candidato sin promoción automática",
     start_date=datetime(2026, 8, 1),
     schedule="@monthly",
     catchup=False,
-    tags=["cgr", "1.8.2", "monitoreo"],
+    tags=["1.8.2", "monitoreo", "poc"],
 ) as dag:
 
     generar_lote_nuevo = BashOperator(
         task_id="generar_lote_nuevo",
-        bash_command=f"cd {PROYECTO} && {PY} src/generar_lote_nuevo.py",
+        bash_command=comando("src/generar_lote_nuevo.py"),
     )
 
-    autoevaluar_y_reentrenar = BashOperator(
-        task_id="autoevaluar_y_reentrenar_si_corresponde",
-        bash_command=f"cd {PROYECTO} && {PY} src/autoevaluacion.py",
+    evaluar_y_generar_candidato = BashOperator(
+        task_id="evaluar_y_generar_modelo_candidato_si_corresponde",
+        bash_command=comando("src/autoevaluacion.py"),
     )
 
-    generar_lote_nuevo >> autoevaluar_y_reentrenar
+    generar_lote_nuevo >> evaluar_y_generar_candidato
