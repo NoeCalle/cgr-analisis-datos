@@ -1,64 +1,64 @@
 """
-Demostración de HMS (Hive Metastore Service) — componente del Anexo 2 del
-TDR ("HMS MySQL" sobre el Delta Lake).
+Demostración local de Hive Metastore — componente del Anexo 2 del TDR.
 
-Registra los datasets reales del prototipo como tablas catalogadas en un
-Hive Metastore, permitiendo consultarlas por nombre vía SQL sin conocer
-la ruta física del archivo — el propósito real de un metastore: separar
-"qué tabla es" de "dónde vive el archivo".
+Registra tablas de Plata/Oro en un catálogo Hive embebido para demostrar la
+separación entre nombre lógico y ruta física. El backend local es Derby; el
+Anexo 2 muestra HMS/MySQL en la plataforma institucional.
 
-Nota de arquitectura: aquí el metastore corre embebido con Apache Derby
-(el backend por defecto de Spark para HMS local), no MySQL como especifica
-el Anexo 2. El servicio (catálogo, bases de datos, tablas, SQL sobre
-ellas) es el mismo; solo cambia el motor de base de datos que almacena
-los metadatos del catálogo — cambiar de Derby a MySQL es una línea de
-configuración (spark.hadoop.javax.jdo.option.ConnectionURL), no un
-cambio de arquitectura.
+Esto valida el patrón de catálogo, NO una instalación equivalente a la CGR.
+Migrar a MySQL requiere configuración JDBC, driver, credenciales, permisos,
+conectividad, HA/backups y parámetros institucionales; no se presenta como un
+simple cambio cosmético.
 """
+
+from pathlib import Path
 
 from pyspark.sql import SparkSession
 
 
 def main():
     spark = (
-        SparkSession.builder.appName("cgr-hms-demo").master("local[*]")
+        SparkSession.builder.appName("cgr-hms-poc").master("local[*]")
         .config("spark.sql.warehouse.dir", "outputs/hms_warehouse")
         .enableHiveSupport()
         .getOrCreate()
     )
     spark.sparkContext.setLogLevel("ERROR")
-
     spark.sql("CREATE DATABASE IF NOT EXISTS modulo_1_8_2")
     spark.sql("USE modulo_1_8_2")
 
-    # Registrar las tablas reales del prototipo en el catálogo HMS
     tablas = {
-        "contratos_siaf_seace": "data/contratos_siaf_seace.csv",
-        "dataset_favoritismo": "data/dataset_favoritismo.csv",
-        "dataset_fraccionamiento": "data/dataset_fraccionamiento.csv",
-        "contratos_reales_seace": "data_real/contratos_reales.csv",
+        "plata_contratos": "lakehouse/plata/contratos_procesados.csv",
+        "plata_favoritismo": "lakehouse/plata/dataset_favoritismo.csv",
+        "plata_fraccionamiento": "lakehouse/plata/dataset_fraccionamiento.csv",
+        "oro_favoritismo": "lakehouse/oro/ranking_riesgo_favoritismo.csv",
+        "oro_fraccionamiento": "lakehouse/oro/ranking_riesgo_fraccionamiento.csv",
     }
+    registradas = 0
     for nombre, ruta in tablas.items():
+        if not Path(ruta).exists():
+            print(f"Omitida {nombre}: no existe {ruta}; ejecutar el DAG primero.")
+            continue
         df = spark.read.csv(ruta, header=True, inferSchema=True)
         df.write.mode("overwrite").saveAsTable(nombre)
-        print(f"Tabla '{nombre}' registrada en HMS ({df.count():,} filas) desde {ruta}")
+        print(f"{nombre}: {df.count():,} filas catalogadas desde {ruta}")
+        registradas += 1
 
-    print("\n--- Catálogo HMS: bases de datos ---")
-    spark.sql("SHOW DATABASES").show()
+    if not registradas:
+        raise FileNotFoundError("No hay tablas Plata/Oro para registrar en HMS.")
 
-    print("--- Catálogo HMS: tablas en modulo_1_8_2 ---")
-    spark.sql("SHOW TABLES").show()
+    print("\nCatálogo HMS local:")
+    spark.sql("SHOW TABLES").show(truncate=False)
+    if spark.catalog.tableExists("plata_contratos"):
+        spark.sql("""
+            SELECT id_entidad, COUNT(*) AS n_contratos, ROUND(SUM(monto),2) AS monto_total
+            FROM plata_contratos
+            GROUP BY id_entidad
+            ORDER BY monto_total DESC
+            LIMIT 5
+        """).show()
 
-    print("--- Consulta SQL directa por nombre de tabla (sin ruta de archivo) ---")
-    spark.sql("""
-        SELECT id_entidad, COUNT(*) as n_contratos, ROUND(SUM(monto),2) as monto_total
-        FROM contratos_siaf_seace
-        GROUP BY id_entidad
-        ORDER BY monto_total DESC
-        LIMIT 5
-    """).show()
-
-    print("HMS VERIFICADO: tablas consultables por nombre vía catálogo, sin conocer la ruta física.")
+    print("HMS verificado como PoC local con Derby; HMS/MySQL institucional pendiente.")
     spark.stop()
 
 
