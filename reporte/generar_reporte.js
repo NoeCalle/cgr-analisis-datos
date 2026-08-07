@@ -701,7 +701,7 @@ const doc = new Document({
             ["Python / SQL / Scala / R / Java", "Completo — los 5 verificados"],
             ["Spark MLlib", "Completo"],
             ["Spark GraphX", "Completo (ver Sección 5 — GraphFrames real)"],
-            ["Hadoop YARN / HDFS", "Bloqueado — sin paquete disponible en este entorno"],
+            ["Hadoop YARN / HDFS", "Fuera de alcance por naturaleza (ver explicación abajo, no un bloqueo de librería)"],
             ["Apache Airflow", "Completo"],
             ["SQL Server / SSRS", "Parcial — esquema real, SQLite como stand-in"],
             ["Modelo Tabular (SSAS)", "Fuera de alcance — solo Windows Server"],
@@ -711,7 +711,8 @@ const doc = new Document({
         ),
         parrafo("", { size: 4 }),
         subtitulo("Tres tipos de bloqueo, no uno solo"),
-        vineta("Red del entorno de prueba: Hadoop/YARN y HDFS requieren descargar un tarball desde Apache, dominio fuera de la lista de salida permitida aquí. GraphX/GraphFrames y Delta Lake tenían el mismo bloqueo, pero ambos se resolvieron (ver Sección 5 y evidencia abajo) descargando los .jar correctos fuera de este entorno y cargándolos manualmente."),
+        vineta("Red del entorno de prueba: GraphX/GraphFrames y Delta Lake requerían descargar un .jar desde Maven Central, dominio fuera de la lista de salida permitida aquí — y ambos se resolvieron (ver Sección 5 y evidencia abajo) descargando los .jar correctos fuera de este entorno y cargándolos manualmente."),
+        vineta("Hadoop YARN/HDFS es un caso distinto y no simulable con el mismo truco — ver explicación dedicada más abajo."),
         vineta("Sistema operativo: SSAS es tecnología exclusiva de Windows Server; no existe equivalente en Linux."),
         vineta("Licencia/cuenta: Power BI y un SQL Server real requieren una cuenta o licencia — no hay forma de \"instalarlos gratis\" en ningún entorno. Quedan fuera de alcance por decisión, no por límite técnico."),
 
@@ -764,6 +765,36 @@ const doc = new Document({
           "cuál era el valor antes. Código en src/spark/lakehouse_delta.py."
         ),
 
+        subtitulo("Por qué Hadoop YARN/HDFS es un caso distinto (no un bloqueo de librería)"),
+        parrafo(
+          "A diferencia de GraphFrames y Delta Lake, que fallaban por no poder descargar un .jar específico " +
+          "— un problema de red, resuelto obteniendo el archivo correcto por fuera — Hadoop YARN y HDFS no son " +
+          "primariamente una librería que falte, sino una arquitectura que requiere múltiples máquinas físicas " +
+          "distintas conectadas en red. Se investigó explícitamente una alternativa liviana " +
+          "(org.apache.hadoop:hadoop-client-minicluster, 27.1 MB, la utilidad interna que el propio equipo de " +
+          "Hadoop usa para sus pruebas automatizadas) y se obtuvo el archivo, pero requiere además " +
+          "hadoop-client-runtime — un segundo .jar que empaqueta todas las dependencias de Hadoop (netty, " +
+          "guava, jetty, protobuf) y normalmente pesa 40-70 MB, de nuevo por encima del límite de archivo de " +
+          "este entorno."
+        ),
+        parrafo(
+          "Más importante que el límite de tamaño: HDFS reparte y replica bloques de datos entre nodos " +
+          "distintos para tolerar la caída de una máquina, y YARN reparte CPU/memoria entre esos mismos nodos. " +
+          "Ambos beneficios dependen, por diseño, de que existan varias máquinas físicas separadas — algo que " +
+          "este entorno de prueba de concepto (un único contenedor) no tiene y no puede simular con más código. " +
+          "Incluso si se lograra instalar MiniDFSCluster/MiniYARNCluster, esas clases están explícitamente " +
+          "diseñadas por Apache para pruebas unitarias, no para demostrar distribución real — no habrían " +
+          "probado nada que Spark en modo local[*] no demuestre ya. Esta es la única pieza del Anexo 2 que " +
+          "queda genuinamente fuera de alcance de este entorno, y solo se puede cerrar con acceso a los " +
+          "servidores reales de la CGR."
+        ),
+        parrafo(
+          "Lo que sí cubre el mismo rol funcional dentro de este prototipo: Spark real (Sección 8) es el motor " +
+          "de cómputo que correría sobre YARN; Delta Lake real (evidencia arriba) es el motor de almacenamiento " +
+          "que correría sobre HDFS; y el particionamiento con poda de particiones (Sección 11) es la técnica " +
+          "que evita leer todo el disco, sea ese disco local o HDFS."
+        ),
+
         titulo("14. Ruta de Escalamiento Restante"),
         parrafo(
           "Con las validaciones de las Secciones 8 y 9, el trabajo pendiente para producción se reduce casi " +
@@ -773,7 +804,6 @@ const doc = new Document({
         vineta("Desplegar el DAG en el Airflow productivo de la CGR (ya disponible según el Anexo 2), reemplazando BashOperator por SparkSubmitOperator para las tareas de entrenamiento."),
         vineta("Ejecutar Spark sobre un clúster YARN real, no en modo local[*]."),
         vineta("Reemplazar el SQLite stand-in por una conexión real a SQL Server (pyodbc/pymssql) y desplegar el .rdl en un servidor SSRS real."),
-        vineta("GraphX/GraphFrames para el módulo de vínculos: se intentó dos veces y falló por falta de acceso a Maven Central desde este entorno. Se resolvió obteniendo los .jar correctos (io.graphframes:graphframes-spark4_2.13:0.10.0) desde una máquina con internet sin restricciones y cargándolos manualmente — ver Sección 5. La red de este entorno sigue siendo la limitación real; se puede resolver caso por caso, no de forma automática."),
 
         titulo("15. Conclusión"),
         parrafo(
