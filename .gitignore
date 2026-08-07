@@ -16,12 +16,22 @@ lakehouse/oro/contratos_particionado/
 # Base de datos local (stand-in de SQL Server, regenerable)
 ssrs/reportes.db
 
-# Datos crudos reales de SEACE (pesados, con licencia CC BY 4.0 de OECE - no versionar el crudo)
+# Datos crudos reales de SEACE/OECE (pesados, CC BY 4.0 - no versionar)
 data_real/main.csv
 data_real/contracts.csv
 data_real/awards.csv
 data_real/awards_suppliers.csv
 data_real/parties.csv
+data_real/sources.csv
+
+# Derivados reales identificables: se regeneran localmente y NO se publican.
+# El repo conserva únicamente un resumen agregado/auditable de la ejecución.
+data_real/contratos_reales.csv
+data_real/proveedores_reales.csv
+data_real/entidades_reales.csv
+outputs/ranking_riesgo_favoritismo_REAL.csv
+outputs/ranking_riesgo_fraccionamiento_REAL.csv
+outputs/ranking_vinculos_organizacionales_REAL.csv
 
 # Warehouse local de HMS (metadatos Derby, regenerable)
 outputs/hms_warehouse/
