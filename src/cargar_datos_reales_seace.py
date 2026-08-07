@@ -14,6 +14,13 @@ asignaba a todos los contratos del proceso. Eso es incorrecto cuando un proceso
 tiene múltiples adjudicaciones. También se usa una clave de contrato compuesta
 OCID + contract.id, porque contract.id solo es único dentro del proceso OCDS.
 
+En la publicación OECE/OCP 2022 usada por este prototipo, awards_suppliers.csv
+trae normalmente un adjudicatario por award. Los consorcios suelen aparecer como
+una entidad adjudicataria propia (nombre "CONSORCIO ..."), no necesariamente
+como varias filas de integrantes. El loader conserva esa semántica y solo crea
+un identificador compuesto si una adjudicación realmente trae múltiples
+suppliers en el CSV.
+
 LIMITACIÓN: OCDS abierto no contiene funcionarios públicos individuales. El
 análisis proveedor-funcionario real requiere fuentes internas/adicionales de CGR.
 """
@@ -100,71 +107,94 @@ def construir_entidades(parties):
     return compradores[columnas]
 
 
-def construir_proveedores(parties):
-    """Catálogo individual de suppliers para datos de contacto/razón social."""
-    roles = parties.get("roles", pd.Series(index=parties.index, dtype="string"))
-    proveedores = parties[_roles_contiene(roles, "supplier")].copy()
-    if "identifier_id" not in proveedores:
-        proveedores["identifier_id"] = proveedores.get("id")
-    proveedores = proveedores.dropna(subset=["identifier_id"]).drop_duplicates("identifier_id")
-    proveedores = proveedores.rename(columns={
-        "identifier_id": "id_proveedor", "name": "razon_social",
-        "address_streetAddress": "direccion", "contactPoint_telephone": "telefono",
-    })
-    columnas = ["id_proveedor", "razon_social", "direccion", "telefono"]
-    for col in columnas:
-        if col not in proveedores:
-            proveedores[col] = pd.NA
-    return proveedores[columnas]
+def construir_proveedores(parties, awards_suppliers):
+    """Catálogo de adjudicatarios usando el mismo ID canónico que awards_suppliers.
 
-
-def _columna_supplier_id(awards_suppliers: pd.DataFrame) -> str:
-    """Localiza el identificador del supplier en el CSV aplanado de OCP."""
-    for candidato in ("identifier_id", "id"):
-        if candidato in awards_suppliers.columns:
-            return candidato
-    raise KeyError(
-        "awards_suppliers.csv no contiene identifier_id ni id; revisar el esquema de la descarga OCP."
-    )
-
-
-def _agrupar_suppliers_por_award(awards_suppliers: pd.DataFrame) -> pd.DataFrame:
-    requeridas = {"main_ocid", "awards_id"}
+    awards_suppliers es la autoridad para saber quién fue adjudicado. parties se
+    usa solo para enriquecer RUC/datos de contacto cuando la entidad también está
+    presente allí. Así no se pierden adjudicatarios (p. ej. algunos consorcios)
+    que aparecen en awards_suppliers pero no como party con rol supplier.
+    """
+    requeridas = {"id", "name"}
     faltantes = requeridas - set(awards_suppliers.columns)
     if faltantes:
-        raise KeyError(
-            f"awards_suppliers.csv no contiene columnas padre requeridas: {sorted(faltantes)}"
-        )
+        raise KeyError(f"awards_suppliers.csv no contiene: {sorted(faltantes)}")
 
-    supplier_id_col = _columna_supplier_id(awards_suppliers)
-    sup = awards_suppliers[["main_ocid", "awards_id", supplier_id_col]].copy()
-    sup = sup.rename(columns={supplier_id_col: "supplier_id"})
-    sup = sup.dropna(subset=["main_ocid", "awards_id", "supplier_id"])
-    sup["main_ocid"] = sup["main_ocid"].astype("string")
-    sup["awards_id"] = sup["awards_id"].astype("string")
-    sup["supplier_id"] = sup["supplier_id"].astype("string")
-    sup = sup.drop_duplicates(["main_ocid", "awards_id", "supplier_id"])
+    base = (
+        awards_suppliers[["id", "name"]]
+        .dropna(subset=["id"])
+        .drop_duplicates("id")
+        .rename(columns={"id": "id_proveedor", "name": "razon_social"})
+    )
+    base["id_proveedor"] = base["id_proveedor"].astype("string")
+
+    p = parties.copy()
+    if "id" not in p:
+        p["id"] = pd.NA
+    p["id"] = p["id"].astype("string")
+    for col in ["identifier_id", "address_streetAddress", "contactPoint_telephone"]:
+        if col not in p:
+            p[col] = pd.NA
+    contacto = (
+        p[["id", "identifier_id", "address_streetAddress", "contactPoint_telephone"]]
+        .dropna(subset=["id"])
+        .drop_duplicates("id")
+        .rename(columns={
+            "id": "id_proveedor",
+            "identifier_id": "ruc",
+            "address_streetAddress": "direccion",
+            "contactPoint_telephone": "telefono",
+        })
+    )
+    proveedores = base.merge(contacto, on="id_proveedor", how="left", validate="one_to_one")
+    proveedores["es_consorcio"] = proveedores["razon_social"].astype("string").str.contains(
+        r"\bCONSORCIO\b", case=False, regex=True, na=False
+    )
+    return proveedores[["id_proveedor", "ruc", "razon_social", "direccion", "telefono", "es_consorcio"]]
+
+
+def _adjudicatarios_por_award(awards_suppliers: pd.DataFrame) -> pd.DataFrame:
+    """Devuelve exactamente una identidad adjudicataria analítica por award."""
+    requeridas = {"main_ocid", "awards_id", "id", "name"}
+    faltantes = requeridas - set(awards_suppliers.columns)
+    if faltantes:
+        raise KeyError(f"awards_suppliers.csv no contiene columnas requeridas: {sorted(faltantes)}")
+
+    sup = awards_suppliers[["main_ocid", "awards_id", "id", "name"]].copy()
+    sup = sup.rename(columns={"awards_id": "award_id", "id": "supplier_id", "name": "supplier_name"})
+    sup = sup.dropna(subset=["main_ocid", "award_id", "supplier_id"])
+    for col in ["main_ocid", "award_id", "supplier_id"]:
+        sup[col] = sup[col].astype("string")
+    sup = sup.drop_duplicates(["main_ocid", "award_id", "supplier_id"])
 
     filas = []
-    for (ocid, award_id), g in sup.groupby(["main_ocid", "awards_id"], sort=False):
-        ids = sorted(g["supplier_id"].dropna().astype(str).unique())
-        if not ids:
-            continue
+    for (ocid, award_id), g in sup.groupby(["main_ocid", "award_id"], sort=False):
+        ids = sorted(g["supplier_id"].astype(str).unique())
+        nombres = [str(x) for x in g["supplier_name"].dropna().astype(str).unique()]
         if len(ids) == 1:
             id_proveedor = ids[0]
-            es_consorcio = False
+            razon_social = nombres[0] if nombres else pd.NA
+            es_consorcio = bool(
+                pd.notna(razon_social)
+                and re.search(r"\bCONSORCIO\b", str(razon_social), flags=re.IGNORECASE)
+            )
+            n_integrantes = pd.NA  # el CSV no expone miembros del consorcio
+            integrantes = pd.NA
         else:
-            # Identificador estable y sin colisiones por truncar la lista de RUC.
             digest = hashlib.sha256("|".join(ids).encode("utf-8")).hexdigest()[:16]
-            id_proveedor = f"CONSORCIO:{digest}"
+            id_proveedor = f"MULTISUPPLIER:{digest}"
+            razon_social = " / ".join(nombres) if nombres else pd.NA
             es_consorcio = True
+            n_integrantes = len(ids)
+            integrantes = ";".join(ids)
         filas.append({
             "main_ocid": str(ocid),
             "award_id": str(award_id),
             "id_proveedor": id_proveedor,
+            "razon_social_adjudicada": razon_social,
             "es_consorcio": es_consorcio,
-            "n_integrantes": len(ids),
-            "integrantes_consorcio": ";".join(ids) if len(ids) > 1 else pd.NA,
+            "n_integrantes_consorcio": n_integrantes,
+            "integrantes_consorcio": integrantes,
         })
     return pd.DataFrame(filas)
 
@@ -172,9 +202,9 @@ def _agrupar_suppliers_por_award(awards_suppliers: pd.DataFrame) -> pd.DataFrame
 def construir_contratos(main, contracts, awards, awards_suppliers):
     """Construye una fila por contrato con el supplier de SU adjudicación.
 
-    Contratos sin awardID válido o sin suppliers vinculados se excluyen del
-    dataset analítico proveedor-dependiente y se reportan, en vez de asignarles
-    por aproximación todos los suppliers del proceso.
+    Contratos sin awardID válido o sin supplier vinculado se excluyen del
+    dataset analítico proveedor-dependiente y se contabilizan, en vez de
+    asignarles por aproximación suppliers de todo el proceso.
     """
     for nombre, df, columnas in (
         ("main.csv", main, {"ocid", "buyer_id"}),
@@ -185,9 +215,7 @@ def construir_contratos(main, contracts, awards, awards_suppliers):
         if faltantes:
             raise KeyError(f"{nombre} no contiene columnas requeridas: {sorted(faltantes)}")
 
-    main_cols = [
-        "ocid", "buyer_id", "tender_procurementMethodDetails", "tender_mainProcurementCategory"
-    ]
+    main_cols = ["ocid", "buyer_id", "tender_procurementMethodDetails", "tender_mainProcurementCategory"]
     main_sel = main.copy()
     for col in main_cols:
         if col not in main_sel:
@@ -204,7 +232,7 @@ def construir_contratos(main, contracts, awards, awards_suppliers):
     a["award_id"] = a["award_id"].astype("string")
     a = a.drop_duplicates(["main_ocid", "award_id"])
 
-    suppliers_por_award = _agrupar_suppliers_por_award(awards_suppliers)
+    adjudicatarios = _adjudicatarios_por_award(awards_suppliers)
 
     base = c.merge(
         main_sel,
@@ -215,31 +243,29 @@ def construir_contratos(main, contracts, awards, awards_suppliers):
         left_on=["main_ocid", "awardID"], right_on=["main_ocid", "award_id"],
         how="left", validate="many_to_one",
     )
-
     n_sin_award = int(base["award_id"].isna().sum())
+
     base = base.merge(
-        suppliers_por_award,
+        adjudicatarios,
         on=["main_ocid", "award_id"], how="left", validate="many_to_one",
     )
     n_sin_supplier = int(base["id_proveedor"].isna().sum())
 
     descripcion = base["description"] if "description" in base else pd.Series(pd.NA, index=base.index)
-    categoria_principal = base["tender_mainProcurementCategory"]
 
     df = pd.DataFrame({
-        # OCDS: contract.id es único dentro del proceso; la clave analítica debe
-        # incluir el OCID para no colisionar entre procesos.
         "id_contrato": base["main_ocid"].astype(str) + "::" + base["id"].astype(str),
         "id_contrato_fuente": base["id"],
         "ocid": base["main_ocid"],
         "award_id": base["award_id"],
         "id_proveedor": base["id_proveedor"],
+        "razon_social_adjudicada": base["razon_social_adjudicada"],
         "es_consorcio": base["es_consorcio"],
-        "n_integrantes_consorcio": base["n_integrantes"],
+        "n_integrantes_consorcio": base["n_integrantes_consorcio"],
         "integrantes_consorcio": base["integrantes_consorcio"],
         "id_entidad": base["buyer_id"],
         "modalidad": base["tender_procurementMethodDetails"],
-        "categoria_principal": categoria_principal,
+        "categoria_principal": base["tender_mainProcurementCategory"],
         "descripcion_contrato": descripcion,
         "objeto": descripcion.apply(categorizar_objeto),
         "monto": pd.to_numeric(base["value_amount"], errors="coerce"),
@@ -271,7 +297,7 @@ def main():
     )
 
     entidades = construir_entidades(parties)
-    proveedores = construir_proveedores(parties)
+    proveedores = construir_proveedores(parties, awards_suppliers)
     contratos = construir_contratos(main_df, contracts, awards, awards_suppliers)
 
     entidades.to_csv(RUTA / "entidades_reales.csv", index=False)
@@ -279,9 +305,9 @@ def main():
     contratos.to_csv(RUTA / "contratos_reales.csv", index=False)
 
     print(f"\nEntidades compradoras: {len(entidades):,}")
-    print(f"Proveedores individuales en parties: {len(proveedores):,}")
+    print(f"Adjudicatarios distintos: {len(proveedores):,}")
     print(f"Contratos reales analíticos: {len(contratos):,}")
-    print(f"Consorcios adjudicatarios distintos: {contratos.loc[contratos['es_consorcio'] == True, 'id_proveedor'].nunique():,}")
+    print(f"Consorcios adjudicatarios en contratos: {contratos.loc[contratos['es_consorcio'] == True, 'id_proveedor'].nunique():,}")
     print("\nDistribución de categoría OCDS:")
     print(contratos["categoria_principal"].value_counts(dropna=False))
     print("\nDistribución de objeto derivado:")
