@@ -141,7 +141,7 @@ def main():
         "criterios_documentales": {
             "usar_termino_senal": True,
             "prohibir_afirmacion_desempeno_productivo": True,
-            "prohibir_conteo_obsoleto_47442": True,
+            "permitir_conteo_obsoleto_solo_como_antecedente_explicito": True,
             "prohibir_pct_no_competitiva": True,
             "prohibir_umbral_fijo_400k_como_regla_general": True,
             "promocion_modelo_requiere_revision_humana": True,
