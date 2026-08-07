@@ -24,7 +24,7 @@ jobs:
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas numpy scikit-learn joblib pytest
+          pip install pandas numpy scikit-learn joblib pytest python-docx
 
       - name: Run regression tests
         run: pytest -q
@@ -41,6 +41,9 @@ jobs:
           python src/comparar_modelos_favoritismo.py
           python src/tuning_favoritismo.py
           python src/tuning_fraccionamiento.py
+
+      - name: Build documentary evidence
+        run: python src/generar_evidencia_documental.py
 
       - name: Validate P1 artifacts
         run: |
@@ -62,13 +65,64 @@ jobs:
               fav_tuning = json.load(f)
           with open('outputs/tuning_fraccionamiento_resumen.json', encoding='utf-8') as f:
               frac_tuning = json.load(f)
+          with open('outputs/evidencia_documental.json', encoding='utf-8') as f:
+              evidencia = json.load(f)
 
           assert len(comparacion['resultados']) == 3
           assert fav_tuning['mejor_configuracion']
+          assert frac_tuning['metrica_seleccion'].startswith('AUC-PR')
           metricas = frac_tuning['metricas_holdout_final']
           for campo in ['recall_at_k', 'auc_roc', 'auc_pr', 'precision', 'recall', 'f1']:
               assert campo in metricas
-          print('Smoke P1 OK')
+
+          assert evidencia['validacion_datos_publicos']['integridad_ocds']['contratos_analiticos_validos'] == 47254
+          assert evidencia['criterios_documentales']['prohibir_conteo_obsoleto_47442'] is True
+          print('Smoke P1 + evidencia documental OK')
+          PY
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: reporte/package-lock.json
+
+      - name: Generate formal DOCX
+        working-directory: reporte
+        run: |
+          npm ci
+          npm run all
+
+      - name: Validate generated DOCX content
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from docx import Document
+
+          files = [Path('reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx')]
+          files += sorted(Path('reporte/productos_formales').glob('Producto_*.docx'))
+          assert len(files) == 8, files
+
+          banned = [
+              '47,442',
+              'pct_no_competitiva',
+              'AUC-ROC = 1.00',
+              'AUC-PR = 1.00',
+              'S/. 400,000',
+              'reentrenado automáticamente',
+          ]
+          for f in files:
+              doc = Document(f)
+              text = '\n'.join(p.text for p in doc.paragraphs)
+              for table in doc.tables:
+                  for row in table.rows:
+                      text += '\n' + ' | '.join(cell.text for cell in row.cells)
+              for token in banned:
+                  assert token not in text, f'{f}: contiene texto obsoleto: {token}'
+              assert 'prototipo' in text.lower()
+
+          final = files[-1]
+          print(f'DOCX validados: {len(files)}')
           PY
 
       - name: Upload model-selection evidence
@@ -82,4 +136,14 @@ jobs:
             outputs/tuning_favoritismo_resultados.csv
             outputs/tuning_fraccionamiento_resumen.json
             outputs/tuning_fraccionamiento_resultados.csv
+            outputs/evidencia_documental.json
+          retention-days: 14
+
+      - name: Upload regenerated formal documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentacion-formal-regenerada
+          path: |
+            reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx
+            reporte/productos_formales/Producto_*.docx
           retention-days: 14
