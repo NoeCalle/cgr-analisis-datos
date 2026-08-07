@@ -5,8 +5,12 @@ on:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   pytest-and-smoke:
@@ -75,6 +79,8 @@ jobs:
               evidencia = json.load(f)
 
           assert len(comparacion['resultados']) == 3
+          assert comparacion['resultados'][0]['modelo'] == 'RandomForest'
+          assert abs(comparacion['resultados'][0]['auc_pr'] - 0.6714285714285714) < 1e-12
           assert fav_tuning['mejor_configuracion']
           assert frac_tuning['metrica_seleccion'].startswith('AUC-PR')
           metricas = frac_tuning['metricas_holdout_final']
@@ -130,6 +136,7 @@ jobs:
 
           reporte = texts['Reporte_Tecnico_Prototipo_CGR_1.8.2.docx']
           assert '47,254' in reporte, 'El reporte no muestra el conteo vigente 47,254'
+          assert 'AUC-PR 0.671' in reporte, 'El reporte no muestra la métrica RF reproducida con el entorno pinneado'
           if '47,442' in reporte:
               assert 'conteo antiguo' in reporte and 'fue descartado' in reporte, (
                   '47,442 solo puede aparecer como antecedente explícitamente descartado'
@@ -160,3 +167,27 @@ jobs:
             reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx
             reporte/productos_formales/Producto_*.docx
           retention-days: 14
+
+      - name: Persist verified evidence and documentation
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor != 'github-actions[bot]'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add \
+            outputs/comparacion_modelos_favoritismo.json \
+            outputs/comparacion_modelos_favoritismo.csv \
+            outputs/tuning_favoritismo_resumen.json \
+            outputs/tuning_favoritismo_resultados.csv \
+            outputs/tuning_fraccionamiento_resumen.json \
+            outputs/tuning_fraccionamiento_resultados.csv \
+            outputs/evidencia_documental.json \
+            reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx \
+            reporte/productos_formales/Producto_*.docx
+
+          if git diff --cached --quiet; then
+            echo "No hay artefactos verificados nuevos que persistir."
+          else
+            git commit -m "docs: regenerar evidencia y documentación verificada [skip ci]"
+            git push
+          fi
