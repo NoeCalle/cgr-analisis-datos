@@ -31,12 +31,12 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
+from umbrales_normativos import obtener_umbral
 
 MODALIDADES_NO_COMPETITIVAS = {
     "Contratación Directa", "Comparación de Precios", "Adjudicación Selectiva",
     "Procedimiento Especial de Contratación", "Régimen Especial",
 }
-UMBRAL_ADJ_SIMPLIFICADA = 400_000
 
 
 def cargar():
@@ -107,7 +107,11 @@ def features_fraccionamiento_real(df):
             if len(ventana) > max_n_ventana:
                 max_n_ventana = len(ventana)
                 max_monto_ventana = ventana["monto"].sum()
-        pct_bajo_umbral = (g["monto"] < UMBRAL_ADJ_SIMPLIFICADA * 0.95).mean()
+        # Umbral parametrizado por año y categoría (bienes/servicios vs.
+        # obras) — importante en datos reales, que sí incluyen contratos
+        # de obra con topes varias veces mayores (ver umbrales_normativos.py).
+        umbrales_fila = g["fecha_contrato"].apply(lambda f: obtener_umbral(f, obj))
+        pct_bajo_umbral = (g["monto"] < umbrales_fila * 0.95).mean()
         filas.append({
             "id_proveedor": prov, "id_entidad": ent, "objeto": obj,
             "n_contratos_grupo": len(g), "max_contratos_ventana_15d": max_n_ventana,

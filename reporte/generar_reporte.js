@@ -211,7 +211,7 @@ const doc = new Document({
           "El modelo de favoritismo (Random Forest) ubicó los 6 casos reales sembrados en las primeras 6 " +
           "posiciones de un ranking de 2,354 pares proveedor-entidad. El modelo de fraccionamiento, combinando " +
           "una regla interpretable basada en el umbral legal de Adjudicación Simplificada con detección de " +
-          "anomalías, alcanzó 100% de precisión (7 de 7 casos marcados fueron fraccionamiento real) sobre 8 " +
+          "anomalías, alcanzó 100% de precisión (8 de 8 casos marcados fueron fraccionamiento real) sobre 8 " +
           "casos sembrados en 149 grupos proveedor-entidad-objeto."
         ),
         parrafo(
@@ -335,8 +335,8 @@ const doc = new Document({
           ["Enfoque", "Grupos marcados", "Aciertos reales", "Precisión"],
           [
             ["Isolation Forest (solo)", "8", "3", "37.5%"],
-            ["Regla interpretable (umbral legal)", "7", "7", "100.0%"],
-            ["Combinado (modelo Y regla)", "7", "7", "100.0%"],
+            ["Regla interpretable (umbral legal)", "8", "8", "100.0%"],
+            ["Combinado (modelo Y regla)", "8", "8", "100.0%"],
           ],
           [3600, 2200, 2000, 2000],
         ),
@@ -370,6 +370,7 @@ const doc = new Document({
             ["P0008", "E15", "Servicio de limpieza y vigilancia", "5", "100%"],
             ["P0067", "E00", "Adquisición de equipos informáticos", "4", "100%"],
             ["P0066", "E13", "Adquisición de bienes de oficina", "3", "100%"],
+            ["P0200", "E08", "Servicio de limpieza y vigilancia", "3", "100%"],
             ["P0098", "E02", "Servicio de transporte", "3", "100%"],
             ["P0147", "E17", "Adquisición de bienes de oficina", "3", "100%"],
             ["P0107", "E17", "Servicio de limpieza y vigilancia", "3", "100%"],
@@ -480,7 +481,7 @@ const doc = new Document({
           ["Enfoque (Spark MLlib)", "Grupos marcados", "Aciertos reales", "Precisión"],
           [
             ["KMeans (distancia a centroide, solo)", "8", "0", "0.0%"],
-            ["Regla interpretable (umbral legal)", "7", "7", "100.0%"],
+            ["Regla interpretable (umbral legal)", "8", "8", "100.0%"],
           ],
           [4200, 2200, 2000, 1600],
         ),
@@ -561,17 +562,16 @@ const doc = new Document({
           "modelo encontrado por Spark usó exactamente los mismos hiperparámetros (100 árboles, profundidad 3) " +
           "que scikit-learn — una confirmación cruzada entre ambas plataformas, no solo dentro de una."
         ),
-        subtitulo("10.2. Fraccionamiento — hallazgo: el techo es del algoritmo, no de la configuración"),
+        subtitulo("10.2. Fraccionamiento — hallazgo: la regla sigue ganando, pero sí hay un mejor ajuste del modelo estadístico"),
         parrafo(
-          "Para Isolation Forest (no supervisado) se implementó una búsqueda manual de 36 combinaciones " +
+          "Para Isolation Forest (no supervisado) se implementó una búsqueda en grilla de 36 combinaciones " +
           "(n° de estimadores, fracción de muestras, tasa de contaminación), usando como métrica cuántos de los " +
-          "8 casos sembrados caen en el top-8 del ranking de anomalía. Resultado: el recall se estancó en 3/8 " +
-          "(37.5%) para toda combinación con max_samples=1.0, sin importar el resto de parámetros — evidencia " +
-          "de que la limitación es estructural del algoritmo sobre estas variables, no una configuración " +
-          "subóptima. Este hallazgo refuerza, con evidencia adicional, la conclusión central del prototipo " +
-          "(Sección 4): ningún ajuste de hiperparámetros iguala a la regla interpretable basada en el umbral " +
-          "legal (100% de precisión). Se mantuvo la configuración más liviana entre las empatadas (100 " +
-          "estimadores en vez de 300)."
+          "8 casos sembrados caen en el top-8 del ranking de anomalía. Resultado: max_samples=0.8 alcanza " +
+          "3/8 (37.5%), mejor que max_samples=1.0 (2/8, 25.0%) — a diferencia de una versión anterior de esta " +
+          "búsqueda, aquí sí hay un hiperparámetro con efecto real, y el modelo de producción se ajustó en " +
+          "consecuencia (ver src/modelo_fraccionamiento.py). Aun con ese ajuste, Isolation Forest se queda en " +
+          "3/8 frente al 8/8 de la regla interpretable basada en el umbral legal — el hallazgo central del " +
+          "prototipo se mantiene: ningún ajuste de hiperparámetros iguala a la regla."
         ),
 
         titulo("11. Estándares Institucionales de Extracción SQL (Ejecutado)"),

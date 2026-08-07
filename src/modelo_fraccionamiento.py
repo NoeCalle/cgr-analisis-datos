@@ -37,14 +37,15 @@ def detectar_anomalias(df):
     X_scaled = scaler.fit_transform(X)
 
     modelo = IsolationForest(
-        # Hiperparámetros confirmados por búsqueda sistemática en grilla
-        # (ver src/tuning_fraccionamiento.py, 36 combinaciones evaluadas
-        # por recall@k contra los casos sembrados): el recall se estanca
-        # en 0.375 (3/8) para toda combinación con max_samples=1.0,
-        # independientemente de n_estimators o contamination — evidencia
-        # de que la limitación es del algoritmo sobre estas features, no
-        # de una mala elección de hiperparámetros. Se usa la configuración
-        # más liviana entre las empatadas (100 en vez de 300 árboles).
+        # Hiperparámetros re-confirmados por búsqueda sistemática en grilla
+        # tras la corrección del umbral normativo (ver src/tuning_fraccionamiento.py
+        # y src/umbrales_normativos.py — el umbral parametrizado por año/categoría
+        # cambió las features de entrada, así que se repitió la búsqueda):
+        # max_samples=0.8 da mejor recall (3/8 = 0.375) que max_samples=1.0
+        # (2/8 = 0.250) — antes de esta corrección ambos daban el mismo
+        # resultado, por eso la versión previa no diferenciaba max_samples.
+        # n_estimators y contamination siguen sin efecto notable dentro del
+        # rango evaluado.
         #
         # contamination='auto' (no derivado de la etiqueta sintética
         # conocida — corrección tras revisión externa): la versión previa
@@ -55,7 +56,7 @@ def detectar_anomalias(df):
         # que el cambio a 'auto' no altera el resultado (sigue en 3/8;
         # contamination solo afecta el corte binario interno del modelo,
         # no el ranking por score de anomalía que usa validar()).
-        n_estimators=100, contamination="auto", random_state=42,
+        n_estimators=100, max_samples=0.8, contamination="auto", random_state=42,
     )
     modelo.fit(X_scaled)
 

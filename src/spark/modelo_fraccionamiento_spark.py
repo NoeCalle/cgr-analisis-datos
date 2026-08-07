@@ -18,13 +18,16 @@ el patrón idiomático para ventanas temporales en Spark SQL.
 """
 
 import time
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))  # para importar umbrales_normativos.py desde src/
 from pyspark.sql import SparkSession, Window
 from pyspark.sql import functions as F
 from pyspark.ml.feature import VectorAssembler, StandardScaler
 from pyspark.ml.clustering import KMeans
 from pyspark.ml.linalg import Vectors, VectorUDT
+from umbrales_normativos import obtener_umbral
 
-UMBRAL_ADJ_SIMPLIFICADA = 400_000
 SEGUNDOS_15_DIAS = 15 * 86400
 
 FEATURES = [
@@ -70,7 +73,14 @@ def construir_features_ventana(spark):
     )
     df = df.withColumn("contratos_ventana_15d", F.count("id_contrato").over(w))
     df = df.withColumn("monto_ventana_15d", F.sum("monto").over(w))
-    df = df.withColumn("bajo_umbral", (F.col("monto") < UMBRAL_ADJ_SIMPLIFICADA * 0.95).cast("int"))
+
+    # Umbral parametrizado por año y categoría (bienes/servicios vs. obras)
+    # — corrección tras revisión externa, ver src/umbrales_normativos.py.
+    # UDF porque la lógica de umbral no es una comparación simple de
+    # columnas, sino que depende de una tabla normativa externa.
+    obtener_umbral_udf = F.udf(lambda fecha, objeto: float(obtener_umbral(fecha, objeto)), "double")
+    df = df.withColumn("umbral_aplicable", obtener_umbral_udf(F.col("fecha_contrato"), F.col("objeto")))
+    df = df.withColumn("bajo_umbral", (F.col("monto") < F.col("umbral_aplicable") * 0.95).cast("int"))
 
     grupos = df.groupBy("id_proveedor", "id_entidad", "objeto").agg(
         F.count("id_contrato").alias("n_contratos_grupo"),
@@ -136,6 +146,10 @@ def main():
     t0 = time.time()
     spark = crear_sesion()
     spark.sparkContext.setLogLevel("ERROR")
+    # Distribuye umbrales_normativos.py a los workers de Spark (procesos
+    # Python separados, incluso en modo local) para que el UDF de
+    # detectar_anomalias_kmeans() pueda importarlo.
+    spark.sparkContext.addPyFile(os.path.join(os.path.dirname(__file__), "..", "umbrales_normativos.py"))
     print(f"Sesión Spark iniciada en {time.time()-t0:.1f}s (modo local[*])\n")
 
     df = construir_features_ventana(spark)

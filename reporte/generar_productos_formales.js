@@ -360,7 +360,7 @@ const p7 = documento(7, "Informe Final", "Informe Final", [
     [
       ["Isolation Forest, scikit-learn (solo)", "8", "3", "37.5%"],
       ["KMeans, Spark MLlib real (solo)", "8", "0", "0.0%"],
-      ["Regla interpretable (umbral legal, ambas plataformas)", "7", "7", "100.0%"],
+      ["Regla interpretable (umbral legal, ambas plataformas)", "8", "8", "100.0%"],
     ],
     [4000, 2200, 1600, 1400],
   ),

@@ -20,8 +20,8 @@ sostenibilidad del modelo" / auto-entrenamiento).
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from umbrales_normativos import obtener_umbral
 
-UMBRAL_ADJ_SIMPLIFICADA = 400_000
 MODALIDADES_NO_COMPETITIVAS = {"Contratación Directa", "Comparación de Precios"}
 
 
@@ -119,7 +119,12 @@ def features_fraccionamiento(df):
                 max_n_ventana = len(ventana)
                 max_monto_ventana = ventana["monto"].sum()
 
-        pct_bajo_umbral = (montos < UMBRAL_ADJ_SIMPLIFICADA * 0.95).mean()
+        # Umbral parametrizado por año y por tipo de objeto (bienes/servicios
+        # vs. obras) — corrección tras revisión externa: antes se usaba un
+        # único umbral fijo para todos los objetos y años, lo cual ignora
+        # que el tope de obras es varias veces mayor (ver umbrales_normativos.py).
+        umbrales_fila = [obtener_umbral(f, obj) for f in fechas]
+        pct_bajo_umbral = (montos < np.array(umbrales_fila) * 0.95).mean()
 
         filas.append({
             "id_proveedor": prov,

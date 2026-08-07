@@ -13,7 +13,7 @@ P0023,E15,Adquisición de bienes de oficina,2,1,353163.13,1.0,394697.78,False
 P0024,E02,Suministro de combustible,2,1,157210.55,1.0,363874.62,False
 P0027,E10,Adquisición de equipos informáticos,2,1,62580.71,1.0,89262.37,False
 P0030,E07,Adquisición de bienes de oficina,2,1,26461.77,1.0,37069.4,False
-P0030,E12,Adquisición de materiales de construcción,2,1,24050.75,0.5,574308.12,False
+P0030,E12,Adquisición de materiales de construcción,2,1,24050.75,1.0,574308.12,False
 P0030,E13,Servicio de limpieza y vigilancia,2,1,5742.54,1.0,67273.17499999999,False
 P0031,E00,Suministro de combustible,2,1,55667.01,0.5,547987.28,False
 P0032,E14,Servicio de mantenimiento de infraestructura,2,1,39452.73,1.0,180859.53,False
@@ -137,7 +137,7 @@ P0197,E01,Servicio de limpieza y vigilancia,2,1,82502.28,1.0,137131.18,False
 P0198,E09,Adquisición de materiales de construcción,2,1,59706.38,1.0,69897.42,False
 P0199,E07,Servicio de mantenimiento de infraestructura,2,1,103124.0,1.0,167420.77,False
 P0199,E17,Adquisición de materiales de construcción,2,1,47172.74,1.0,105782.32999999999,False
-P0200,E08,Servicio de limpieza y vigilancia,3,3,751232.565,0.6666666666666666,751232.565,True
+P0200,E08,Servicio de limpieza y vigilancia,3,3,751232.565,1.0,751232.565,True
 P0202,E09,Adquisición de equipos informáticos,2,1,93274.8,1.0,102081.59,False
 P0203,E01,Servicio de limpieza y vigilancia,2,1,61530.634999999995,1.0,99998.295,False
 P0203,E10,Servicio de capacitación,2,1,86509.55,1.0,285049.56,False
@@ -146,5 +146,5 @@ P0211,E16,Adquisición de equipos informáticos,2,1,257459.28,1.0,289916.37,Fals
 P0212,E10,Suministro de combustible,2,1,80947.19,1.0,301798.41000000003,False
 P0213,E01,Adquisición de bienes de oficina,2,1,14446.92,1.0,76231.36,False
 P0213,E03,Adquisición de equipos informáticos,2,1,3404.81,1.0,16778.27,False
-P0216,E11,Servicio de transporte,2,1,21871.98,0.5,472235.06,False
+P0216,E11,Servicio de transporte,2,1,21871.98,1.0,472235.06,False
 P0217,E16,Adquisición de bienes de oficina,2,1,6183.58,1.0,150889.84,False

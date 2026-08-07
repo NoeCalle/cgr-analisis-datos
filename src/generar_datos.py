@@ -53,7 +53,11 @@ OBJETOS = [
     "Suministro de combustible",
 ]
 
-UMBRAL_ADJ_SIMPLIFICADA = 400_000  # S/. aprox. umbral que dispara fraccionamiento
+UMBRAL_ADJ_SIMPLIFICADA = 400_000  # S/. umbral usado SOLO para sembrar casos de
+# prueba (no para detectarlos): se siembra siempre con el umbral de
+# bienes/servicios 2022, como un patrón representativo conocido. El umbral
+# real usado por los modelos de DETECCIÓN sí está parametrizado por año y
+# categoría — ver src/umbrales_normativos.py.
 
 
 def _fecha_aleatoria(inicio, fin):
