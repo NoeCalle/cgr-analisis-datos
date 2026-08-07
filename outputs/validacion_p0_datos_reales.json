@@ -1,0 +1,52 @@
+{
+  "fecha_validacion": "2026-08-07",
+  "fuente": "Portal de datos abiertos OCDS de la OECE / Open Contracting Partnership, publicación usada por el prototipo",
+  "naturaleza_resultados": "Señales estadísticas para priorización de revisión; no constituyen hallazgos ni determinaciones de irregularidad",
+  "integridad_ocds": {
+    "regla_relacional": "Contract(main_ocid, awardID) -> Award(main_ocid, id) -> awards_suppliers(main_ocid, awards_id)",
+    "clave_contrato_analitica": "OCID::contract.id",
+    "contratos_crudos": 47510,
+    "contratos_con_award_y_supplier_resolubles": 47254,
+    "contratos_excluidos_sin_adjudicacion_resoluble": 256,
+    "contratos_analiticos_validos": 47254,
+    "adjudicatarios_distintos_en_contratos": 25861,
+    "entidades_distintas_en_contratos": 2732,
+    "consorcios_adjudicatarios_distintos_en_contratos": 7486,
+    "monto_total_pen": 23082420702.60,
+    "fecha_contrato_min": "2018-09-18",
+    "fecha_contrato_max": "2024-11-08",
+    "categorias_ocds": {
+      "goods": 23630,
+      "services": 18584,
+      "works": 5040
+    }
+  },
+  "analisis_regenerado": {
+    "pares_proveedor_entidad_con_2_o_mas_contratos": 5387,
+    "grupos_fraccionamiento_con_2_o_mas_contratos": 4585,
+    "grupos_priorizados_por_senal_fraccionamiento": 322,
+    "pares_proveedor_entidad_evaluados_para_vinculos_organizacionales": 37626,
+    "senales_por_telefono_o_direccion_compartidos": 0
+  },
+  "comparacion_con_ejecucion_obsoleta": {
+    "conteo_contratos_anterior": 47442,
+    "conteo_contratos_corregido": 47254,
+    "diferencia": -188,
+    "nota": "Los artefactos *_REAL.csv previos fueron retirados del repositorio porque derivaban de una asociación supplier-proceso que no respetaba la relación Contract->Award->Supplier."
+  },
+  "fuentes_hash_sha256": {
+    "main.csv": "90981c7c7553b76aafed6627295ffdb22b3afa61c3d3e5a5977370412827f7b7",
+    "contracts.csv": "e31e7c8167601ca8b631b315d1c20c78ef0da005ec53da7a58e740712860133f",
+    "awards.csv": "1e2816d543d2c18adb7942ec6dfc2b53e163633982aeeb63ac1baea6edb05721",
+    "awards_suppliers.csv": "c4f4d68fff94d7fcaad26d3d720713f3c5c3c978ac2565998d3fbe252d7a249f",
+    "parties.csv": "f3e42d1a88b69cb538c4a81fe24c6eb792b4861c9b2847c62d3c150c5bf5de5c",
+    "sources.csv": "743b02a67fd1ee49c3438763351fd9a5a64accb787011239c389daef59250a78"
+  },
+  "pendientes_p1": [
+    "Revisar modelado de competitividad de modalidades, especialmente Comparación de Precios.",
+    "Mejorar validación independiente y tuning de fraccionamiento.",
+    "Corregir evaluación post-reentrenamiento y gate de promoción de modelos.",
+    "Alinear consumo real Plata/Oro y entorno Airflow.",
+    "Regenerar documentación formal desde evidencia automática."
+  ]
+}
