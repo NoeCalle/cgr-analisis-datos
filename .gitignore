@@ -33,3 +33,7 @@ outputs/streaming_demo/origen/
 
 # Checkpoints de GraphFrames (connectedComponents, regenerable)
 /tmp/graphframes_checkpoints/
+
+# Tablas Delta Lake locales (regenerable, incluye archivos internos _delta_log)
+lakehouse_delta/
+/tmp/delta_test*

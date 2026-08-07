@@ -11,3 +11,12 @@ problema de red.
 
 Uso: `spark.jars` apuntando a ambos archivos (ver
 src/spark/vinculos_graphframes.py).
+
+## Delta Lake (Spark 4.1 / Scala 2.13)
+io.delta:delta-spark_4.1_2.13:4.3.0 y io.delta:delta-storage:4.3.0,
+mismo origen y mismo motivo que los de GraphFrames (Maven Central,
+descargados fuera de este entorno). Nota: la primera versión probada
+(delta-spark_2.13:4.0.0, sin sufijo de versión de Spark) falló por
+incompatibilidad — Delta Lake 4.1+ publica artefactos específicos por
+versión de Spark (`_4.1_` en el nombre) que hay que hacer coincidir
+exactamente con la versión de PySpark instalada.
