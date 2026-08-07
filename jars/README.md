@@ -20,3 +20,20 @@ descargados fuera de este entorno). Nota: la primera versión probada
 incompatibilidad — Delta Lake 4.1+ publica artefactos específicos por
 versión de Spark (`_4.1_` en el nombre) que hay que hacer coincidir
 exactamente con la versión de PySpark instalada.
+
+## Hadoop Client Minicluster (intento incompleto, documentado con honestidad)
+org.apache.hadoop:hadoop-client-minicluster:3.1.1 (27.1 MB) — la utilidad
+oficial que el propio equipo de Apache Hadoop usa para sus pruebas
+automatizadas (contiene MiniDFSCluster y MiniYARNCluster, HDFS y YARN
+reales corriendo en un solo proceso). Se descargó como alternativa liviana
+al tarball completo de Hadoop (554 MB) para intentar cerrar la última
+brecha del Anexo 2 del TDR.
+
+**No se pudo completar**: este jar solo trae las clases de prueba, no las
+clases base (`org.apache.hadoop.conf.Configuration`, etc.), que viven en
+`hadoop-client-runtime` — un segundo archivo que normalmente pesa 40-70 MB,
+de nuevo por encima del límite de subida de archivos de este entorno
+(30 MB). Ver `src/spark/hadoop_mini/TestMiniCluster.java` para el código
+que se alcanzó a escribir, y el reporte técnico (Anexo B, Producto 7
+Sección 11) para la explicación completa de por qué Hadoop YARN/HDFS
+requiere máquinas físicas reales y no es simulable solo con más código.

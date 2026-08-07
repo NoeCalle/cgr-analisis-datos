@@ -1,5 +1,10 @@
 # Datos reales de SEACE (OCDS)
 
+Este pipeline corresponde al Anexo A del reporte técnico y a la Sección 10
+del Producto 7 (Informe Final) — una prueba adicional fuera del alcance
+formal del TDR (que usa datos sintéticos), incluida para dejar registro de
+cómo se comporta la metodología sobre datos verdaderos.
+
 Los archivos crudos (main.csv, contracts.csv, awards.csv, parties.csv) NO
 están versionados aquí por su tamaño (~245 MB combinados) — se excluyen
 vía .gitignore.

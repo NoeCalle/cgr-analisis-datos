@@ -6,36 +6,122 @@ ejecución de los servicios de control", descrito en el TDR de contratación
 de un Consultor Científico de Datos (Contraloría General de la República,
 Mayo 2026).
 
-**Objetivo del prototipo:** demostrar que el pipeline de detección de
-favoritismo y fraccionamiento en contrataciones públicas puede construirse
-rápidamente con herramientas open source, antes de comprometer una
+**Objetivo del prototipo:** demostrar que los tres casos de uso priorizados
+del TDR (favoritismo, fraccionamiento, vínculos proveedor-funcionario)
+pueden construirse rápidamente con herramientas open source y con
+evidencia de ejecución real — no solo teórica — antes de comprometer una
 consultoría de S/. 72,000 por 180 días.
 
 ## Estado
-🚧 En construcción — ver commits para avance por producto.
 
-## Estructura
-- `data/` — datos sintéticos que simulan la integración SIAF/SEACE
-- `src/` — código fuente (ETL, EDA, modelos)
-- `outputs/` — gráficos y modelos entrenados
+✅ **Finalizado.** Los 7 productos formales del TDR (Anexo 01) están
+completos, más un conjunto sustancial de mejoras y cierres de brecha
+construidos después de la primera versión. Ver "Qué incluye" abajo y el
+[reporte técnico completo](reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx)
+para el detalle con evidencia de cada pieza.
 
-## Nota sobre datos
-Todos los datos en este repositorio son **sintéticos**, generados para
-fines de demostración. No contienen información real de proveedores,
-funcionarios ni entidades públicas.
+## Qué incluye
 
-## Escalamiento a producción
-Este prototipo usa pandas/scikit-learn por velocidad de desarrollo. La
-lógica es directamente portable a Apache Spark MLlib (`pyspark.ml`) sobre
-el Lakehouse Hadoop descrito en el Anexo 2 del TDR cuando se conecte a
-datos reales de volumen productivo.
+**Los 3 casos de uso del TDR**, con modelos entrenados, validados y
+explicables (SHAP):
+- Detección de favoritismo (Random Forest)
+- Detección de fraccionamiento (Isolation Forest + regla del umbral legal — la regla gana con 100% de precisión)
+- Vínculos proveedor-funcionario (grafo con networkx y con Spark GraphFrames real)
 
-## Productos formales (Anexo 01)
-La carpeta `reporte/productos_formales/` contiene los 7 productos del TDR
-como documentos .docx separados, cada uno con la estructura exacta que
-exige el Anexo 01 (carátula, resumen ejecutivo, índice, introducción,
-objetivo, productos alcanzados, actividades, grado de cumplimiento,
-dificultades, conclusiones, anexos). El `reporte/Reporte_Tecnico_*.docx`
-en la raíz de `reporte/` es un documento único consolidado, útil para
-lectura rápida; los 7 productos son la versión formal equivalente al
-formato que la CGR usaría para evaluar entregables reales.
+**Ejecutado y verificado en el entorno de desarrollo** (no solo diseñado
+en papel):
+- Apache Spark MLlib real (RandomForestClassifier, KMeans)
+- Apache Airflow real — 2 DAGs, `airflow dags test`, 100% de tareas exitosas
+- Búsqueda sistemática de hiperparámetros (GridSearchCV + CrossValidator, coincidencia cruzada entre plataformas)
+- Estándares SQL institucionales (LEFT JOIN, poda de particiones anti Full Table Scan)
+- Integración SSRS (esquema T-SQL + reporte `.rdl` real)
+- Autoevaluación y autoentrenamiento (Population Stability Index + reentrenamiento condicional, orquestado con Airflow)
+- Delta Lake real (ACID, historial de versiones, time travel, Change Data Feed)
+- Spark GraphFrames real (PageRank, Connected Components)
+- R, Scala, Python, SQL, Java — los 5 lenguajes del Anexo 2 del TDR, verificados
+
+**Adicional, fuera del alcance formal del TDR:** el pipeline completo se
+corrió también sobre 47,442 contratos **reales** de contrataciones
+públicas del Perú (portal de datos abiertos OCDS de la OECE, no de la
+CGR) — ver `data_real/`.
+
+## Qué queda fuera de alcance (y por qué)
+
+| Componente | Motivo |
+|---|---|
+| Hadoop YARN / HDFS | Requiere múltiples máquinas físicas reales en red — no es simulable en un solo entorno, sin importar cuánto código se agregue. Se investigó `hadoop-client-minicluster` (la utilidad oficial de pruebas de Hadoop) pero el jar complementario excede el límite de archivo de este entorno. |
+| SQL Server real, SSAS, Power BI | Requieren licencia o cuenta — fuera de alcance por decisión, ya que el objetivo del prototipo es justamente demostrar que no hace falta gastar en eso todavía. |
+
+Ambos casos están documentados con honestidad técnica en el reporte
+(Anexo B) y en el Producto 7 (Sección 11) — no se ocultan como si
+estuvieran resueltos.
+
+## Estructura del repositorio
+
+```
+data/                   Datos sintéticos (contratos, proveedores, entidades, funcionarios)
+data_real/              Pipeline sobre datos reales de SEACE (Anexo A) — ver su propio README
+src/                     Scripts principales (generación, EDA, preprocesamiento, modelos, autoevaluación)
+src/spark/               Versiones en Apache Spark real (MLlib, GraphFrames, Delta Lake, estándares SQL, streaming, HMS)
+airflow_home/dags/       Los 2 DAGs de Airflow (pipeline principal + monitoreo/reentrenamiento)
+ssrs/                    Esquema T-SQL y reporte .rdl para SSRS
+jars/                    GraphFrames, Delta Lake y el intento de Hadoop minicluster (descargados de Maven Central)
+outputs/                 Gráficos, modelos entrenados, rankings de riesgo, logs
+reporte/                 Reporte técnico consolidado (.docx) y su script generador
+reporte/productos_formales/  Los 7 productos formales del Anexo 01, como documentos separados
+```
+
+## Cómo reproducir
+
+Orden de ejecución (o usar directamente el DAG de Airflow, que hace lo
+mismo de forma orquestada):
+
+```
+python3 src/generar_datos.py
+python3 src/eda.py                        # opcional
+python3 src/preprocesamiento.py
+python3 src/modelo_favoritismo.py
+python3 src/modelo_fraccionamiento.py
+python3 src/modelo_grafos.py
+python3 src/generar_diccionario_diagrama.py
+
+# Versiones en Spark real (requieren los .jar de jars/):
+python3 src/spark/modelo_favoritismo_spark.py
+python3 src/spark/modelo_fraccionamiento_spark.py
+python3 src/spark/vinculos_graphframes.py
+python3 src/spark/lakehouse_delta.py
+python3 src/spark/estandares_sql.py
+
+# Autoevaluación y publicación:
+python3 src/autoevaluacion.py
+python3 src/publicar_ssrs.py
+
+# O todo orquestado con Airflow:
+airflow dags test modulo_analisis_datos_1_8_2
+airflow dags test monitoreo_reentrenamiento_1_8_2
+```
+
+## Documentación
+
+- **[Reporte_Tecnico_Prototipo_CGR_1.8.2.docx](reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx)** — documento único consolidado, la forma más rápida de leer todo el trabajo con evidencia y hallazgos.
+- **`reporte/productos_formales/`** — los 7 productos formales del Anexo 01, cada uno con la carátula, estructura y numeración que exige el TDR (relevante porque el TDR liga cada pago a la aprobación de un producto individual, no de un reporte único).
+- **`data_real/README.md`** — cómo reproducir la validación con datos reales de SEACE.
+- **`jars/README.md`** — de dónde salieron los `.jar` de GraphFrames/Delta Lake/Hadoop y por qué hicieron falta.
+
+## Nota sobre los datos
+
+Los datasets en `data/` son **sintéticos**, generados para fines de
+demostración — no contienen información real de proveedores, funcionarios
+ni entidades públicas. Los datasets en `data_real/` (procesados) sí son
+**reales**: contrataciones públicas del Perú, publicadas legalmente en
+formato abierto por la OECE bajo licencia CC BY 4.0 — no son datos
+internos de la CGR.
+
+## Hallazgo principal
+
+En el caso de fraccionamiento, ni Isolation Forest (scikit-learn) ni
+KMeans (Spark MLlib real) igualan la precisión de una regla simple basada
+en el umbral legal de Adjudicación Simplificada (100% vs. 37.5% y 0%
+respectivamente). El valor de este tipo de herramienta está tanto en
+traducir correctamente la normativa de contrataciones a reglas
+computables como en el modelo estadístico en sí.

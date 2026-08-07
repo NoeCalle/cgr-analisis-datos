@@ -1,3 +1,18 @@
+/*
+ * Prueba dirigida de Hadoop YARN/HDFS reales — documentado en el reporte
+ * técnico (Anexo B) y en Producto 7, Sección 11.
+ *
+ * ESTADO: este archivo NO compila tal cual con solo hadoop-client-minicluster
+ * (27.1 MB, sí versionado en jars/). Le falta org.apache.hadoop.conf.Configuration
+ * y otras clases base, que viven en hadoop-client-runtime — un segundo .jar
+ * de 40-70 MB que excede el límite de subida de archivos de este entorno
+ * (30 MB) y no se pudo obtener.
+ *
+ * Se deja este archivo como evidencia honesta del intento, no como código
+ * funcional. Para completarlo: descargar hadoop-client-runtime (misma
+ * versión, 3.1.1) desde Maven Central, partido en fragmentos <30MB si hace
+ * falta, y agregarlo al classpath de compilación y ejecución.
+ */
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
