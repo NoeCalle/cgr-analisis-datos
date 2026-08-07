@@ -2,9 +2,9 @@
 DAG principal — orquestación ETL/ML del PoC según numeral 6 del TDR.
 
 Flujo P1:
-  generar fuentes -> Bronce -> preprocesar/features -> Plata
-      -> tuning favoritismo -> entrenar favoritismo
-      -> tuning fraccionamiento -> entrenar fraccionamiento
+  fuentes -> Bronce -> preprocesar/features -> Plata
+      -> comparar algoritmos favoritismo -> tuning RF -> entrenar favoritismo
+      -> tuning fraccionamiento con holdout -> entrenar fraccionamiento
       -> análisis de vínculos
   -> Oro -> run manifest -> documentación
 
@@ -48,31 +48,28 @@ with DAG(
     default_args=default_args,
     tags=["1.8.2", "auditoria", "poc"],
 ) as dag:
-
     generar_datos = BashOperator(
-        task_id="generar_datos",
-        bash_command=comando("src/generar_datos.py"),
+        task_id="generar_datos", bash_command=comando("src/generar_datos.py")
     )
     cargar_bronce = BashOperator(
-        task_id="cargar_capa_bronce",
-        bash_command=comando("src/lakehouse_capas.py", "bronce"),
+        task_id="cargar_capa_bronce", bash_command=comando("src/lakehouse_capas.py", "bronce")
     )
     preprocesar = BashOperator(
-        task_id="preprocesamiento_y_features",
-        bash_command=comando("src/preprocesamiento.py"),
+        task_id="preprocesamiento_y_features", bash_command=comando("src/preprocesamiento.py")
     )
     mover_plata = BashOperator(
-        task_id="publicar_capa_plata",
-        bash_command=comando("src/lakehouse_capas.py", "plata"),
+        task_id="publicar_capa_plata", bash_command=comando("src/lakehouse_capas.py", "plata")
     )
 
+    comparar_favoritismo = BashOperator(
+        task_id="comparar_algoritmos_favoritismo",
+        bash_command=comando("src/comparar_modelos_favoritismo.py"),
+    )
     tuning_favoritismo = BashOperator(
-        task_id="tuning_favoritismo",
-        bash_command=comando("src/tuning_favoritismo.py"),
+        task_id="tuning_favoritismo", bash_command=comando("src/tuning_favoritismo.py")
     )
     entrenar_favoritismo = BashOperator(
-        task_id="entrenar_modelo_favoritismo",
-        bash_command=comando("src/modelo_favoritismo.py"),
+        task_id="entrenar_modelo_favoritismo", bash_command=comando("src/modelo_favoritismo.py")
     )
 
     tuning_fraccionamiento = BashOperator(
@@ -83,18 +80,15 @@ with DAG(
         task_id="entrenar_modelo_fraccionamiento",
         bash_command=comando("src/modelo_fraccionamiento.py"),
     )
-
     analizar_vinculos = BashOperator(
         task_id="analizar_vinculos_proveedor_funcionario",
         bash_command=comando("src/modelo_grafos.py"),
     )
     mover_oro = BashOperator(
-        task_id="publicar_capa_oro",
-        bash_command=comando("src/lakehouse_capas.py", "oro"),
+        task_id="publicar_capa_oro", bash_command=comando("src/lakehouse_capas.py", "oro")
     )
     generar_manifest = BashOperator(
-        task_id="generar_run_manifest",
-        bash_command=comando("src/generar_run_manifest.py"),
+        task_id="generar_run_manifest", bash_command=comando("src/generar_run_manifest.py")
     )
     documentar = BashOperator(
         task_id="generar_diccionario_y_diagrama",
@@ -102,7 +96,7 @@ with DAG(
     )
 
     generar_datos >> cargar_bronce >> preprocesar >> mover_plata
-    mover_plata >> tuning_favoritismo >> entrenar_favoritismo
+    mover_plata >> comparar_favoritismo >> tuning_favoritismo >> entrenar_favoritismo
     mover_plata >> tuning_fraccionamiento >> entrenar_fraccionamiento
     mover_plata >> analizar_vinculos
     [entrenar_favoritismo, entrenar_fraccionamiento, analizar_vinculos] >> mover_oro
