@@ -25,7 +25,10 @@ PROYECTO = "/home/claude/proyecto_1.8.2"
 PY = "python3"
 
 default_args = {
-    "owner": "cgr-subgerencia-sistemas-informacion",
+    # Nota: "owner" es un campo administrativo de Airflow (no implica
+    # autoría institucional). Este DAG es de un prototipo independiente,
+    # no una implementación oficial de la CGR — ver README.md.
+    "owner": "prototipo-independiente",
     "retries": 1,
 }
 

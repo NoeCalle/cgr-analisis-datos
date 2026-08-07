@@ -11,7 +11,7 @@ const A4 = { width: 11906, height: 16838 };
 
 const CONSULTORIA = '"Módulo de Análisis de Datos para Dar Soporte a los Auditores Durante la ' +
   'Ejecución de los Servicios de Control" — Proyecto Interno 1.8.2';
-const CONSULTOR = "Prototipo elaborado como prueba de concepto (proof of concept) — no constituye una postulación formal";
+const CONSULTOR = "Prototipo independiente elaborado como prueba de concepto (proof of concept) — no constituye una postulación formal, una implementación oficial, ni cuenta con aprobación institucional de la CGR";
 const REPO_URL = "https://github.com/NoeCalle/cgr-analisis-datos";
 
 function titulo(text) {

@@ -135,6 +135,14 @@ const doc = new Document({
         }),
         new Paragraph({
           alignment: AlignmentType.CENTER,
+          spacing: { before: 100, after: 100 },
+          children: [new TextRun({
+            text: "Prototipo independiente — no constituye una implementación oficial ni cuenta con aprobación institucional de la CGR",
+            size: 20, bold: true, color: "C0392B",
+          })],
+        }),
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
           children: [new TextRun({ text: "en respuesta a los Términos de Referencia de la Contraloría General de la República", size: 22 })],
         }),
         new Paragraph({

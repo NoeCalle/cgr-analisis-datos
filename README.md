@@ -1,5 +1,11 @@
 # Módulo de Análisis de Datos — Prototipo (Proyecto Interno CGR 1.8.2)
 
+> **Prototipo independiente.** Este repositorio no constituye una
+> implementación oficial ni cuenta con aprobación institucional de la
+> Contraloría General de la República (CGR). Es un ejercicio técnico
+> propio, construido a partir de un TDR público, no un encargo ni un
+> producto entregado a la CGR.
+
 Prototipo funcional construido para demostrar viabilidad técnica del
 "Módulo de análisis de datos para dar soporte a los auditores durante la
 ejecución de los servicios de control", descrito en el TDR de contratación
