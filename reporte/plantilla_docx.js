@@ -55,8 +55,13 @@ function tabla(headers, rows, widths) {
     width: { size: widths.reduce((a, b) => a + b, 0), type: WidthType.DXA },
     columnWidths: widths,
     rows: [
-      new TableRow({ children: headers.map((h, i) => celda(h, { header: true, width: widths[i] })) }),
+      new TableRow({
+        tableHeader: true,
+        cantSplit: true,
+        children: headers.map((h, i) => celda(h, { header: true, width: widths[i] })),
+      }),
       ...rows.map((r) => new TableRow({
+        cantSplit: true,
         children: r.map((c, i) => celda(c, { width: widths[i], align: i === 0 ? AlignmentType.LEFT : AlignmentType.CENTER })),
       })),
     ],
