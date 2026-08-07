@@ -693,9 +693,9 @@ const doc = new Document({
           [
             ["Ingesta Batch", "Completo"],
             ["Ingesta Streaming", "Completo (verificado abajo)"],
-            ["Ingesta CDC/CDF", "Bloqueado (depende de Delta Lake)"],
-            ["Capas Bronce/Plata/Oro", "Completo (como Parquet, no Delta Lake)"],
-            ["Delta Lake (formato nativo)", "Bloqueado — requiere Maven"],
+            ["Ingesta CDC/CDF", "Completo (ver evidencia abajo)"],
+            ["Capas Bronce/Plata/Oro", "Completo (Delta Lake real disponible, ver evidencia)"],
+            ["Delta Lake (formato nativo)", "Completo (ver evidencia abajo)"],
             ["HMS (Hive Metastore)", "Completo (verificado abajo)"],
             ["Parquet", "Completo"],
             ["Python / SQL / Scala / R / Java", "Completo — los 5 verificados"],
@@ -711,7 +711,7 @@ const doc = new Document({
         ),
         parrafo("", { size: 4 }),
         subtitulo("Tres tipos de bloqueo, no uno solo"),
-        vineta("Red del entorno de prueba: Hadoop/YARN, HDFS y Delta Lake requieren descargar un .jar o tarball desde Maven Central o Apache, dominios fuera de la lista de salida permitida aquí. GraphX/GraphFrames tenía el mismo bloqueo, pero se resolvió (ver Sección 5) descargando los .jar correctos fuera de este entorno y cargándolos manualmente — la misma solución aplicaría a Delta Lake si se repite el proceso."),
+        vineta("Red del entorno de prueba: Hadoop/YARN y HDFS requieren descargar un tarball desde Apache, dominio fuera de la lista de salida permitida aquí. GraphX/GraphFrames y Delta Lake tenían el mismo bloqueo, pero ambos se resolvieron (ver Sección 5 y evidencia abajo) descargando los .jar correctos fuera de este entorno y cargándolos manualmente."),
         vineta("Sistema operativo: SSAS es tecnología exclusiva de Windows Server; no existe equivalente en Linux."),
         vineta("Licencia/cuenta: Power BI y un SQL Server real requieren una cuenta o licencia — no hay forma de \"instalarlos gratis\" en ningún entorno. Quedan fuera de alcance por decisión, no por límite técnico."),
 
@@ -739,12 +739,37 @@ const doc = new Document({
         imagen("outputs/charts/13_r_boxplot_concentracion.png", 460, 306),
         piePagina("Figura 11. Separación entre grupos (R) — evidencia visual de la misma señal que detecta el modelo."),
 
+        subtitulo("Evidencia: Delta Lake (ACID, historial de versiones, time travel, CDC/CDF)"),
+        parrafo(
+          "Con los .jar correctos (io.delta:delta-spark_4.1_2.13:4.3.0 — nótese el sufijo de versión de Spark, " +
+          "obligatorio desde Delta Lake 4.1), la capa Bronce se reescribió como una tabla Delta Lake real, no " +
+          "Parquet plano. Se simuló el escenario más relevante para un auditor: una corrección de monto sobre " +
+          "un contrato ya existente."
+        ),
+        tabla(
+          ["Capacidad verificada", "Resultado"],
+          [
+            ["UPDATE transaccional (ACID)", "Aplicado correctamente, nueva versión creada automáticamente"],
+            ["DESCRIBE HISTORY", "2 versiones registradas: WRITE (v0) y UPDATE (v1), con predicado exacto"],
+            ["Time travel (versionAsOf 0)", "Monto original (S/. 51,428.87) recuperado exacto, tras la corrección a S/. 69,428.97"],
+            ["Change Data Feed (CDC/CDF)", "Preimage y postimage capturados fila por fila (update_preimage / update_postimage)"],
+          ],
+          [3600, 5200],
+        ),
+        parrafo("", { size: 4 }),
+        parrafo(
+          "Esto es lo que un CSV sobrescrito, o incluso Parquet plano, no puede ofrecer: la versión anterior de " +
+          "un dato sigue existiendo y es consultable sin backups manuales — si un funcionario corrige (o " +
+          "manipula) un monto después de que un auditor ya lo revisó, Delta Lake conserva evidencia exacta de " +
+          "cuál era el valor antes. Código en src/spark/lakehouse_delta.py."
+        ),
+
         titulo("14. Ruta de Escalamiento Restante"),
         parrafo(
           "Con las validaciones de las Secciones 8 y 9, el trabajo pendiente para producción se reduce casi " +
           "exclusivamente a infraestructura y gobernanza de datos:"
         ),
-        vineta("Conectar la ingesta real a las capas Plata/Oro del Lakehouse (reemplazando las carpetas locales por lectura/escritura del Delta Lake sobre Hadoop, según el Anexo 2 del TDR)."),
+        vineta("Conectar la ingesta real a las capas Plata/Oro del Lakehouse (reemplazando las carpetas locales por lectura/escritura del Delta Lake real sobre Hadoop HDFS, según el Anexo 2 del TDR — la lógica de Delta Lake ya está verificada, falta el HDFS productivo detrás)."),
         vineta("Desplegar el DAG en el Airflow productivo de la CGR (ya disponible según el Anexo 2), reemplazando BashOperator por SparkSubmitOperator para las tareas de entrenamiento."),
         vineta("Ejecutar Spark sobre un clúster YARN real, no en modo local[*]."),
         vineta("Reemplazar el SQLite stand-in por una conexión real a SQL Server (pyodbc/pymssql) y desplegar el .rdl en un servidor SSRS real."),
