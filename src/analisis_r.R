@@ -1,55 +1,58 @@
-# Análisis estadístico en R — componente "R" del Anexo 2 del TDR
-# ("Lenguajes de programación soportados": Python, SQL, Scala, R, Java).
-#
-# R es fuerte en estadística inferencial; aquí se usa para un análisis que
-# complementa lo ya hecho en Python: pruebas de hipótesis formales sobre
-# si los pares proveedor-entidad de alto riesgo tienen medias
-# significativamente distintas al resto, algo que en el pipeline Python
-# se reportó de forma descriptiva (rankings) pero no como prueba
-# estadística formal.
+# Análisis estadístico en R — componente R del Anexo 2 del TDR.
+# PoC sintético: análisis descriptivo/inferencial complementario, no validación
+# independiente del modelo ni evidencia de desempeño productivo.
 
-datos <- read.csv("data/dataset_favoritismo.csv")
+ruta <- "lakehouse/plata/dataset_favoritismo.csv"
+if (!file.exists(ruta)) {
+  stop("No existe lakehouse/plata/dataset_favoritismo.csv; ejecutar el DAG o publicar Plata primero.")
+}
+datos <- read.csv(ruta)
 
-cat("=== Resumen del dataset (R) ===\n")
+cat("=== Resumen del dataset Plata (R) ===\n")
 cat(sprintf("Filas: %d | Columnas: %d\n", nrow(datos), ncol(datos)))
-cat(sprintf("Casos con favoritismo sembrado: %d de %d (%.2f%%)\n\n",
-            sum(datos$label_favoritismo_real == "True"),
-            nrow(datos),
-            100 * mean(datos$label_favoritismo_real == "True")))
 
-# Separar grupos: favoritismo real vs. resto
-grupo_favoritismo <- datos[datos$label_favoritismo_real == "True", ]
-grupo_normal <- datos[datos$label_favoritismo_real == "False", ]
+# read.csv puede interpretar booleanos como TRUE/FALSE lógicos o texto según
+# la versión/archivo. Normalizamos explícitamente.
+label <- as.character(datos$label_favoritismo_real) %in% c("True", "TRUE", "1")
+grupo_favoritismo <- datos[label, ]
+grupo_normal <- datos[!label, ]
+cat(sprintf("Casos sembrados: %d de %d (%.2f%%)\n\n",
+            nrow(grupo_favoritismo), nrow(datos), 100 * mean(label)))
 
 cat("=== Estadística descriptiva por grupo ===\n")
-for (col in c("n_contratos", "concentracion_objeto", "pct_no_competitiva", "monto_total")) {
+columnas <- c(
+  "n_contratos",
+  "concentracion_objeto",
+  "pct_contratacion_directa",
+  "pct_comparacion_precios",
+  "monto_total"
+)
+for (col in columnas) {
   cat(sprintf("\n%s:\n", col))
-  cat(sprintf("  Favoritismo real  -> media=%.4f, sd=%.4f\n",
+  cat(sprintf("  Casos sembrados -> media=%.4f, sd=%.4f\n",
               mean(grupo_favoritismo[[col]]), sd(grupo_favoritismo[[col]])))
-  cat(sprintf("  Resto             -> media=%.4f, sd=%.4f\n",
+  cat(sprintf("  Resto           -> media=%.4f, sd=%.4f\n",
               mean(grupo_normal[[col]]), sd(grupo_normal[[col]])))
 }
 
-# Prueba t de Welch (no asume varianzas iguales) para concentracion_objeto,
-# la variable de mayor importancia según el modelo Random Forest (Sección 3
-# del reporte técnico)
-cat("\n=== Prueba t de Welch: concentracion_objeto (favoritismo vs. resto) ===\n")
-prueba <- t.test(grupo_favoritismo$concentracion_objeto, grupo_normal$concentracion_objeto)
+cat("\n=== Prueba t de Welch: concentracion_objeto ===\n")
+prueba <- t.test(
+  grupo_favoritismo$concentracion_objeto,
+  grupo_normal$concentracion_objeto
+)
 print(prueba)
+cat(sprintf(
+  "\nInterpretación PoC: p=%.6g. Esta prueba describe diferencia entre grupos sintéticos; no valida causalidad ni generalización del modelo.\n",
+  prueba$p.value
+))
 
-cat(sprintf("\nConclusión: %s\n",
-    ifelse(prueba$p.value < 0.05,
-           "diferencia estadísticamente significativa (p < 0.05) — confirma con una prueba formal lo que el modelo Random Forest ya señalaba por importancia de variable.",
-           "sin diferencia estadísticamente significativa.")))
-
-# Guardar un gráfico de cajas comparando ambos grupos
-png("outputs/charts/13_r_boxplot_concentracion.png", width = 900, height = 600, res = 120)
-boxplot(concentracion_objeto ~ label_favoritismo_real, data = datos,
-        col = c("#a0aec0", "#c53030"),
-        names = c("Resto", "Favoritismo real"),
-        main = "Concentracion de objeto contractual por grupo (R)",
-        ylab = "concentracion_objeto")
+png("outputs/charts/13_r_boxplot_concentracion.png", width=900, height=600, res=120)
+boxplot(
+  concentracion_objeto ~ label,
+  data=datos,
+  names=c("Resto", "Caso sembrado"),
+  main="Concentración de objeto contractual por grupo sintético (R)",
+  ylab="concentracion_objeto"
+)
 dev.off()
-
-cat("\nGráfico guardado en outputs/charts/13_r_boxplot_concentracion.png\n")
-cat("R VERIFICADO: análisis estadístico formal ejecutado sobre los datos del prototipo.\n")
+cat("R verificado como análisis complementario sobre la capa Plata del PoC.\n")
