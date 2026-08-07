@@ -38,6 +38,7 @@ jobs:
 
       - name: Run model-selection smoke tests
         run: |
+          python src/comparar_modelos_favoritismo.py
           python src/tuning_favoritismo.py
           python src/tuning_fraccionamiento.py
 
@@ -49,21 +50,36 @@ jobs:
 
           fav = pd.read_csv('lakehouse/plata/dataset_favoritismo.csv')
           frac = pd.read_csv('lakehouse/plata/dataset_fraccionamiento.csv')
-
           assert 'pct_contratacion_directa' in fav.columns
           assert 'pct_comparacion_precios' in fav.columns
           assert 'pct_no_competitiva' not in fav.columns
           assert fav['label_favoritismo_real'].sum() > 0
           assert frac['label_fraccionamiento_real'].sum() > 0
 
+          with open('outputs/comparacion_modelos_favoritismo.json', encoding='utf-8') as f:
+              comparacion = json.load(f)
           with open('outputs/tuning_favoritismo_resumen.json', encoding='utf-8') as f:
               fav_tuning = json.load(f)
           with open('outputs/tuning_fraccionamiento_resumen.json', encoding='utf-8') as f:
               frac_tuning = json.load(f)
 
+          assert len(comparacion['resultados']) == 3
           assert fav_tuning['mejor_configuracion']
           metricas = frac_tuning['metricas_holdout_final']
           for campo in ['recall_at_k', 'auc_roc', 'auc_pr', 'precision', 'recall', 'f1']:
               assert campo in metricas
           print('Smoke P1 OK')
           PY
+
+      - name: Upload model-selection evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-selection-evidence
+          path: |
+            outputs/comparacion_modelos_favoritismo.json
+            outputs/comparacion_modelos_favoritismo.csv
+            outputs/tuning_favoritismo_resumen.json
+            outputs/tuning_favoritismo_resultados.csv
+            outputs/tuning_fraccionamiento_resumen.json
+            outputs/tuning_fraccionamiento_resultados.csv
+          retention-days: 14
