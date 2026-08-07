@@ -6,12 +6,10 @@ Flujo P1:
       -> tuning favoritismo -> entrenar favoritismo
       -> tuning fraccionamiento -> entrenar fraccionamiento
       -> análisis de vínculos
-  -> Oro -> documentación
+  -> Oro -> run manifest -> documentación
 
-Airflow puede vivir en un virtualenv separado, pero las tareas de ciencia de
-datos deben ejecutarse con el Python del proyecto (`.venv/bin/python`) o con
-la ruta indicada por `CGR_PROJECT_PYTHON`. Esto evita que BashOperator use por
-accidente el Python del entorno Airflow sin pandas/sklearn/SHAP.
+Airflow vive en un virtualenv separado, pero las tareas usan el Python del
+proyecto (`.venv/bin/python`) o `CGR_PROJECT_PYTHON`.
 """
 
 from datetime import datetime
@@ -94,6 +92,10 @@ with DAG(
         task_id="publicar_capa_oro",
         bash_command=comando("src/lakehouse_capas.py", "oro"),
     )
+    generar_manifest = BashOperator(
+        task_id="generar_run_manifest",
+        bash_command=comando("src/generar_run_manifest.py"),
+    )
     documentar = BashOperator(
         task_id="generar_diccionario_y_diagrama",
         bash_command=comando("src/generar_diccionario_diagrama.py"),
@@ -103,4 +105,5 @@ with DAG(
     mover_plata >> tuning_favoritismo >> entrenar_favoritismo
     mover_plata >> tuning_fraccionamiento >> entrenar_fraccionamiento
     mover_plata >> analizar_vinculos
-    [entrenar_favoritismo, entrenar_fraccionamiento, analizar_vinculos] >> mover_oro >> documentar
+    [entrenar_favoritismo, entrenar_fraccionamiento, analizar_vinculos] >> mover_oro
+    mover_oro >> generar_manifest >> documentar
