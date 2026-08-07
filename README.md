@@ -1,195 +1,209 @@
-# Módulo de Análisis de Datos — Prototipo (Proyecto Interno CGR 1.8.2)
+# Módulo de Análisis de Datos — Prototipo independiente (CGR 1.8.2)
 
 > **Prototipo independiente.** Este repositorio no constituye una
 > implementación oficial ni cuenta con aprobación institucional de la
-> Contraloría General de la República (CGR). Es un ejercicio técnico
-> propio, construido a partir de un TDR público, no un encargo ni un
-> producto entregado a la CGR.
+> Contraloría General de la República (CGR). Es un ejercicio técnico propio,
+> construido a partir de un TDR público de mayo de 2026.
 
-Prototipo funcional construido para demostrar viabilidad técnica del
-"Módulo de análisis de datos para dar soporte a los auditores durante la
-ejecución de los servicios de control", descrito en el TDR de contratación
-de un Consultor Científico de Datos (Contraloría General de la República,
-Mayo 2026).
+Prueba de concepto del “Módulo de análisis de datos para dar soporte a los
+auditores durante la ejecución de los servicios de control”, con énfasis en:
 
-**Objetivo del prototipo:** construir, con licencia abierta, una
-contribución técnica al control gubernamental y a la lucha anticorrupción,
-con evidencia reproducible sobre los tres casos de uso priorizados del TDR:
-favoritismo, posible fraccionamiento y vínculos proveedor-funcionario.
+- priorización de señales de posible favoritismo;
+- priorización de señales de posible fraccionamiento;
+- análisis de vínculos proveedor–funcionario en el escenario sintético;
+- Spark MLlib, Airflow, Lakehouse Bronce/Plata/Oro, SSRS y MLOps como PoC.
 
-## Estado
+Las salidas de riesgo son **señales para revisión de auditor**. No constituyen
+hallazgos, imputaciones ni determinaciones automáticas de irregularidad.
 
-🟡 **Prueba de concepto funcional en proceso de endurecimiento técnico.**
-Existen los 7 documentos que reflejan la estructura de productos del TDR y
-un conjunto amplio de implementaciones técnicas (Spark, Airflow, Delta,
-GraphFrames, SSRS stand-in, MLOps). Tras una auditoría técnica de agosto de
-2026 se inició un plan de cierre de brechas antes de volver a declarar el
-prototipo como "finalizado".
+## Estado del plan de cierre de brechas
 
-La primera prioridad (P0) es **integridad de datos reales + normativa**:
-- la carga OCDS fue corregida para usar `Contract -> Award -> Supplier`;
-- la clave de contrato es ahora `OCID::contract.id`;
-- los consorcios se forman por adjudicación, no por proceso completo;
-- el motor normativo fue corregido y distingue el cambio de régimen desde
-  el 22/04/2025 (Ley 32069);
-- se añadieron pruebas de regresión en `tests/`.
+### ✅ P0 — Integridad OCDS y normativa: cerrado
 
-> Los CSV procesados y rankings `*_REAL.csv` generados antes de esta
-> corrección se consideran **artefactos históricos/stale hasta regenerarlos**
-> desde los crudos OCDS. No deben usarse como evidencia vigente ni como
-> hallazgos confirmados. Ver `data_real/README.md`.
+En agosto de 2026 se re-auditó el repositorio contra el TDR y se corrigió la
+parte más crítica del pipeline real:
 
-## Qué incluye
+- relación OCDS correcta: `Contract -> Award -> Supplier`;
+- clave analítica del contrato: `OCID::contract.id`;
+- adjudicatarios tomados de `awards_suppliers.csv`, sin mezclar suppliers de
+  distintas adjudicaciones del mismo proceso;
+- consorcios preservados según la identidad adjudicataria publicada;
+- `mainProcurementCategory` (`goods/services/works`) tiene prioridad para el
+  contexto normativo;
+- motor normativo parametrizado 2018–2026 y cambio de régimen desde
+  22/04/2025 (Ley 32069);
+- tests de regresión de integridad y normativa;
+- artefactos reales identificables antiguos retirados del repositorio público.
 
-**Los 3 casos de uso del TDR:**
-- Favoritismo: Random Forest supervisado sobre datos sintéticos + score no
-  supervisado de priorización sobre datos abiertos sin ground truth.
-- Posible fraccionamiento: Isolation Forest/KMeans + regla interpretable de
-  ventana temporal y cuantías normativas, tratada como **señal de alerta**,
-  no como determinación jurídica automática.
-- Vínculos proveedor-funcionario: grafo con networkx y Spark GraphFrames
-  sobre datos sintéticos; en datos abiertos reales se limita a relaciones
-  organizacionales porque OCDS no publica funcionarios individuales.
+La regeneración P0 sobre los crudos OCDS utilizados produjo:
 
-**Ejecutado y verificado en el entorno de desarrollo** (no solo diseñado):
-- Apache Spark MLlib (RandomForestClassifier, KMeans)
-- Apache Airflow — 2 DAGs
-- Búsqueda sistemática de hiperparámetros
-- Estándares SQL institucionales simulados (LEFT JOIN, poda de particiones)
-- Integración SSRS mediante esquema T-SQL + `.rdl` y SQLite como stand-in
-- Autoevaluación y reentrenamiento experimental
-- Delta Lake (ACID, historial, time travel, Change Data Feed)
-- Spark GraphFrames (PageRank, Connected Components)
-- R, Scala, Python, SQL y Java como demostraciones del ecosistema del Anexo 2
+| Métrica | Resultado |
+|---|---:|
+| Contratos crudos | 47,510 |
+| Contratos analíticos con award + supplier resolubles | **47,254** |
+| Contratos excluidos por vínculo no resoluble | 256 |
+| Adjudicatarios distintos presentes en contratos | 25,861 |
+| Entidades distintas | 2,732 |
+| Categoría `goods` | 23,630 |
+| Categoría `services` | 18,584 |
+| Categoría `works` | 5,040 |
 
-**Adicional, fuera del alcance formal del TDR:** existe un pipeline para
-datos públicos reales de contrataciones del Perú (OCDS/OECE). La ejecución
-histórica produjo 47,442 filas analíticas, pero esa cifra **no se considera
-vigente** después de la corrección P0 de relación contrato-adjudicación-
-proveedor. Debe recalcularse desde los crudos. Ver `data_real/`.
+El detalle agregado, hashes SHA-256 de las fuentes y comparación con la
+ejecución antigua están en `outputs/validacion_p0_datos_reales.json`.
 
-## Qué queda fuera de alcance local
+La cifra anterior de 47,442 contratos **ya no es válida** y los rankings
+`*_REAL.csv` derivados de esa ejecución fueron retirados.
 
-| Componente | Motivo / estado |
+### 🟡 P1 — Modelado, validación y reproducibilidad: en implementación
+
+Correcciones ya integradas en `main`:
+
+- Contratación Directa y Comparación de Precios son features separadas; no se
+  etiquetan como una única categoría “no competitiva”.
+- Favoritismo y fraccionamiento consumen preferentemente datasets de la capa
+  **Plata** del PoC.
+- Los rankings para reporting se publican en **Oro**.
+- Tuning de favoritismo persiste la configuración seleccionada y el modelo
+  final la consume.
+- Tuning de fraccionamiento reserva un **holdout final antes del tuning**.
+- Autoevaluación usa un recall mínimo explícito y separa un holdout del lote
+  nuevo; un reentrenamiento produce un **modelo candidato**, sin promoción
+  automática.
+- Airflow usa un Python de proyecto separado del virtualenv de Airflow.
+- `outputs/run_manifest.json` registra commit, versiones, hashes, tuning y
+  artefactos de una ejecución.
+- GitHub Actions ejecuta pruebas de regresión en cada push/PR.
+
+Los artefactos sintéticos versionados que fueron generados antes de estas
+correcciones deben regenerarse antes de volver a citar sus métricas en los
+Productos 1–7. La documentación formal se actualizará al final de P1 para que
+lea evidencia generada automáticamente y no números escritos a mano.
+
+## Correspondencia resumida con el TDR
+
+| Área TDR | Estado PoC |
 |---|---|
-| Lakehouse Plata/Oro institucional CGR | Requiere acceso a la plataforma institucional; el repo solo reproduce el patrón arquitectónico. |
-| Hadoop YARN / HDFS productivo | No se completó un clúster distribuido. El modo single-node es técnicamente posible, pero no demuestra las propiedades de un clúster real. |
-| SQL Server/SSRS, SSAS y Power BI institucionales | Se entrega interfaz/esquema PoC; la validación real requiere infraestructura/licencias/accesos CGR. |
-| Git institucional, DEV/QA/PROD, certificación y marcha blanca | Solo pueden cerrarse durante una implementación institucional. |
-| Transferencia formal a usuarios CGR | Depende de ejecución contractual y coordinación institucional. |
+| EDA y calidad de datos | Implementado |
+| Feature engineering | Implementado / endurecido en P1 |
+| Favoritismo supervisado | Random Forest + CV + SHAP |
+| Fraccionamiento no supervisado | Isolation Forest + regla interpretable + holdout de evaluación |
+| Spark MLlib | Implementado en modo local; clúster institucional pendiente |
+| Grafos | networkx + GraphFrames en escenario sintético |
+| Airflow DAGs | Implementados; entorno reproducible endurecido en P1 |
+| Bronce / Plata / Oro | Simulación local funcional; Lakehouse CGR pendiente |
+| Autoevaluación/reentrenamiento | Modelo candidato + revisión humana requerida |
+| SSRS | Esquema T-SQL + RDL + SQLite stand-in; servidor institucional pendiente |
+| Linaje/diccionario | Diccionario, diagrama y run manifest |
+| DEV/QA/PROD, Git institucional, certificación | Dependencia institucional CGR |
+| Transferencia formal / marcha blanca | Dependencia contractual/institucional |
 
-## Estructura del repositorio
+## Estructura
 
 ```text
-CÓDIGO FUENTE
-  src/                         Scripts principales
-  src/spark/                   MLlib, GraphFrames, Delta, SQL, streaming, HMS
-  airflow_home/dags/           DAG principal + monitoreo/reentrenamiento
-  reporte/generar_*.js         Generadores de documentos
-  ssrs/schema_sql_server.sql   Esquema T-SQL
-  tests/                       Pruebas de regresión P0 y futuras
-
-DEPENDENCIAS BINARIAS
-  jars/                        GraphFrames, Delta Lake y pruebas Hadoop
-
-ARTEFACTOS / EVIDENCIA
-  data/                        Datos sintéticos y datasets derivados
-  data_real/*.csv              Datos reales procesados (ver estado en su README)
-  outputs/                     Gráficos, modelos, rankings y logs
-  reporte/*.docx               Documentos generados
-  reporte/productos_formales/  Productos 1–7 generados
-  ssrs/*.rdl                   Reporte SSRS generado
+src/                         Python principal
+src/spark/                   Spark MLlib, GraphFrames, Delta, SQL, streaming, HMS
+airflow_home/dags/           DAG principal + monitoreo
+lakehouse/bronce/             Simulación de ingesta cruda
+lakehouse/plata/              Datos limpios/features consumidos por modelos
+lakehouse/oro/                Salidas para reporting/integración
+ssrs/                         DDL T-SQL + RDL PoC
+reporte/                      Generadores y documentos formales
+outputs/                      Evidencias, modelos, tuning, manifests
+tests/                        Pruebas de regresión
+.github/workflows/            CI
 ```
 
-## Cómo reproducir
+## Reproducir el entorno Python
 
-### 0. Instalar el entorno
+Se recomienda separar el entorno del proyecto del entorno de Airflow:
 
 ```bash
-pip install -r requirements.txt --break-system-packages
-cd reporte && npm install && cd ..
+python3 -m venv .venv
+.venv/bin/pip install --upgrade pip
+.venv/bin/pip install -r requirements.txt
+
+python3 -m venv .venv_airflow
+.venv_airflow/bin/pip install "apache-airflow==3.3.0" \
+  --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-3.3.0/constraints-3.12.txt"
 ```
 
-R, Java/Spark y Airflow requieren sus respectivos runtimes. Airflow se ha
-mantenido en un entorno virtual separado para evitar conflictos de
-versiones; esta integración será endurecida en una fase posterior del plan.
-
-### 1. Ejecutar pruebas de regresión
+Para Airflow:
 
 ```bash
-pytest -q
+export PROYECTO_DIR="$PWD"
+export CGR_PROJECT_PYTHON="$PWD/.venv/bin/python"
+export AIRFLOW_HOME="$PWD/airflow_home"
 ```
 
-Las pruebas P0 verifican como mínimo:
-- un contrato recibe suppliers de **su award**, no de todos los awards del
-  proceso;
-- `contract.id` repetido en OCID diferentes no colisiona;
-- un award sin supplier no hereda el supplier de otro award;
-- topes 2022–2026 parametrizados;
-- cambio de régimen el 22/04/2025;
-- prioridad de `mainProcurementCategory` sobre texto libre;
-- fallo explícito para años normativos no parametrizados.
-
-### 2. Pipeline sintético
+## Pruebas
 
 ```bash
-python3 src/generar_datos.py
-python3 src/eda.py
-python3 src/preprocesamiento.py
-python3 src/modelo_favoritismo.py
-python3 src/modelo_fraccionamiento.py
-python3 src/modelo_grafos.py
-python3 src/generar_diccionario_diagrama.py
+.venv/bin/pytest -q
 ```
 
-### 3. Pipeline real OCDS/OECE
+Cubren, entre otros:
 
-Seguir `data_real/README.md`. Se necesitan los crudos:
-`main.csv`, `contracts.csv`, `awards.csv`, `awards_suppliers.csv` y
-`parties.csv`.
+- `Contract -> Award -> Supplier`;
+- claves `OCID::contract.id`;
+- consorcios/adjudicatarios por award;
+- topes normativos 2018–2026;
+- cambio de régimen 22/04/2025;
+- prioridad de `mainProcurementCategory`;
+- separación Contratación Directa vs. Comparación de Precios;
+- holdout independiente para reentrenamiento.
+
+## Pipeline sintético orquestado
 
 ```bash
-python3 src/cargar_datos_reales_seace.py
-pytest -q
-python3 src/modelo_real.py
+.venv_airflow/bin/airflow dags test modulo_analisis_datos_1_8_2
 ```
 
-### 4. Componentes Spark / MLOps / SSRS PoC
+Flujo conceptual:
 
-```bash
-python3 src/spark/modelo_favoritismo_spark.py
-python3 src/spark/modelo_fraccionamiento_spark.py
-python3 src/spark/vinculos_graphframes.py
-python3 src/spark/lakehouse_delta.py
-python3 src/spark/estandares_sql.py
-python3 src/autoevaluacion.py
-python3 src/publicar_ssrs.py
+```text
+fuentes -> Bronce -> preprocesamiento/features -> Plata
+                       |                     |
+                       |-> tuning favoritismo -> modelo
+                       |-> tuning fraccionamiento -> modelo
+                       |-> grafos
+                                      ↓
+                                     Oro
+                                      ↓
+                              run_manifest.json
+                                      ↓
+                                 documentación
 ```
 
-## Documentación
+Los scripts también pueden ejecutarse individualmente. En ese caso las
+funciones de `src/rutas_datos.py` permiten un fallback explícito a `data/` o
+`outputs/`, mostrando una advertencia para distinguirlo del flujo del DAG.
 
-- `reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx` — reporte consolidado
-  generado antes de algunas correcciones P0; será regenerado al cerrar las
-  brechas de datos/modelado para evitar documentar cifras obsoletas.
-- `reporte/productos_formales/` — Productos 1–7 generados; mismo criterio de
-  actualización que el reporte consolidado.
-- `data_real/README.md` — procedimiento y estado de la validación real.
-- `jars/README.md` — dependencias JVM versionadas.
+## Datos reales OCDS/OECE
+
+Los crudos y derivados identificables no se publican en este repo. Para
+reproducir localmente la validación, seguir `data_real/README.md` con:
+
+- `main.csv`
+- `contracts.csv`
+- `awards.csv`
+- `awards_suppliers.csv`
+- `parties.csv`
+
+Los rankings reales se generan localmente, pero están ignorados por Git para
+evitar publicar asociaciones entre proveedores reales y señales estadísticas
+fuera de contexto.
+
+## Documentación formal
+
+Los `.docx` existentes en `reporte/` y `reporte/productos_formales/` fueron
+generados antes de parte de las correcciones P0/P1. Se conservan como evidencia
+histórica del desarrollo, pero **no deben considerarse todavía la versión final
+actualizada**. Se regenerarán al cerrar P1 usando `run_manifest.json` y los
+resultados nuevos.
 
 ## Licencia
 
-El código de este repositorio está bajo licencia **MIT** (ver `LICENSE`).
-Los datos públicos reales procedentes de OECE conservan su licencia **CC BY
-4.0** y requieren atribución.
-
-## Nota metodológica
-
-Los datasets de `data/` son sintéticos y permiten pruebas funcionales con
-ground truth sembrado. Las métricas perfectas obtenidas en esos escenarios
-**no son estimaciones del desempeño esperado en producción**. En particular,
-el 100% de la regla sintética de posible fraccionamiento es un *sanity check*
-de implementación sobre casos construidos con el patrón que la regla busca.
-
-El objetivo productivo del módulo no debe ser "declarar corrupción" ni
-"probar fraccionamiento" automáticamente, sino **priorizar señales explicables
-y trazables para revisión de auditor**, en línea con el propósito del TDR.
+El código está bajo licencia MIT. Los datos públicos de OECE/OCP conservan su
+licencia de origen (CC BY 4.0 cuando corresponda). Si el prototipo evolucionara
+a un encargo contractual, los activos generados bajo dicho encargo deberían
+separarse y regirse por las cláusulas de propiedad/confidencialidad del TDR.
