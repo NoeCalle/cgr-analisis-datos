@@ -6,11 +6,11 @@ ejecución de los servicios de control", descrito en el TDR de contratación
 de un Consultor Científico de Datos (Contraloría General de la República,
 Mayo 2026).
 
-**Objetivo del prototipo:** demostrar que los tres casos de uso priorizados
-del TDR (favoritismo, fraccionamiento, vínculos proveedor-funcionario)
-pueden construirse rápidamente con herramientas open source y con
-evidencia de ejecución real — no solo teórica — antes de comprometer una
-consultoría de S/. 72,000 por 180 días.
+**Objetivo del prototipo:** construir, con licencia abierta, una
+contribución técnica al control gubernamental y a la lucha anticorrupción
+— con evidencia de ejecución real, no solo teórica, sobre los tres casos
+de uso priorizados del TDR (favoritismo, fraccionamiento, vínculos
+proveedor-funcionario).
 
 ## Estado
 
@@ -50,7 +50,7 @@ CGR) — ver `data_real/`.
 | Componente | Motivo |
 |---|---|
 | Hadoop YARN / HDFS | Requiere múltiples máquinas físicas reales en red — no es simulable en un solo entorno, sin importar cuánto código se agregue. Se investigó `hadoop-client-minicluster` (la utilidad oficial de pruebas de Hadoop) pero el jar complementario excede el límite de archivo de este entorno. |
-| SQL Server real, SSAS, Power BI | Requieren licencia o cuenta — fuera de alcance por decisión, ya que el objetivo del prototipo es justamente demostrar que no hace falta gastar en eso todavía. |
+| SQL Server real, SSAS, Power BI | Requieren licencia o cuenta — fuera de alcance por decisión, ya que el prototipo se construye enteramente con herramientas de licencia abierta. |
 
 Ambos casos están documentados con honestidad técnica en el reporte
 (Anexo B) y en el Producto 7 (Sección 11) — no se ocultan como si

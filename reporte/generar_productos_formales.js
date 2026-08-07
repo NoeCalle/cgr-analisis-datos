@@ -461,7 +461,7 @@ const p7 = documento(7, "Informe Final", "Informe Final", [
   ),
   parrafo(
     "SQL Server real, SSAS y Power BI quedan fuera de alcance por decisión — requieren licencia o cuenta, y " +
-    "el objetivo de este prototipo es demostrar que no hace falta gastar en eso todavía."
+    "el prototipo se construye enteramente con herramientas de licencia abierta."
   ),
 
   titulo("12. Manual de Implementación"),
@@ -502,7 +502,8 @@ const p7 = documento(7, "Informe Final", "Informe Final", [
   titulo("16. Conclusiones y Recomendaciones"),
   parrafo(
     "El prototipo demuestra que los tres casos de uso priorizados del TDR son técnicamente alcanzables con " +
-    "herramientas open source, en un plazo muy reducido frente a los 180 días previstos, y con evidencia de " +
+    "herramientas de licencia abierta, construidas como una contribución al control gubernamental y a la " +
+    "lucha anticorrupción, con evidencia de " +
     "ejecución real en cada pieza de la arquitectura del Anexo 2 — no solo en la lógica de los modelos. El " +
     "hallazgo más relevante se mantiene y se reforzó con más evidencia: ni Isolation Forest ni KMeans " +
     "(en dos plataformas distintas) igualan a la regla interpretable basada en el umbral legal — el valor " +

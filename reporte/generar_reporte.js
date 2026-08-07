@@ -188,7 +188,8 @@ const doc = new Document({
           "Interno 1.8.2 de la Contraloría General de la República (CGR). El objetivo es demostrar, con código " +
           "abierto y en un plazo de desarrollo muy reducido, que es técnicamente viable construir los componentes " +
           "centrales solicitados en el TDR — detección de favoritismo y de fraccionamiento en contrataciones " +
-          "públicas — antes de comprometer una consultoría individual de S/. 72,000 por 180 días calendario."
+          "públicas — como una contribución de licencia abierta al control gubernamental y a la lucha " +
+          "anticorrupción."
         ),
         parrafo(
           "Se generó un conjunto de datos sintético que simula la integración de fuentes SIAF y SEACE, con casos " +
@@ -809,8 +810,9 @@ const doc = new Document({
         parrafo(
           "Este prototipo demuestra en código abierto y en un plazo muy corto que los tres casos de uso " +
           "priorizados del TDR —favoritismo, fraccionamiento y vínculos proveedor-funcionario— son técnicamente " +
-          "alcanzables sin necesidad de comprometer de inmediato una consultoría individual de 180 días y S/. " +
-          "72,000. Cada pieza de la arquitectura fue validada con ejecución real, no solo de forma teórica: " +
+          "alcanzables con herramientas de licencia abierta, construidas como una contribución al control " +
+          "gubernamental y a la lucha anticorrupción. Cada pieza de la arquitectura fue validada con ejecución " +
+          "real, no solo de forma teórica: " +
           "modelado en scikit-learn y Apache Spark MLlib (Sección 8), orquestación con Apache Airflow " +
           "(Sección 9), optimización sistemática de hiperparámetros en ambas plataformas (Sección 10), " +
           "extracción bajo los estándares SQL institucionales de la CGR (Sección 11), publicación lista para " +
