@@ -441,6 +441,11 @@ const p7 = documento(7, "Informe Final", "Informe Final", [
     ],
     [3400, 5400],
   ),
+  parrafo(
+    "Precisión importante: este historial no es inmutable de forma permanente — VACUUM elimina archivos de " +
+    "versiones antiguas según una política de retención configurable (7 días por defecto). Para uso de " +
+    "auditoría, esa política debe ajustarse al período que la CGR necesite conservar evidencia."
+  ),
 
   titulo("10. Validación con Datos Reales de SEACE (fuera del alcance del TDR)"),
   parrafo(

@@ -790,6 +790,15 @@ const doc = new Document({
           "manipula) un monto después de que un auditor ya lo revisó, Delta Lake conserva evidencia exacta de " +
           "cuál era el valor antes. Código en src/spark/lakehouse_delta.py."
         ),
+        parrafo(
+          "Precisión importante: este historial NO es inmutable de forma permanente. El comando VACUUM elimina " +
+          "físicamente los archivos de versiones antiguas ya no referenciadas, según una política de " +
+          "retención configurable (por defecto, 7 días). Pasado ese período y tras ejecutar VACUUM, el time " +
+          "travel a esas versiones deja de funcionar. Para uso de auditoría, la política de retención debe " +
+          "configurarse explícitamente acorde al período que la CGR necesite conservar evidencia — " +
+          "potencialmente años, no el valor por defecto — y VACUUM no debe ejecutarse sin ese criterio en " +
+          "mente."
+        ),
 
         subtitulo("Por qué Hadoop YARN/HDFS es un caso distinto (no un bloqueo de librería)"),
         parrafo(

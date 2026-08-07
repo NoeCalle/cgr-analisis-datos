@@ -5,13 +5,26 @@ señalada en el Anexo B del reporte técnico. Usa los .jar exactos
 este entorno, igual que GraphFrames.
 
 Por qué esto importa específicamente para un auditor (no es una feature
-genérica): Delta Lake mantiene un historial inmutable de cada escritura
+genérica): Delta Lake mantiene un historial de cada escritura
 (`DESCRIBE HISTORY`) y permite "viajar en el tiempo" a cualquier versión
-anterior de la tabla. Si un funcionario corrige (o manipula) un monto
-después de que un auditor ya lo revisó, Delta Lake conserva la versión
-original — algo que un CSV sobrescrito no puede ofrecer. Esta demo simula
-exactamente ese escenario: una corrección de monto sobre la capa Bronce,
-y la capacidad de consultar el valor ANTES de la corrección.
+anterior de la tabla, mientras esa versión no haya sido purgada. Si un
+funcionario corrige (o manipula) un monto después de que un auditor ya lo
+revisó, Delta Lake conserva la versión original — algo que un CSV
+sobrescrito no puede ofrecer. Esta demo simula exactamente ese escenario:
+una corrección de monto sobre la capa Bronce, y la capacidad de consultar
+el valor ANTES de la corrección.
+
+PRECISIÓN IMPORTANTE (corrección tras revisión externa): el historial de
+Delta Lake NO es inmutable de forma permanente. El comando `VACUUM`
+elimina físicamente los archivos de datos de versiones antiguas que ya no
+están referenciadas, según una política de retención configurable
+(`delta.deletedFileRetentionDuration`, por defecto 7 días). Pasado ese
+período, y si se ejecuta VACUUM, el time travel a esas versiones deja de
+funcionar. Para uso de auditoría, esto significa que la política de
+retención debe configurarse explícitamente en línea con el período que la
+CGR necesite conservar evidencia (potencialmente años, no los 7 días por
+defecto), y que VACUUM debe ejecutarse con ese criterio en mente, no
+dejarse en su configuración por defecto sin revisión.
 """
 
 import os
