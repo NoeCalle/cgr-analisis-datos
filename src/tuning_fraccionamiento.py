@@ -1,12 +1,14 @@
 """
 Tuning y evaluación independiente — detección de posible fraccionamiento.
 
-Isolation Forest se entrena sin etiquetas. Las etiquetas sembradas se usan
-solo para seleccionar configuraciones en VALIDACIÓN. Un holdout final se
-separa antes del tuning y se consulta una sola vez al final.
+Isolation Forest se entrena sin etiquetas. Las etiquetas sintéticas se usan
+solo para comparar configuraciones en VALIDACIÓN. Un holdout final se separa
+antes del tuning y se consulta una sola vez al final.
 
-Se reportan recall@K, AUC-ROC, AUC-PR, precision, recall y F1 sobre el holdout.
-Son métricas de un benchmark sintético pequeño y NO estiman desempeño real.
+Por el fuerte desbalance y el escaso número de positivos, AUC-PR es el criterio
+primario de selección; recall@K queda como métrica secundaria de ranking. En el
+holdout final se reportan AUC-ROC, AUC-PR, precision, recall, F1 y recall@K.
+Todo sigue siendo benchmark sintético y NO estima desempeño productivo.
 """
 
 import itertools
@@ -60,12 +62,19 @@ def entrenar_modelo(X_train, n_estimators, max_samples, contamination, seed):
     return modelo, scaler
 
 
-def evaluar_recall_validacion(X_train, X_eval, y_eval, params, seed):
+def evaluar_split(X_train, X_eval, y_eval, params, seed):
     modelo, scaler = entrenar_modelo(
-        X_train, params["n_estimators"], params["max_samples"], params["contamination"], seed
+        X_train,
+        params["n_estimators"],
+        params["max_samples"],
+        params["contamination"],
+        seed,
     )
     scores = -modelo.decision_function(scaler.transform(X_eval))
-    return recall_at_k_from_scores(scores, y_eval)
+    return {
+        "auc_pr": float(average_precision_score(y_eval, scores)),
+        "recall_at_k": recall_at_k_from_scores(scores, y_eval),
+    }
 
 
 def separar_holdout_final(df):
@@ -79,7 +88,7 @@ def separar_holdout_final(df):
 
 
 def evaluar_configuracion_en_desarrollo(desarrollo, params):
-    recalls = []
+    auc_prs, recalls = [], []
     for seed in VALIDATION_SEEDS:
         train, val = train_test_split(
             desarrollo,
@@ -87,28 +96,42 @@ def evaluar_configuracion_en_desarrollo(desarrollo, params):
             random_state=seed,
             stratify=desarrollo["label_fraccionamiento_real"].astype(int),
         )
-        recall = evaluar_recall_validacion(
-            train[FEATURES], val[FEATURES],
-            val["label_fraccionamiento_real"].astype(int), params, seed,
+        m = evaluar_split(
+            train[FEATURES],
+            val[FEATURES],
+            val["label_fraccionamiento_real"].astype(int),
+            params,
+            seed,
         )
-        if recall is not None:
-            recalls.append(recall)
-    return sum(recalls) / len(recalls), min(recalls), max(recalls)
+        auc_prs.append(m["auc_pr"])
+        if m["recall_at_k"] is not None:
+            recalls.append(m["recall_at_k"])
+    return {
+        "auc_pr_validacion_medio": sum(auc_prs) / len(auc_prs),
+        "auc_pr_min": min(auc_prs),
+        "auc_pr_max": max(auc_prs),
+        "recall_at_k_validacion_medio": sum(recalls) / len(recalls),
+        "recall_at_k_min": min(recalls),
+        "recall_at_k_max": max(recalls),
+    }
 
 
 def seleccionar_mejor(desarrollo):
     combinaciones = [
         {"n_estimators": n, "max_samples": m, "contamination": c}
         for n, m, c in itertools.product(
-            PARAM_GRID["n_estimators"], PARAM_GRID["max_samples"], PARAM_GRID["contamination"]
+            PARAM_GRID["n_estimators"],
+            PARAM_GRID["max_samples"],
+            PARAM_GRID["contamination"],
         )
     ]
     filas = []
     for params in combinaciones:
-        media, minimo, maximo = evaluar_configuracion_en_desarrollo(desarrollo, params)
-        filas.append({**params, "recall_validacion_medio": media, "recall_min": minimo, "recall_max": maximo})
+        filas.append({**params, **evaluar_configuracion_en_desarrollo(desarrollo, params)})
+
     resultados = pd.DataFrame(filas).sort_values(
-        ["recall_validacion_medio", "n_estimators"], ascending=[False, True]
+        ["auc_pr_validacion_medio", "recall_at_k_validacion_medio", "n_estimators"],
+        ascending=[False, False, True],
     )
     resultados.to_csv("outputs/tuning_fraccionamiento_resultados.csv", index=False)
     return resultados.iloc[0].to_dict()
@@ -147,6 +170,7 @@ def main():
 
     resumen = {
         "diseno": "holdout final separado antes del tuning; validaciones repetidas solo en desarrollo",
+        "metrica_seleccion": "AUC-PR media en validaciones repetidas",
         "n_total": len(df),
         "positivos_total": int(df["label_fraccionamiento_real"].sum()),
         "n_desarrollo": len(desarrollo),
@@ -155,7 +179,8 @@ def main():
             "n_estimators": int(mejor["n_estimators"]),
             "max_samples": float(mejor["max_samples"]),
             "contamination": mejor["contamination"],
-            "recall_validacion_medio": float(mejor["recall_validacion_medio"]),
+            "auc_pr_validacion_medio": float(mejor["auc_pr_validacion_medio"]),
+            "recall_at_k_validacion_medio": float(mejor["recall_at_k_validacion_medio"]),
         },
         "metricas_holdout_final": metricas_test,
         "advertencia": "benchmark sintético con pocos positivos; no estima desempeño productivo",
