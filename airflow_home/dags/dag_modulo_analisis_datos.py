@@ -18,10 +18,21 @@ a punta dentro de este entorno de prueba de concepto.
 """
 
 from datetime import datetime
+import os
 from airflow import DAG
 from airflow.providers.standard.operators.bash import BashOperator
 
-PROYECTO = "/home/claude/proyecto_1.8.2"
+# Ruta del proyecto — corrección tras revisión externa: antes estaba
+# hardcodeada a "/home/claude/proyecto_1.8.2", que solo existe en este
+# entorno específico y rompe el DAG en cualquier otra máquina. Ahora se
+# calcula relativa a la ubicación real de este archivo (dags/ está dos
+# niveles debajo de la raíz del proyecto: airflow_home/dags/ -> raíz), con
+# la opción de sobreescribirla vía la variable de entorno PROYECTO_DIR
+# si la carpeta de DAGs de Airflow está configurada de otra forma.
+PROYECTO = os.environ.get(
+    "PROYECTO_DIR",
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+)
 PY = "python3"
 
 default_args = {

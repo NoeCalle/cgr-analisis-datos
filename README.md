@@ -79,6 +79,31 @@ reporte/productos_formales/  Los 7 productos formales del Anexo 01, como documen
 
 ## Cómo reproducir
 
+### 0. Instalar el entorno (paso que faltaba documentar — corregido tras revisión externa)
+
+```bash
+# Dependencias de Python (versiones fijadas en requirements.txt)
+pip install -r requirements.txt --break-system-packages
+
+# Dependencias de Node.js (generación de los .docx del reporte)
+cd reporte && npm install && cd ..
+
+# R (para src/analisis_r.R) — vía apt en Debian/Ubuntu
+apt-get install -y r-base-core
+
+# Apache Airflow — en un entorno virtual SEPARADO (evita conflictos de
+# dependencias con el resto del proyecto):
+python3 -m venv .venv_airflow
+.venv_airflow/bin/pip install "apache-airflow==3.3.0" \
+    --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-3.3.0/constraints-3.12.txt"
+```
+
+Los `.jar` de Spark (GraphFrames, Delta Lake, el intento de Hadoop) ya
+están versionados en `jars/` — no hace falta descargarlos de nuevo (ver
+`jars/README.md` si necesitas otra versión).
+
+### 1. Ejecutar el pipeline
+
 Orden de ejecución (o usar directamente el DAG de Airflow, que hace lo
 mismo de forma orquestada):
 
@@ -102,7 +127,7 @@ python3 src/spark/estandares_sql.py
 python3 src/autoevaluacion.py
 python3 src/publicar_ssrs.py
 
-# O todo orquestado con Airflow:
+# O todo orquestado con Airflow (con AIRFLOW_HOME apuntando a airflow_home/):
 airflow dags test modulo_analisis_datos_1_8_2
 airflow dags test monitoreo_reentrenamiento_1_8_2
 ```

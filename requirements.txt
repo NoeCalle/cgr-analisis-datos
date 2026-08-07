@@ -1,0 +1,56 @@
+# Dependencias de Python para el prototipo — versiones fijadas a las
+# realmente usadas y verificadas en este repositorio (no una lista
+# aproximada). Instalar con:
+#
+#   pip install -r requirements.txt --break-system-packages
+#
+# (--break-system-packages es necesario en algunos entornos Debian/Ubuntu
+# recientes con Python gestionado por el sistema; omitir si usas un
+# entorno virtual propio, lo cual es lo recomendado.)
+
+# --- Núcleo de datos y modelos ---
+pandas==3.0.2
+numpy==2.4.4
+scikit-learn==1.8.0
+scipy==1.17.1
+matplotlib==3.10.8
+joblib==1.5.3
+shap==0.52.0
+networkx==3.6.1
+
+# --- Apache Spark y extensiones ---
+pyspark==4.1.1
+pyarrow==25.0.0
+
+# delta-spark (paquete Python) da las utilidades de Python
+# (delta.tables, configure_spark_with_delta_pip). El motor real de
+# ejecución de Delta Lake sobre Spark, sin embargo, requiere ADEMÁS el
+# .jar de Maven Central versionado en jars/ (ver jars/README.md) — pip
+# por sí solo NO basta para que Delta Lake funcione en este entorno,
+# porque Maven Central está bloqueado. Igual para GraphFrames: el
+# paquete graphframes-py da la API de Python, pero requiere los .jar en
+# jars/ para funcionar contra Spark 4.1 real.
+delta-spark==4.3.1
+graphframes-py==0.12.1
+
+# --- Verificación de documentos (lectura de .docx generados, no su creación) ---
+# La GENERACIÓN de los .docx del reporte usa Node.js (ver package.json),
+# no Python. python-docx se usa solo para verificar el contenido de los
+# .docx ya generados (extraer texto para confirmar que no quedaron
+# referencias desactualizadas, por ejemplo).
+python-docx==1.2.0
+
+# =============================================================================
+# NOTA sobre Apache Airflow: NO está en este archivo a propósito.
+# Airflow se instaló en un entorno virtual separado (.venv_airflow/, no
+# versionado por su tamaño) para evitar conflictos de dependencias con el
+# resto del proyecto (Airflow fija versiones específicas de varias
+# librerías que chocan con las de arriba). Para reproducir:
+#
+#   python3 -m venv .venv_airflow
+#   .venv_airflow/bin/pip install "apache-airflow==3.3.0" \
+#       --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-3.3.0/constraints-3.12.txt"
+#
+# Ver también package.json para la dependencia de Node.js (generación de
+# los .docx del reporte) y jars/README.md para los .jar de Spark.
+# =============================================================================

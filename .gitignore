@@ -37,3 +37,6 @@ outputs/streaming_demo/origen/
 # Tablas Delta Lake locales (regenerable, incluye archivos internos _delta_log)
 lakehouse_delta/
 /tmp/delta_test*
+
+# Dependencias de Node.js (instalables vía reporte/package.json + npm install)
+node_modules/

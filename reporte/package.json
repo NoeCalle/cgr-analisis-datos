@@ -1,0 +1,13 @@
+{
+  "name": "cgr-analisis-datos-reportes",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Generadores de los documentos .docx del prototipo (reporte técnico consolidado y los 7 productos formales del Anexo 01).",
+  "scripts": {
+    "reporte": "node generar_reporte.js",
+    "productos": "node generar_productos_formales.js"
+  },
+  "dependencies": {
+    "docx": "9.6.1"
+  }
+}

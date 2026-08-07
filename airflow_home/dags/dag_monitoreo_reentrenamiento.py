@@ -7,10 +7,16 @@ evaluando si los nuevos contratos ingresados justifican un reentrenamiento.
 """
 
 from datetime import datetime
+import os
 from airflow import DAG
 from airflow.providers.standard.operators.bash import BashOperator
 
-PROYECTO = "/home/claude/proyecto_1.8.2"
+# Ver dag_modulo_analisis_datos.py para la explicación de este cálculo
+# (corrección tras revisión externa: ya no está hardcodeada).
+PROYECTO = os.environ.get(
+    "PROYECTO_DIR",
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+)
 PY = "python3"
 
 with DAG(
