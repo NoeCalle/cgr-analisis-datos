@@ -366,6 +366,14 @@ const p7 = documento(7, "Informe Final", "Informe Final", [
   ),
   parrafo("", { size: 4 }),
   parrafo(
+    "Nota metodológica: los 8 casos de fraccionamiento sembrados tienen exactamente el patrón que la regla " +
+    "busca (mismo proveedor-entidad-objeto, compras repetidas en pocos días, montos bajo el umbral). El " +
+    "100% confirma que la regla está correctamente implementada, no que vaya a repetir ese desempeño sobre " +
+    "fraccionamiento real no sembrado — ver Producto 7, Sección 10, donde se aplica como señal de riesgo " +
+    "sobre datos reales sin etiquetas, no como determinación automática."
+  ),
+  parrafo("", { size: 4 }),
+  parrafo(
     "Búsqueda de hiperparámetros: GridSearchCV (60 combinaciones, scikit-learn) y CrossValidator " +
     "(pyspark.ml.tuning, 12 ajustes) confirmaron de forma independiente la misma configuración óptima " +
     "(100 árboles, profundidad 3) para favoritismo — coincidencia cruzada entre ambas plataformas."

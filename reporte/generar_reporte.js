@@ -214,6 +214,14 @@ const doc = new Document({
           "anomalías, alcanzó 100% de precisión (7 de 7 casos marcados fueron fraccionamiento real) sobre 8 " +
           "casos sembrados en 149 grupos proveedor-entidad-objeto."
         ),
+        parrafo(
+          "Nota de interpretación importante: el generador sintético siembra los casos de fraccionamiento " +
+          "exactamente con el patrón que la regla busca (mismo proveedor-entidad-objeto, 3 a 6 compras en " +
+          "pocos días, montos justo bajo el umbral legal). Que la regla los encuentre con 100% de precisión " +
+          "confirma que la implementación funciona como fue diseñada — una prueba funcional (sanity check) " +
+          "válida y necesaria — pero no es evidencia de desempeño predictivo sobre datos externos no " +
+          "sembrados. La Sección 4 detalla esta distinción con mayor profundidad."
+        ),
 
         new Paragraph({ children: [new PageBreak()] }),
 
@@ -341,6 +349,15 @@ const doc = new Document({
           "normativa de contrataciones públicas a reglas computables — un trabajo de dominio que un consultor " +
           "conocedor del marco legal peruano puede hacer sin necesitar infraestructura de big data desde el " +
           "primer día."
+        ),
+        parrafo(
+          "Precisión metodológica sobre el 100%: los 8 casos sembrados fueron construidos deliberadamente con " +
+          "el patrón exacto que la regla busca (mismo proveedor-entidad-objeto, 3-6 compras en una ventana de " +
+          "pocos días, montos justo bajo el umbral). Este resultado valida que la regla está correctamente " +
+          "implementada — que hace lo que se diseñó para hacer — no que vaya a alcanzar 100% de precisión " +
+          "sobre datos reales no sembrados, donde el fraccionamiento real puede presentarse con patrones más " +
+          "sutiles o distintos (ver el Anexo A, donde sobre datos reales sin etiquetas la regla se usa como " +
+          "señal de riesgo para revisión de auditor, no como determinación automática)."
         ),
         imagen("outputs/charts/06_deteccion_fraccionamiento.png", 460, 288),
         piePagina("Figura 5. Casos reales sembrados (rojo) vs. score de anomalía y señales de ventana temporal."),
