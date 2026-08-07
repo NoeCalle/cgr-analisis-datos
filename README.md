@@ -13,179 +13,183 @@ de un Consultor Científico de Datos (Contraloría General de la República,
 Mayo 2026).
 
 **Objetivo del prototipo:** construir, con licencia abierta, una
-contribución técnica al control gubernamental y a la lucha anticorrupción
-— con evidencia de ejecución real, no solo teórica, sobre los tres casos
-de uso priorizados del TDR (favoritismo, fraccionamiento, vínculos
-proveedor-funcionario).
+contribución técnica al control gubernamental y a la lucha anticorrupción,
+con evidencia reproducible sobre los tres casos de uso priorizados del TDR:
+favoritismo, posible fraccionamiento y vínculos proveedor-funcionario.
 
 ## Estado
 
-✅ **Finalizado.** Los 7 productos formales del TDR (Anexo 01) están
-completos, más un conjunto sustancial de mejoras y cierres de brecha
-construidos después de la primera versión. Ver "Qué incluye" abajo y el
-[reporte técnico completo](reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx)
-para el detalle con evidencia de cada pieza.
+🟡 **Prueba de concepto funcional en proceso de endurecimiento técnico.**
+Existen los 7 documentos que reflejan la estructura de productos del TDR y
+un conjunto amplio de implementaciones técnicas (Spark, Airflow, Delta,
+GraphFrames, SSRS stand-in, MLOps). Tras una auditoría técnica de agosto de
+2026 se inició un plan de cierre de brechas antes de volver a declarar el
+prototipo como "finalizado".
+
+La primera prioridad (P0) es **integridad de datos reales + normativa**:
+- la carga OCDS fue corregida para usar `Contract -> Award -> Supplier`;
+- la clave de contrato es ahora `OCID::contract.id`;
+- los consorcios se forman por adjudicación, no por proceso completo;
+- el motor normativo fue corregido y distingue el cambio de régimen desde
+  el 22/04/2025 (Ley 32069);
+- se añadieron pruebas de regresión en `tests/`.
+
+> Los CSV procesados y rankings `*_REAL.csv` generados antes de esta
+> corrección se consideran **artefactos históricos/stale hasta regenerarlos**
+> desde los crudos OCDS. No deben usarse como evidencia vigente ni como
+> hallazgos confirmados. Ver `data_real/README.md`.
 
 ## Qué incluye
 
-**Los 3 casos de uso del TDR**, con modelos entrenados, validados y
-explicables (SHAP):
-- Detección de favoritismo (Random Forest)
-- Detección de fraccionamiento (Isolation Forest + regla del umbral legal — la regla gana con 100% de precisión)
-- Vínculos proveedor-funcionario (grafo con networkx y con Spark GraphFrames real)
+**Los 3 casos de uso del TDR:**
+- Favoritismo: Random Forest supervisado sobre datos sintéticos + score no
+  supervisado de priorización sobre datos abiertos sin ground truth.
+- Posible fraccionamiento: Isolation Forest/KMeans + regla interpretable de
+  ventana temporal y cuantías normativas, tratada como **señal de alerta**,
+  no como determinación jurídica automática.
+- Vínculos proveedor-funcionario: grafo con networkx y Spark GraphFrames
+  sobre datos sintéticos; en datos abiertos reales se limita a relaciones
+  organizacionales porque OCDS no publica funcionarios individuales.
 
-**Ejecutado y verificado en el entorno de desarrollo** (no solo diseñado
-en papel):
-- Apache Spark MLlib real (RandomForestClassifier, KMeans)
-- Apache Airflow real — 2 DAGs, `airflow dags test`, 100% de tareas exitosas
-- Búsqueda sistemática de hiperparámetros (GridSearchCV + CrossValidator, coincidencia cruzada entre plataformas)
-- Estándares SQL institucionales (LEFT JOIN, poda de particiones anti Full Table Scan)
-- Integración SSRS (esquema T-SQL + reporte `.rdl` real)
-- Autoevaluación y autoentrenamiento (Population Stability Index + reentrenamiento condicional, orquestado con Airflow)
-- Delta Lake real (ACID, historial de versiones, time travel, Change Data Feed)
-- Spark GraphFrames real (PageRank, Connected Components)
-- R, Scala, Python, SQL, Java — los 5 lenguajes del Anexo 2 del TDR, verificados
+**Ejecutado y verificado en el entorno de desarrollo** (no solo diseñado):
+- Apache Spark MLlib (RandomForestClassifier, KMeans)
+- Apache Airflow — 2 DAGs
+- Búsqueda sistemática de hiperparámetros
+- Estándares SQL institucionales simulados (LEFT JOIN, poda de particiones)
+- Integración SSRS mediante esquema T-SQL + `.rdl` y SQLite como stand-in
+- Autoevaluación y reentrenamiento experimental
+- Delta Lake (ACID, historial, time travel, Change Data Feed)
+- Spark GraphFrames (PageRank, Connected Components)
+- R, Scala, Python, SQL y Java como demostraciones del ecosistema del Anexo 2
 
-**Adicional, fuera del alcance formal del TDR:** el pipeline completo se
-corrió también sobre 47,442 contratos **reales** de contrataciones
-públicas del Perú (portal de datos abiertos OCDS de la OECE, no de la
-CGR) — ver `data_real/`.
+**Adicional, fuera del alcance formal del TDR:** existe un pipeline para
+datos públicos reales de contrataciones del Perú (OCDS/OECE). La ejecución
+histórica produjo 47,442 filas analíticas, pero esa cifra **no se considera
+vigente** después de la corrección P0 de relación contrato-adjudicación-
+proveedor. Debe recalcularse desde los crudos. Ver `data_real/`.
 
-## Qué queda fuera de alcance (y por qué)
+## Qué queda fuera de alcance local
 
-| Componente | Motivo |
+| Componente | Motivo / estado |
 |---|---|
-| Hadoop YARN / HDFS | No se completó una instalación pseudo-distribuida (single-node) por límites de tamaño de archivo, no por imposibilidad técnica — Apache documenta ese modo explícitamente. Se investigó `hadoop-client-minicluster` (27.1 MB, obtenido) pero requiere un segundo archivo de 40-70 MB que excede el límite de subida de este entorno; el tarball completo (554 MB) también. El beneficio real de producción (replicación tolerante a fallos, reparto de recursos entre nodos) sí requiere máquinas físicas distintas — eso no cambia con más código. |
-| SQL Server real, SSAS, Power BI | Requieren licencia o cuenta — fuera de alcance por decisión, ya que el prototipo se construye enteramente con herramientas de licencia abierta. |
-
-Ambos casos están documentados con honestidad técnica en el reporte
-(Anexo B) y en el Producto 7 (Sección 11) — no se ocultan como si
-estuvieran resueltos.
+| Lakehouse Plata/Oro institucional CGR | Requiere acceso a la plataforma institucional; el repo solo reproduce el patrón arquitectónico. |
+| Hadoop YARN / HDFS productivo | No se completó un clúster distribuido. El modo single-node es técnicamente posible, pero no demuestra las propiedades de un clúster real. |
+| SQL Server/SSRS, SSAS y Power BI institucionales | Se entrega interfaz/esquema PoC; la validación real requiere infraestructura/licencias/accesos CGR. |
+| Git institucional, DEV/QA/PROD, certificación y marcha blanca | Solo pueden cerrarse durante una implementación institucional. |
+| Transferencia formal a usuarios CGR | Depende de ejecución contractual y coordinación institucional. |
 
 ## Estructura del repositorio
 
-Separado en **código fuente** (lo que se ejecuta) y **artefactos /
-evidencia** (lo que ese código produjo, versionado para que los
-resultados sean revisables sin tener que re-ejecutar todo):
-
-```
+```text
 CÓDIGO FUENTE
-  src/                     Scripts principales (generación, EDA, preprocesamiento, modelos, autoevaluación)
-  src/spark/               Versiones en Apache Spark real (MLlib, GraphFrames, Delta Lake, estándares SQL, streaming, HMS)
-  airflow_home/dags/       Los 2 DAGs de Airflow (pipeline principal + monitoreo/reentrenamiento)
-  reporte/generar_*.js     Scripts que generan los .docx (no los .docx en sí)
-  ssrs/schema_sql_server.sql   Esquema T-SQL (definición, no un artefacto generado)
+  src/                         Scripts principales
+  src/spark/                   MLlib, GraphFrames, Delta, SQL, streaming, HMS
+  airflow_home/dags/           DAG principal + monitoreo/reentrenamiento
+  reporte/generar_*.js         Generadores de documentos
+  ssrs/schema_sql_server.sql   Esquema T-SQL
+  tests/                       Pruebas de regresión P0 y futuras
 
-DEPENDENCIAS BINARIAS (no artefactos del proyecto, pero versionadas por
-la misma razón que los datos reales: sin ellas, nadie puede reproducir
-sin repetir el mismo problema de acceso a Maven Central)
-  jars/                    GraphFrames, Delta Lake y el intento de Hadoop minicluster — ver jars/README.md
+DEPENDENCIAS BINARIAS
+  jars/                        GraphFrames, Delta Lake y pruebas Hadoop
 
-ARTEFACTOS / EVIDENCIA (generados por el código de arriba; se pueden
-borrar y regenerar corriendo los scripts correspondientes)
-  data/                    Datos sintéticos generados (contratos, proveedores, entidades, funcionarios)
-  data_real/*.csv          Salida del pipeline sobre datos reales de SEACE — ver su propio README
-  outputs/                 Gráficos, modelos entrenados (.joblib), rankings de riesgo, logs
-  reporte/*.docx           Reporte técnico consolidado y los 7 productos formales, ya generados
-  reporte/productos_formales/  Los 7 productos formales del Anexo 01, como documentos separados
-  ssrs/*.rdl               Reporte SSRS ya generado
+ARTEFACTOS / EVIDENCIA
+  data/                        Datos sintéticos y datasets derivados
+  data_real/*.csv              Datos reales procesados (ver estado en su README)
+  outputs/                     Gráficos, modelos, rankings y logs
+  reporte/*.docx               Documentos generados
+  reporte/productos_formales/  Productos 1–7 generados
+  ssrs/*.rdl                   Reporte SSRS generado
 ```
-
-Nota de honestidad (revisión externa, agosto 2026): el repositorio no
-está reorganizado en carpetas físicas separadas (ej. `artefactos/` vs
-`codigo/`) — habría significado mover muchas rutas ya verificadas contra
-las últimas correcciones, con riesgo de romper algo sin poder
-re-verificar todo a tiempo. Esta tabla es la separación conceptual
-explícita que faltaba, no una reestructuración física.
 
 ## Cómo reproducir
 
-### 0. Instalar el entorno (paso que faltaba documentar — corregido tras revisión externa)
+### 0. Instalar el entorno
 
 ```bash
-# Dependencias de Python (versiones fijadas en requirements.txt)
 pip install -r requirements.txt --break-system-packages
-
-# Dependencias de Node.js (generación de los .docx del reporte)
 cd reporte && npm install && cd ..
-
-# R (para src/analisis_r.R) — vía apt en Debian/Ubuntu
-apt-get install -y r-base-core
-
-# Apache Airflow — en un entorno virtual SEPARADO (evita conflictos de
-# dependencias con el resto del proyecto):
-python3 -m venv .venv_airflow
-.venv_airflow/bin/pip install "apache-airflow==3.3.0" \
-    --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-3.3.0/constraints-3.12.txt"
 ```
 
-Los `.jar` de Spark (GraphFrames, Delta Lake, el intento de Hadoop) ya
-están versionados en `jars/` — no hace falta descargarlos de nuevo (ver
-`jars/README.md` si necesitas otra versión).
+R, Java/Spark y Airflow requieren sus respectivos runtimes. Airflow se ha
+mantenido en un entorno virtual separado para evitar conflictos de
+versiones; esta integración será endurecida en una fase posterior del plan.
 
-### 1. Ejecutar el pipeline
+### 1. Ejecutar pruebas de regresión
 
-Orden de ejecución (o usar directamente el DAG de Airflow, que hace lo
-mismo de forma orquestada):
-
+```bash
+pytest -q
 ```
+
+Las pruebas P0 verifican como mínimo:
+- un contrato recibe suppliers de **su award**, no de todos los awards del
+  proceso;
+- `contract.id` repetido en OCID diferentes no colisiona;
+- un award sin supplier no hereda el supplier de otro award;
+- topes 2022–2026 parametrizados;
+- cambio de régimen el 22/04/2025;
+- prioridad de `mainProcurementCategory` sobre texto libre;
+- fallo explícito para años normativos no parametrizados.
+
+### 2. Pipeline sintético
+
+```bash
 python3 src/generar_datos.py
-python3 src/eda.py                        # opcional
+python3 src/eda.py
 python3 src/preprocesamiento.py
 python3 src/modelo_favoritismo.py
 python3 src/modelo_fraccionamiento.py
 python3 src/modelo_grafos.py
 python3 src/generar_diccionario_diagrama.py
+```
 
-# Versiones en Spark real (requieren los .jar de jars/):
+### 3. Pipeline real OCDS/OECE
+
+Seguir `data_real/README.md`. Se necesitan los crudos:
+`main.csv`, `contracts.csv`, `awards.csv`, `awards_suppliers.csv` y
+`parties.csv`.
+
+```bash
+python3 src/cargar_datos_reales_seace.py
+pytest -q
+python3 src/modelo_real.py
+```
+
+### 4. Componentes Spark / MLOps / SSRS PoC
+
+```bash
 python3 src/spark/modelo_favoritismo_spark.py
 python3 src/spark/modelo_fraccionamiento_spark.py
 python3 src/spark/vinculos_graphframes.py
 python3 src/spark/lakehouse_delta.py
 python3 src/spark/estandares_sql.py
-
-# Autoevaluación y publicación:
 python3 src/autoevaluacion.py
 python3 src/publicar_ssrs.py
-
-# O todo orquestado con Airflow (con AIRFLOW_HOME apuntando a airflow_home/):
-airflow dags test modulo_analisis_datos_1_8_2
-airflow dags test monitoreo_reentrenamiento_1_8_2
 ```
 
 ## Documentación
 
-- **[Reporte_Tecnico_Prototipo_CGR_1.8.2.docx](reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx)** — documento único consolidado, la forma más rápida de leer todo el trabajo con evidencia y hallazgos.
-- **`reporte/productos_formales/`** — los 7 productos formales del Anexo 01, cada uno con la carátula, estructura y numeración que exige el TDR (relevante porque el TDR liga cada pago a la aprobación de un producto individual, no de un reporte único).
-- **`data_real/README.md`** — cómo reproducir la validación con datos reales de SEACE.
-- **`jars/README.md`** — de dónde salieron los `.jar` de GraphFrames/Delta Lake/Hadoop y por qué hicieron falta.
+- `reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx` — reporte consolidado
+  generado antes de algunas correcciones P0; será regenerado al cerrar las
+  brechas de datos/modelado para evitar documentar cifras obsoletas.
+- `reporte/productos_formales/` — Productos 1–7 generados; mismo criterio de
+  actualización que el reporte consolidado.
+- `data_real/README.md` — procedimiento y estado de la validación real.
+- `jars/README.md` — dependencias JVM versionadas.
 
 ## Licencia
 
-El código de este repositorio está bajo licencia **MIT** (ver
-[`LICENSE`](LICENSE)) — cualquiera, incluida la CGR, puede usarlo, copiarlo,
-modificarlo y redistribuirlo libremente, sin restricciones ni necesidad de
-pedir permiso.
+El código de este repositorio está bajo licencia **MIT** (ver `LICENSE`).
+Los datos públicos reales procedentes de OECE conservan su licencia **CC BY
+4.0** y requieren atribución.
 
-Esto es distinto de la licencia de los **datos** en `data_real/`, que son
-de la OECE bajo **CC BY 4.0** (requiere atribución) — ver
-`data_real/README.md`. El código y los datos reales tienen licencias
-separadas porque tienen dueños distintos.
+## Nota metodológica
 
-## Nota sobre los datos
+Los datasets de `data/` son sintéticos y permiten pruebas funcionales con
+ground truth sembrado. Las métricas perfectas obtenidas en esos escenarios
+**no son estimaciones del desempeño esperado en producción**. En particular,
+el 100% de la regla sintética de posible fraccionamiento es un *sanity check*
+de implementación sobre casos construidos con el patrón que la regla busca.
 
-Los datasets en `data/` son **sintéticos**, generados para fines de
-demostración — no contienen información real de proveedores, funcionarios
-ni entidades públicas. Los datasets en `data_real/` (procesados) sí son
-**reales**: contrataciones públicas del Perú, publicadas legalmente en
-formato abierto por la OECE bajo licencia CC BY 4.0 — no son datos
-internos de la CGR.
-
-## Hallazgo principal
-
-En el caso de fraccionamiento, ni Isolation Forest (scikit-learn) ni
-KMeans (Spark MLlib real) igualan la precisión de una regla simple basada
-en el umbral legal de Adjudicación Simplificada (100% vs. 37.5% y 0%
-respectivamente). El valor de este tipo de herramienta está tanto en
-traducir correctamente la normativa de contrataciones a reglas
-computables como en el modelo estadístico en sí.
+El objetivo productivo del módulo no debe ser "declarar corrupción" ni
+"probar fraccionamiento" automáticamente, sino **priorizar señales explicables
+y trazables para revisión de auditor**, en línea con el propósito del TDR.
