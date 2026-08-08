@@ -12,8 +12,8 @@ airflow_home/logs/
 airflow_home/*.cfg
 airflow_home/*.pid
 
-# Parquet particionado (regenerable)
-lakehouse/oro/contratos_particionado/
+# Parquet particionado (regenerable por la evidencia SQL Spark)
+lakehouse/plata/contratos_particionado/
 
 # Base de datos local (stand-in de SQL Server, regenerable)
 ssrs/reportes.db
