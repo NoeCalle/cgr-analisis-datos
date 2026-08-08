@@ -214,16 +214,24 @@ def _moda_o_error(series: pd.Series, campo: str):
 
 
 def main():
-    # Pipeline reproducible legacy: conserva exactamente el rol de benchmark PoC.
+    # Pipeline reproducible legacy: conserva nombres y métricas del benchmark PoC.
     df = codificar_y_normalizar(limpiar_e_imputar(cargar()))
     df.to_csv("data/contratos_procesados.csv", index=False)
-    fav = features_favoritismo(df)
+    fav = features_favoritismo(
+        df,
+        label_col="es_favoritismo_real",
+        output_label="label_favoritismo_real",
+    )
     fav.to_csv("data/dataset_favoritismo.csv", index=False)
-    frac = features_fraccionamiento(df)
+    frac = features_fraccionamiento(
+        df,
+        label_col="es_fraccionamiento_real",
+        output_label="label_fraccionamiento_real",
+    )
     frac.to_csv("data/dataset_fraccionamiento.csv", index=False)
     print(
-        f"Favoritismo: {len(fav)} pares / {int(fav['es_favoritismo_real'].sum())} positivos.\n"
-        f"Fraccionamiento: {len(frac)} grupos / {int(frac['es_fraccionamiento_real'].sum())} positivos."
+        f"Favoritismo: {len(fav)} pares / {int(fav['label_favoritismo_real'].sum())} positivos.\n"
+        f"Fraccionamiento: {len(frac)} grupos / {int(frac['label_fraccionamiento_real'].sum())} positivos."
     )
 
 
