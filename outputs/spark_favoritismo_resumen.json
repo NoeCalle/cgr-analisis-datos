@@ -1,0 +1,33 @@
+{
+  "motor": "Apache Spark MLlib",
+  "modo": "local[*]",
+  "implementacion_objetivo_tdr": true,
+  "dataset": "lakehouse/plata/contratos_procesados.csv",
+  "algoritmo": "RandomForestClassifier",
+  "metrica_seleccion": "AUC-PR CV",
+  "cv": "3-fold estratificado determinístico mediante foldCol",
+  "n_registros": 2328,
+  "positivos": 6,
+  "mejor_configuracion": {
+    "numTrees": 100,
+    "maxDepth": 3
+  },
+  "auc_pr_cv": 1.0,
+  "features": [
+    "n_contratos",
+    "monto_total",
+    "monto_promedio",
+    "n_objetos_unicos",
+    "pct_contratacion_directa",
+    "pct_comparacion_precios",
+    "n_funcionarios_distintos",
+    "dias_actividad",
+    "concentracion_objeto",
+    "contratos_por_mes",
+    "monto_por_funcionario"
+  ],
+  "ranking": "outputs/ranking_riesgo_favoritismo_spark.csv",
+  "modelo_runtime": "outputs/runtime/modelo_favoritismo_spark_rf",
+  "duracion_s": 49.317,
+  "advertencia": "Ejecución Spark real local; no equivale a clúster ni producción CGR."
+}

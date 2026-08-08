@@ -1,0 +1,20 @@
+{
+  "motor": "Apache Spark + GraphFrames",
+  "modo": "local[*]",
+  "implementacion_objetivo_tdr": true,
+  "jars": [
+    "jars/graphframes-spark4_2_13-0_10_0.jar",
+    "jars/graphframes-graphx-spark4_2_13-0_10_0.jar"
+  ],
+  "n_vertices": 280,
+  "n_aristas": 2995,
+  "n_senales_vinculo_sinteticas": 5,
+  "n_componentes_conectados": 1,
+  "pagerank_top_n": 10,
+  "salidas": [
+    "outputs/vinculos_graphframes_sospechosos.csv",
+    "outputs/vinculos_graphframes_pagerank.csv"
+  ],
+  "duracion_s": 21.596,
+  "advertencia": "Datos de contacto sintéticos; clúster y fuentes institucionales CGR pendientes."
+}

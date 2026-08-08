@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "generado_utc": "2026-08-08T00:07:24.053555+00:00",
-  "git_commit": "46b503ba67f544ce1bd06479c377d773e565d4bc",
+  "generado_utc": "2026-08-08T00:41:36.504633+00:00",
+  "git_commit": "939c39523a8775ec230fa9a551239eb4fb6dca66",
   "naturaleza": "Prototipo independiente. Las métricas sintéticas evalúan el PoC y no estiman desempeño productivo. Las salidas sobre datos públicos son señales de priorización para revisión y no constituyen hallazgos ni determinaciones de irregularidad.",
   "sintetico": {
     "contratos": 3709,
@@ -213,23 +213,26 @@
     ]
   },
   "run_manifest": {
-    "schema_version": 2,
-    "generado_utc": "2026-08-08T00:07:23.721452+00:00",
-    "git_commit": "46b503ba67f544ce1bd06479c377d773e565d4bc",
+    "schema_version": 3,
+    "generado_utc": "2026-08-08T00:41:36.123760+00:00",
+    "git_commit": "939c39523a8775ec230fa9a551239eb4fb6dca66",
     "entorno": {
       "python": "3.12.13",
       "pandas": "3.0.2",
       "numpy": "2.4.4",
       "scikit-learn": "1.8.0",
       "shap": "0.52.0",
-      "pyspark": null,
-      "delta-spark": null,
-      "graphframes-py": null
+      "pyspark": "4.1.1",
+      "delta-spark": "4.3.0",
+      "graphframes-py": "0.10.0",
+      "graphviz": "0.21"
     },
     "arquitectura_datos": {
       "entrada_modelos": "lakehouse/plata",
       "salida_reporting": "lakehouse/oro",
-      "nota": "simulación local; no equivale al Lakehouse institucional CGR"
+      "benchmark_metodologico": "scikit-learn",
+      "implementacion_objetivo_tdr": "Apache Spark MLlib / GraphFrames",
+      "nota": "simulación local; no equivale al Lakehouse ni clúster institucional CGR"
     },
     "comparacion_modelos_favoritismo": {
       "diseno": "predicciones out-of-fold, StratifiedKFold 3-fold, mismas particiones para todos",
@@ -330,6 +333,85 @@
       },
       "advertencia": "benchmark sintético con pocos positivos; no estima desempeño productivo"
     },
+    "spark_favoritismo": {
+      "motor": "Apache Spark MLlib",
+      "modo": "local[*]",
+      "implementacion_objetivo_tdr": true,
+      "dataset": "lakehouse/plata/contratos_procesados.csv",
+      "algoritmo": "RandomForestClassifier",
+      "metrica_seleccion": "AUC-PR CV",
+      "cv": "3-fold estratificado determinístico mediante foldCol",
+      "n_registros": 2328,
+      "positivos": 6,
+      "mejor_configuracion": {
+        "numTrees": 100,
+        "maxDepth": 3
+      },
+      "auc_pr_cv": 1.0,
+      "features": [
+        "n_contratos",
+        "monto_total",
+        "monto_promedio",
+        "n_objetos_unicos",
+        "pct_contratacion_directa",
+        "pct_comparacion_precios",
+        "n_funcionarios_distintos",
+        "dias_actividad",
+        "concentracion_objeto",
+        "contratos_por_mes",
+        "monto_por_funcionario"
+      ],
+      "ranking": "outputs/ranking_riesgo_favoritismo_spark.csv",
+      "modelo_runtime": "outputs/runtime/modelo_favoritismo_spark_rf",
+      "duracion_s": 49.317,
+      "advertencia": "Ejecución Spark real local; no equivale a clúster ni producción CGR."
+    },
+    "spark_fraccionamiento": {
+      "motor": "Apache Spark MLlib",
+      "modo": "local[*]",
+      "implementacion_objetivo_tdr": true,
+      "dataset": "lakehouse/plata/contratos_procesados.csv",
+      "algoritmo": "KMeans + distancia al centroide",
+      "k": 2,
+      "features": [
+        "n_contratos_grupo",
+        "max_contratos_ventana_15d",
+        "monto_total_ventana_15d",
+        "pct_montos_bajo_umbral",
+        "monto_total_grupo"
+      ],
+      "sanity_sintetico": {
+        "n_grupos": 180,
+        "positivos_sinteticos": 8,
+        "top_k_aciertos": 4,
+        "senal_interpretable_marcados": 9,
+        "senal_interpretable_positivos": 8
+      },
+      "ranking": "outputs/ranking_riesgo_fraccionamiento_spark.csv",
+      "modelo_runtime": "outputs/runtime/modelo_fraccionamiento_spark_kmeans",
+      "duracion_s": 20.993,
+      "advertencia": "Sanity check sobre benchmark sintético; no estima desempeño productivo. Ejecución Spark real local; clúster CGR pendiente."
+    },
+    "graphframes": {
+      "motor": "Apache Spark + GraphFrames",
+      "modo": "local[*]",
+      "implementacion_objetivo_tdr": true,
+      "jars": [
+        "jars/graphframes-spark4_2_13-0_10_0.jar",
+        "jars/graphframes-graphx-spark4_2_13-0_10_0.jar"
+      ],
+      "n_vertices": 280,
+      "n_aristas": 2995,
+      "n_senales_vinculo_sinteticas": 5,
+      "n_componentes_conectados": 1,
+      "pagerank_top_n": 10,
+      "salidas": [
+        "outputs/vinculos_graphframes_sospechosos.csv",
+        "outputs/vinculos_graphframes_pagerank.csv"
+      ],
+      "duracion_s": 21.596,
+      "advertencia": "Datos de contacto sintéticos; clúster y fuentes institucionales CGR pendientes."
+    },
     "validacion_p0_datos_reales": {
       "fecha_validacion": "2026-08-07",
       "fuente": "Portal de datos abiertos OCDS de la OECE / Open Contracting Partnership, publicación usada por el prototipo",
@@ -422,8 +504,8 @@
       },
       "outputs/ranking_riesgo_favoritismo.csv": {
         "existe": true,
-        "sha256": "2ed16ebf4a1112246933b2ec827c0522933e16d197b757e094817a2b94e0ef50",
-        "bytes": 192441
+        "sha256": "21b7e870b1bdee1d392dd32c9c9efe1d4a274a62173c6761e06d8f436dc6c4b1",
+        "bytes": 192440
       },
       "outputs/ranking_riesgo_fraccionamiento.csv": {
         "existe": true,
@@ -434,6 +516,51 @@
         "existe": true,
         "sha256": "800dfae46978faaa6d504c8feb7e4ad5b3e0e823e6be67ca4331e2768ad8ccca",
         "bytes": 121706
+      },
+      "outputs/spark_favoritismo_resumen.json": {
+        "existe": true,
+        "sha256": "244cf5f8b2f7a1a16ef71d02d5f4568aad9860659dfd1e10581d791a56aa8060",
+        "bytes": 974
+      },
+      "outputs/spark_fraccionamiento_resumen.json": {
+        "existe": true,
+        "sha256": "217ad8753174de4f82eb456ac0f0540498dde06d64b91adf7f1951142282951b",
+        "bytes": 872
+      },
+      "outputs/graphframes_resumen.json": {
+        "existe": true,
+        "sha256": "caa96fdef1c5f63752a87ec0dd8f6b6f90207ee2be6fae78e6145069b7dce74f",
+        "bytes": 603
+      },
+      "outputs/ranking_riesgo_favoritismo_spark.csv": {
+        "existe": true,
+        "sha256": "d4d47eafd85591cd13988dbcd3761c4a1fe08c4ff6dc816c533802bc057c93f0",
+        "bytes": 63759
+      },
+      "outputs/ranking_riesgo_fraccionamiento_spark.csv": {
+        "existe": true,
+        "sha256": "50222997fb35e6b826af62d52192fac604535dc5c4b4917fd0546ea149262ab8",
+        "bytes": 14042
+      },
+      "outputs/vinculos_graphframes_sospechosos.csv": {
+        "existe": true,
+        "sha256": "8f49edb49bfd60eba87578466cc1f30f2044efcf3aed346055ca8e91f58c8a5d",
+        "bytes": 635
+      },
+      "outputs/vinculos_graphframes_pagerank.csv": {
+        "existe": true,
+        "sha256": "035acdb7a696eb8724fc0b724df9692dea5cd613c06f8b78d1db636ec79d4a58",
+        "bytes": 372
+      },
+      "data/diccionario_datos.csv": {
+        "existe": true,
+        "sha256": "303d545c4bda92a5ee3be6da642e245b09021469f4d7dd2e2708fa26badb33a1",
+        "bytes": 4192
+      },
+      "outputs/linaje_datos.csv": {
+        "existe": true,
+        "sha256": "8e2019eb66df25cda3499df1d797442a95736bdd888f8c380e635033d533dd52",
+        "bytes": 4818
       }
     }
   },
