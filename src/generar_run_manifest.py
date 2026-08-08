@@ -99,7 +99,7 @@ def main():
         }
 
     manifest = {
-        "schema_version": 4,
+        "schema_version": 3,
         "generado_utc": datetime.now(timezone.utc).isoformat(),
         "git_commit": git_sha(),
         "entorno": versiones(),
