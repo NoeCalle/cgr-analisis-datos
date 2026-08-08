@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "scope": "TDR completo público de mayo de 2026",
+  "nature": "auditoría del PoC independiente; no conformidad ni aprobación CGR",
+  "total_criterios": 25,
+  "resumen": {
+    "✅": 12,
+    "🟡": 8,
+    "🔵": 5,
+    "🔴": 0
+  },
+  "repo_closable_gaps": 0,
+  "criterios": [
+    {
+      "numero": 1,
+      "seccion_tdr": "4.1.1 / 6",
+      "requisito": "Análisis Exploratorio de Datos (EDA) y estadísticas descriptivas",
+      "estado": "✅",
+      "evidencias": [
+        "outputs/evidencia_documental.json",
+        "outputs/charts"
+      ],
+      "dependencias_cgr": [],
+      "detalle": "EDA, estadísticas y gráficos programáticos forman parte de la evidencia reproducible."
+    },
+    {
+      "numero": 2,
+      "seccion_tdr": "4.1.2-4.1.3 / 6",
+      "requisito": "Identificación, adquisición, integración y consolidación SIAF/SEACE",
+      "estado": "🟡",
+      "evidencias": [
+        "docs/Integracion_Datos.md",
+        "config/cgr.example.yaml",
+        "src/core/schemas.py"
+      ],
+      "dependencias_cgr": [
+        "CGR-DEP-01",
+        "CGR-DEP-06"
+      ],
+      "detalle": "Existe contrato canónico y conectores; la lectura de fuentes internas reales requiere acceso CGR."
+    },
+    {
+      "numero": 3,
+      "seccion_tdr": "4.1.4 / Productos 2 y 5",
+      "requisito": "Limpieza, faltantes, outliers, codificación y normalización/estandarización",
+      "estado": "✅",
+      "evidencias": [
+        "src/preprocesamiento.py",
+        "outputs/champions_spark/preprocesador_contratos.json"
+      ],
+      "dependencias_cgr": [],
+      "detalle": "FIT/TRANSFORM están separados; el P99 se congela y el serving de favoritismo consume monto_capped."
+    },
+    {
+      "numero": 4,
+      "seccion_tdr": "4.1.5",
+      "requisito": "Enriquecimiento y generación de características",
+      "estado": "✅",
+      "evidencias": [
+        "data/dataset_favoritismo.csv",
+        "data/dataset_fraccionamiento.csv",
+        "outputs/linaje_datos.csv"
+      ],
+      "dependencias_cgr": [],
+      "detalle": "Features de favoritismo/fraccionamiento y linaje fuente→feature están materializados."
+    },
+    {
+      "numero": 5,
+      "seccion_tdr": "6",
+      "requisito": "Análisis Profundo de Pagos y Modalidades de Contratación",
+      "estado": "🟡",
+      "evidencias": [
+        "data/pagos_siaf_sintetico.csv",
+        "outputs/analisis_pagos_modalidades.json",
+        "outputs/resumen_pagos_contrato.csv",
+        "outputs/resumen_modalidades_regimen.csv",
+        "outputs/charts/11_ratio_pago_contrato.png",
+        "outputs/charts/12_modalidades_regimen.png"
+      ],
+      "dependencias_cgr": [
+        "CGR-DEP-01"
+      ],
+      "detalle": "El motor analítico y la evidencia sintética están implementados; el cierre literal requiere pagos SIAF y mapeos institucionales reales."
+    },
+    {
+      "numero": 6,
+      "seccion_tdr": "4.2.2 / Productos 3-4",
+      "requisito": "Identificación de proveedores favoritos",
+      "estado": "✅",
+      "evidencias": [
+        "outputs/comparacion_modelos_favoritismo.json",
+        "outputs/tuning_favoritismo_resumen.json",
+        "outputs/ranking_riesgo_favoritismo_spark.csv"
+      ],
+      "dependencias_cgr": [],
+      "detalle": "Clasificación/riesgo con benchmark, tuning, explicación y ejecución Spark."
+    },
+    {
+      "numero": 7,
+      "seccion_tdr": "4.2.3 / Productos 6-7",
+      "requisito": "Detección de fraccionamiento y compras repetitivas/anómalas",
+      "estado": "✅",
+      "evidencias": [
+        "outputs/tuning_fraccionamiento_resumen.json",
+        "outputs/ranking_riesgo_fraccionamiento_spark.csv"
+      ],
+      "dependencias_cgr": [],
+      "detalle": "Isolation Forest de referencia + KMeans MLlib + señal interpretable por ventana/cuantía."
+    },
+    {
+      "numero": 8,
+      "seccion_tdr": "4.2.4",
+      "requisito": "Evaluación de vínculos proveedor-funcionario mediante grafos/redes",
+      "estado": "🟡",
+      "evidencias": [
+        "outputs/graphframes_resumen.json",
+        "outputs/vinculos_graphframes_sospechosos.csv"
+      ],
+      "dependencias_cgr": [
+        "CGR-DEP-01"
+      ],
+      "detalle": "GraphFrames se ejecuta sobre escenario sintético; los vínculos y datos personales institucionales requieren fuentes y permisos CGR."
+    },
+    {
+      "numero": 9,
+      "seccion_tdr": "4.2.5",
+      "requisito": "Entrenamiento, validación cruzada y optimización de hiperparámetros",
+      "estado": "✅",
+      "evidencias": [
+        "outputs/tuning_favoritismo_resumen.json",
+        "outputs/tuning_fraccionamiento_resumen.json",
+        "outputs/spark_favoritismo_resumen.json"
+      ],
+      "dependencias_cgr": [],
+      "detalle": "Tuning/validación y separación de holdout quedan persistidos."
+    },
+    {
+      "numero": 10,
+      "seccion_tdr": "3.2.a / 4.2.6",
+      "requisito": "Apache Spark MLlib escalable y pruebas de rendimiento/robustez",
+      "estado": "🟡",
+      "evidencias": [
+        "outputs/inference_spark_smoke_summary.json",
+        "outputs/spark_favoritismo_resumen.json",
+        "outputs/spark_fraccionamiento_resumen.json"
+      ],
+      "dependencias_cgr": [
+        "CGR-DEP-06",
+        "CGR-DEP-03"
+      ],
+      "detalle": "Spark MLlib se ejecuta en local[*]; clúster institucional y aceptación de performance requieren CGR."
+    },
+    {
+      "numero": 11,
+      "seccion_tdr": "4.3.1-4.3.2",
+      "requisito": "Reportes automáticos con tablas, estadísticas, gráficos y métricas",
+      "estado": "✅",
+      "evidencias": [
+        "src/generar_evidencia_documental.py",
+        "reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx",
+        "outputs/charts"
+      ],
+      "dependencias_cgr": [],
+      "detalle": "La documentación formal se genera desde evidencia machine-readable y gráficos programáticos."
+    },
+    {
+      "numero": 12,
+      "seccion_tdr": "4.4",
+      "requisito": "Documentación técnica completa, código fuente, diccionario y diagrama",
+      "estado": "✅",
+      "evidencias": [
+        "data/diccionario_datos.csv",
+        "outputs/charts/09_diagrama_modelo_datos.png",
+        "outputs/run_manifest.json",
+        "README.md"
+      ],
+      "dependencias_cgr": [],
+      "detalle": "Código, versiones, hashes, diccionario, diagrama y documentación están versionados."
+    },
+    {
+      "numero": 13,
+      "seccion_tdr": "Anexo 2 / 6",
+      "requisito": "Lakehouse Bronce/Plata/Oro y DAGs de orquestación",
+      "estado": "🟡",
+      "evidencias": [
+        "lakehouse/bronce",
+        "lakehouse/plata",
+        "lakehouse/oro",
+        "airflow_home/dags/dag_modulo_analisis_datos.py"
+      ],
+      "dependencias_cgr": [
+        "CGR-DEP-01",
+        "CGR-DEP-06"
+      ],
+      "detalle": "La arquitectura es funcional localmente; Datamart/HDFS/YARN/Airflow institucional requieren CGR."
+    },
+    {
+      "numero": 14,
+      "seccion_tdr": "3.2.c / 6",
+      "requisito": "Autoevaluación y estrategia de actualización/reentrenamiento sostenible",
+      "estado": "✅",
+      "evidencias": [
+        "src/autoevaluacion.py",
+        "src/registro_modelos.py",
+        "docs/Train_Inference.md"
+      ],
+      "dependencias_cgr": [],
+      "detalle": "El reentrenamiento produce candidate; no existe autopromoción silenciosa."
+    },
+    {
+      "numero": 15,
+      "seccion_tdr": "3.2.f / Producto 7",
+      "requisito": "Separación TRAIN/INFERENCE, persistencia y serving sin reentrenamiento",
+      "estado": "✅",
+      "evidencias": [
+        "outputs/model_registry.json",
+        "outputs/inference_spark_smoke_summary.json",
+        "airflow_home/dags/dag_inferencia_modelos.py"
+      ],
+      "dependencias_cgr": [],
+      "detalle": "El perfil activo es Spark MLlib; inference no consume labels, training ni tuning."
+    },
+    {
+      "numero": 16,
+      "seccion_tdr": "3.2.f / 4.2.6 / 6",
+      "requisito": "Despliegue, seguridad, mantenimiento y monitorización operacional",
+      "estado": "🟡",
+      "evidencias": [
+        "docs/Train_Inference.md",
+        "src/monitoreo_modelos.py",
+        "src/autoevaluacion.py",
+        "airflow_home/dags/dag_monitoreo_reentrenamiento.py",
+        "outputs/model_registry.json"
+      ],
+      "dependencias_cgr": [
+        "CGR-DEP-04",
+        "CGR-DEP-06"
+      ],
+      "detalle": "Controles de software, autoevaluación y monitoreo de solo lectura existen; identidad, secretos, segregación y operación productiva son institucionales."
+    },
+    {
+      "numero": 17,
+      "seccion_tdr": "6 / Producto 7",
+      "requisito": "Pruebas de integración en ambientes DEV/QA/PROD y puesta a producción",
+      "estado": "🔵",
+      "evidencias": [],
+      "dependencias_cgr": [
+        "CGR-DEP-06",
+        "CGR-DEP-04"
+      ],
+      "detalle": "No es demostrable fuera de los ambientes, accesos y controles institucionales."
+    },
+    {
+      "numero": 18,
+      "seccion_tdr": "Anexo 3 / Producto 7",
+      "requisito": "Publicación e integración en SQL Server/SSRS",
+      "estado": "🟡",
+      "evidencias": [
+        "ssrs/schema_sql_server.sql",
+        "ssrs/ReporteRiesgoFavoritismo.rdl",
+        "ssrs/ReporteRiesgoFraccionamiento.rdl",
+        "outputs/ssrs_publicacion_manifest.json"
+      ],
+      "dependencias_cgr": [
+        "CGR-DEP-05",
+        "CGR-DEP-06"
+      ],
+      "detalle": "Contrato T-SQL/RDL validado localmente; despliegue real requiere SQL Server/SSRS CGR."
+    },
+    {
+      "numero": 19,
+      "seccion_tdr": "Anexo 3 / 3.2.e",
+      "requisito": "Umbrales institucionales y validación productiva de Accuracy/F1/AUC-ROC",
+      "estado": "🟡",
+      "evidencias": [
+        "outputs/comparacion_modelos_favoritismo.json",
+        "outputs/tuning_fraccionamiento_resumen.json"
+      ],
+      "dependencias_cgr": [
+        "CGR-DEP-03",
+        "CGR-DEP-06"
+      ],
+      "detalle": "El PoC reporta métricas; el TDR público no aporta los mínimos numéricos ni ground truth institucional."
+    },
+    {
+      "numero": 20,
+      "seccion_tdr": "6 / Producto 7",
+      "requisito": "Certificación, levantamiento de observaciones/incidencias y marcha blanca",
+      "estado": "🔵",
+      "evidencias": [],
+      "dependencias_cgr": [
+        "CGR-DEP-07",
+        "CGR-DEP-06"
+      ],
+      "detalle": "Requiere usuarios, casos, ambientes e incidencias reales de la CGR."
+    },
+    {
+      "numero": 21,
+      "seccion_tdr": "6 / Transferencia de Conocimiento",
+      "requisito": "Transferencia de conocimiento a usuarios técnicos y funcionales",
+      "estado": "🔵",
+      "evidencias": [],
+      "dependencias_cgr": [
+        "CGR-DEP-08"
+      ],
+      "detalle": "Las sesiones y actas de transferencia son una actividad contractual institucional."
+    },
+    {
+      "numero": 22,
+      "seccion_tdr": "13",
+      "requisito": "Accesos a bases de datos y herramientas colaborativas CGR",
+      "estado": "🔵",
+      "evidencias": [],
+      "dependencias_cgr": [
+        "CGR-DEP-01",
+        "CGR-DEP-04",
+        "CGR-DEP-06"
+      ],
+      "detalle": "El repositorio no puede crear ni simular como reales permisos institucionales."
+    },
+    {
+      "numero": 23,
+      "seccion_tdr": "14",
+      "requisito": "Entrega/propiedad/confidencialidad y repositorio institucional",
+      "estado": "🔵",
+      "evidencias": [],
+      "dependencias_cgr": [
+        "CGR-DEP-08",
+        "CGR-DEP-04"
+      ],
+      "detalle": "El PoC mantiene licencia/avisos propios; la cesión y entrega contractual se formalizan dentro de CGR."
+    },
+    {
+      "numero": 24,
+      "seccion_tdr": "Anexo 1",
+      "requisito": "Formato formal de Productos e Informe Final",
+      "estado": "✅",
+      "evidencias": [
+        "reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx",
+        "reporte/productos_formales/Producto_01_Plan_de_Trabajo.docx",
+        "reporte/productos_formales/Producto_07_Informe_Final.docx"
+      ],
+      "dependencias_cgr": [],
+      "detalle": "Los ocho DOCX son regenerados, indexados, auditados y renderizados en CI."
+    },
+    {
+      "numero": 25,
+      "seccion_tdr": "6 / análisis normativo",
+      "requisito": "Trazabilidad normativa por fecha/régimen para umbrales y modalidades",
+      "estado": "✅",
+      "evidencias": [
+        "src/umbrales_normativos.py",
+        "outputs/analisis_pagos_modalidades.json"
+      ],
+      "dependencias_cgr": [],
+      "detalle": "El rango sintético 2023-2026 conserva fuentes oficiales versionadas y cambio de régimen 22/04/2025."
+    }
+  ]
+}

@@ -1,8 +1,8 @@
 {
-  "schema_version": 1,
-  "generado_utc": "2026-08-08T17:17:48.962461+00:00",
-  "git_commit": "3cb067acf0a14080121d887c6888c47399d04c34",
-  "naturaleza": "Prototipo independiente. Las métricas sintéticas evalúan el PoC y no estiman desempeño productivo. Las salidas sobre datos públicos son señales de priorización para revisión y no constituyen hallazgos ni determinaciones de irregularidad.",
+  "schema_version": 2,
+  "generado_utc": "2026-08-08T18:40:52.392056+00:00",
+  "git_commit": "9d6b68d304c74f8bdc715fc195996b257793cda6",
+  "naturaleza": "Prototipo independiente. Las métricas sintéticas evalúan el PoC y no estiman desempeño productivo. El análisis de pagos usa datos sintéticos y no representa SIAF real. Las salidas sobre datos públicos son señales de priorización para revisión y no constituyen hallazgos ni determinaciones de irregularidad.",
   "sintetico": {
     "contratos": 3709,
     "columnas_contratos": 12,
@@ -53,6 +53,90 @@
         "monto_total_grupo"
       ]
     }
+  },
+  "analisis_pagos_modalidades": {
+    "artifacts": {
+      "chart_modalidades_regimen": "outputs/charts/12_modalidades_regimen.png",
+      "chart_ratio_pago": "outputs/charts/11_ratio_pago_contrato.png",
+      "resumen_modalidades_regimen": "outputs/resumen_modalidades_regimen.csv",
+      "resumen_pagos_contrato": "outputs/resumen_pagos_contrato.csv"
+    },
+    "config": "config/local-tdr.yaml",
+    "institutional_dependency": "El reemplazo de pagos sintéticos por pagos SIAF reales, y la validación jurídica/funcional de modalidades, requiere fuentes, diccionarios y especialistas CGR.",
+    "modalidades": {
+      "clasificacion_modalidad": {
+        "compatible_referencial_por_cuantia": 847,
+        "especial_no_inferible_por_cuantia": 1422,
+        "requiere_revision_contexto": 1314,
+        "sin_cuantia_para_comparar": 35,
+        "sin_informacion": 91
+      },
+      "contratos_por_regimen": {
+        "Ley 30225": 2436,
+        "Ley 32069": 1273
+      },
+      "modalidades_observadas": {
+        "Adjudicación Simplificada": 1274,
+        "Comparación de Precios": 1039,
+        "Concurso Público": 354,
+        "Concurso Público Abreviado": 11,
+        "Contratación Directa": 383,
+        "Licitación Pública": 548,
+        "Licitación Pública Abreviada": 9,
+        "SIN_DATO": 91
+      },
+      "nota_interpretacion": "La comparación por cuantía es referencial. 'requiere_revision_contexto' no significa ilegalidad; exige revisar el supuesto jurídico, objeto, causal y demás antecedentes."
+    },
+    "nature": "Datos sintéticos; no representan pagos SIAF ni decisiones de contratación reales.",
+    "normative_provenance_2023_2026": {
+      "2023": {
+        "ley_presupuesto": "Ley N.° 31638 - Presupuesto del Sector Público para el Año Fiscal 2023",
+        "url_presupuesto": "https://www.gob.pe/institucion/mef/normas-legales/3715319-31638"
+      },
+      "2024": {
+        "ley_presupuesto": "Ley N.° 31953 - Presupuesto del Sector Público para el Año Fiscal 2024",
+        "url_presupuesto": "https://www.gob.pe/institucion/mef/normas-legales/6964231-31953"
+      },
+      "2025": {
+        "ley_presupuesto": "Ley N.° 32185 - Presupuesto del Sector Público para el Año Fiscal 2025",
+        "ley_regimen": "Ley N.° 32069 - Ley General de Contrataciones Públicas",
+        "url_presupuesto": "https://www.gob.pe/institucion/mef/normas-legales/6278077-32185",
+        "url_topes": "https://www.gob.pe/77926-montos-para-la-determinacion-de-los-procedimientos-de-seleccion-segun-ley-de-presupuesto-del-sector-publico-para-el-ano-fiscal-2025-ley-32185",
+        "url_vigencia_regimen": "https://www.gob.pe/institucion/oece/noticias/1153925-oece-inicia-funciones-con-la-entrada-en-vigencia-de-la-nueva-ley-general-de-contrataciones-publicas"
+      },
+      "2026": {
+        "ley_presupuesto": "Ley N.° 32513 - Presupuesto del Sector Público para el Año Fiscal 2026",
+        "ley_regimen": "Ley N.° 32069 - Ley General de Contrataciones Públicas",
+        "url_presupuesto": "https://www.gob.pe/institucion/mef/normas-legales/7475743-32513",
+        "url_regimen": "https://www.gob.pe/institucion/oece/colecciones/45029-ley-n-32069-ley-general-de-contrataciones-publicas"
+      }
+    },
+    "payments": {
+      "contract_amount_missing_rows": 69,
+      "contracts_rows": 3709,
+      "contracts_with_payments": 3709,
+      "dias_devengado_a_pagado_p50": 16.0,
+      "dias_devengado_a_pagado_p90": 28.0,
+      "dias_devengado_a_pagado_p95": 77.0,
+      "estado_pago_contratos": {
+        "pagado_aproximadamente_completo": 2894,
+        "pago_parcial": 452,
+        "pendiente_sin_pago": 218,
+        "sin_pago_o_sin_cuantia": 69,
+        "sobrepago_senal_revisar": 76
+      },
+      "monto_contractual_total_valido": 409900334.85999995,
+      "monto_devengado_total": 388348328.18,
+      "monto_pagado_total": 374259575.66999996,
+      "orphan_payments": 0,
+      "payments_rows": 6726,
+      "ratio_pagado_global_sobre_monto_valido": 0.9130501827909632,
+      "ratio_pagado_p50": 1.0,
+      "ratio_pagado_p90": 1.0
+    },
+    "schema_version": 1,
+    "scope": "analisis_profundo_pagos_y_modalidades_tdr_poc",
+    "source_type": "local_csv"
   },
   "seleccion_favoritismo": {
     "diseno": "predicciones out-of-fold, StratifiedKFold 3-fold, mismas particiones para todos",
@@ -235,8 +319,8 @@
   },
   "run_manifest": {
     "schema_version": 3,
-    "generado_utc": "2026-08-08T17:17:48.667575+00:00",
-    "git_commit": "3cb067acf0a14080121d887c6888c47399d04c34",
+    "generado_utc": "2026-08-08T18:40:52.012878+00:00",
+    "git_commit": "9d6b68d304c74f8bdc715fc195996b257793cda6",
     "entorno": {
       "python": "3.12.13",
       "pandas": "3.0.2",
@@ -253,7 +337,92 @@
       "salida_reporting": "lakehouse/oro",
       "benchmark_metodologico": "scikit-learn",
       "implementacion_objetivo_tdr": "Apache Spark MLlib / GraphFrames",
+      "analisis_pagos_modalidades": "contrato canónico contracts + payments; evidencia sintética",
       "nota": "simulación local; no equivale al Lakehouse ni clúster institucional CGR"
+    },
+    "analisis_pagos_modalidades": {
+      "artifacts": {
+        "chart_modalidades_regimen": "outputs/charts/12_modalidades_regimen.png",
+        "chart_ratio_pago": "outputs/charts/11_ratio_pago_contrato.png",
+        "resumen_modalidades_regimen": "outputs/resumen_modalidades_regimen.csv",
+        "resumen_pagos_contrato": "outputs/resumen_pagos_contrato.csv"
+      },
+      "config": "config/local-tdr.yaml",
+      "institutional_dependency": "El reemplazo de pagos sintéticos por pagos SIAF reales, y la validación jurídica/funcional de modalidades, requiere fuentes, diccionarios y especialistas CGR.",
+      "modalidades": {
+        "clasificacion_modalidad": {
+          "compatible_referencial_por_cuantia": 847,
+          "especial_no_inferible_por_cuantia": 1422,
+          "requiere_revision_contexto": 1314,
+          "sin_cuantia_para_comparar": 35,
+          "sin_informacion": 91
+        },
+        "contratos_por_regimen": {
+          "Ley 30225": 2436,
+          "Ley 32069": 1273
+        },
+        "modalidades_observadas": {
+          "Adjudicación Simplificada": 1274,
+          "Comparación de Precios": 1039,
+          "Concurso Público": 354,
+          "Concurso Público Abreviado": 11,
+          "Contratación Directa": 383,
+          "Licitación Pública": 548,
+          "Licitación Pública Abreviada": 9,
+          "SIN_DATO": 91
+        },
+        "nota_interpretacion": "La comparación por cuantía es referencial. 'requiere_revision_contexto' no significa ilegalidad; exige revisar el supuesto jurídico, objeto, causal y demás antecedentes."
+      },
+      "nature": "Datos sintéticos; no representan pagos SIAF ni decisiones de contratación reales.",
+      "normative_provenance_2023_2026": {
+        "2023": {
+          "ley_presupuesto": "Ley N.° 31638 - Presupuesto del Sector Público para el Año Fiscal 2023",
+          "url_presupuesto": "https://www.gob.pe/institucion/mef/normas-legales/3715319-31638"
+        },
+        "2024": {
+          "ley_presupuesto": "Ley N.° 31953 - Presupuesto del Sector Público para el Año Fiscal 2024",
+          "url_presupuesto": "https://www.gob.pe/institucion/mef/normas-legales/6964231-31953"
+        },
+        "2025": {
+          "ley_presupuesto": "Ley N.° 32185 - Presupuesto del Sector Público para el Año Fiscal 2025",
+          "ley_regimen": "Ley N.° 32069 - Ley General de Contrataciones Públicas",
+          "url_presupuesto": "https://www.gob.pe/institucion/mef/normas-legales/6278077-32185",
+          "url_topes": "https://www.gob.pe/77926-montos-para-la-determinacion-de-los-procedimientos-de-seleccion-segun-ley-de-presupuesto-del-sector-publico-para-el-ano-fiscal-2025-ley-32185",
+          "url_vigencia_regimen": "https://www.gob.pe/institucion/oece/noticias/1153925-oece-inicia-funciones-con-la-entrada-en-vigencia-de-la-nueva-ley-general-de-contrataciones-publicas"
+        },
+        "2026": {
+          "ley_presupuesto": "Ley N.° 32513 - Presupuesto del Sector Público para el Año Fiscal 2026",
+          "ley_regimen": "Ley N.° 32069 - Ley General de Contrataciones Públicas",
+          "url_presupuesto": "https://www.gob.pe/institucion/mef/normas-legales/7475743-32513",
+          "url_regimen": "https://www.gob.pe/institucion/oece/colecciones/45029-ley-n-32069-ley-general-de-contrataciones-publicas"
+        }
+      },
+      "payments": {
+        "contract_amount_missing_rows": 69,
+        "contracts_rows": 3709,
+        "contracts_with_payments": 3709,
+        "dias_devengado_a_pagado_p50": 16.0,
+        "dias_devengado_a_pagado_p90": 28.0,
+        "dias_devengado_a_pagado_p95": 77.0,
+        "estado_pago_contratos": {
+          "pagado_aproximadamente_completo": 2894,
+          "pago_parcial": 452,
+          "pendiente_sin_pago": 218,
+          "sin_pago_o_sin_cuantia": 69,
+          "sobrepago_senal_revisar": 76
+        },
+        "monto_contractual_total_valido": 409900334.85999995,
+        "monto_devengado_total": 388348328.18,
+        "monto_pagado_total": 374259575.66999996,
+        "orphan_payments": 0,
+        "payments_rows": 6726,
+        "ratio_pagado_global_sobre_monto_valido": 0.9130501827909632,
+        "ratio_pagado_p50": 1.0,
+        "ratio_pagado_p90": 1.0
+      },
+      "schema_version": 1,
+      "scope": "analisis_profundo_pagos_y_modalidades_tdr_poc",
+      "source_type": "local_csv"
     },
     "comparacion_modelos_favoritismo": {
       "diseno": "predicciones out-of-fold, StratifiedKFold 3-fold, mismas particiones para todos",
@@ -403,9 +572,10 @@
         "contratos_por_mes",
         "monto_por_funcionario"
       ],
+      "amount_source": "monto",
       "ranking": "outputs/ranking_riesgo_favoritismo_spark.csv",
       "modelo_runtime": "outputs/runtime/modelo_favoritismo_spark_rf",
-      "duracion_s": 33.04,
+      "duracion_s": 46.616,
       "advertencia": "Benchmark sintético con solo 6 positivos: la métrica CV es de alta varianza y no se usa como estimación de desempeño productivo. Ejecución Spark real local; clúster CGR pendiente."
     },
     "spark_fraccionamiento": {
@@ -432,7 +602,7 @@
       "ranking": "outputs/ranking_riesgo_fraccionamiento_spark.csv",
       "modelo_runtime": "outputs/runtime/modelo_fraccionamiento_spark_kmeans",
       "scaler_runtime": "outputs/runtime/modelo_fraccionamiento_spark_scaler",
-      "duracion_s": 15.006,
+      "duracion_s": 20.346,
       "advertencia": "Sanity check sobre benchmark sintético; no estima desempeño productivo. Ejecución Spark real local; clúster CGR pendiente."
     },
     "graphframes": {
@@ -452,7 +622,7 @@
         "outputs/vinculos_graphframes_sospechosos.csv",
         "outputs/vinculos_graphframes_pagerank.csv"
       ],
-      "duracion_s": 15.453,
+      "duracion_s": 21.129,
       "advertencia": "Datos de contacto sintéticos; clúster y fuentes institucionales CGR pendientes."
     },
     "validacion_p0_datos_reales": {
@@ -515,6 +685,16 @@
       ]
     },
     "artefactos": {
+      "data/pagos_siaf_sintetico.csv": {
+        "existe": true,
+        "sha256": "336db965216fa0a207641a09724bca5b06523454c7314eaf6ae07f7645573ed5",
+        "bytes": 574069
+      },
+      "lakehouse/bronce/pagos_siaf_sintetico.csv": {
+        "existe": true,
+        "sha256": "336db965216fa0a207641a09724bca5b06523454c7314eaf6ae07f7645573ed5",
+        "bytes": 574069
+      },
       "lakehouse/plata/contratos_procesados.csv": {
         "existe": true,
         "sha256": "d50bf10118f18d30b956b0545f00fc837c49b2c1755df8f7d543461f4ed44be6",
@@ -529,6 +709,21 @@
         "existe": true,
         "sha256": "9ac60a0c452617cc4c4a9f2704a70f767338fd32f171b024336b5b1092c2298e",
         "bytes": 14516
+      },
+      "outputs/analisis_pagos_modalidades.json": {
+        "existe": true,
+        "sha256": "8fd0521c6651b15fb8dbd8c037c024967c5f8f8e116d4b3c199634cd00953d3b",
+        "bytes": 4003
+      },
+      "outputs/resumen_pagos_contrato.csv": {
+        "existe": true,
+        "sha256": "2c06ba423a7e22cde405124ece2dd2814c76dcf9315ec24c298a18fd8433849e",
+        "bytes": 633812
+      },
+      "outputs/resumen_modalidades_regimen.csv": {
+        "existe": true,
+        "sha256": "bc00f06363d45c801e2a35ea4948cd19f36c3da8c2a973d49fcb788aad38fc6b",
+        "bytes": 1907
       },
       "outputs/comparacion_modelos_favoritismo.json": {
         "existe": true,
@@ -547,13 +742,13 @@
       },
       "outputs/ranking_riesgo_favoritismo.csv": {
         "existe": true,
-        "sha256": "1aab3a37897d7844c060ebd01e78700753bd4e0afe7842a8b9886c1affd88793",
+        "sha256": "ba91b6188767e4c9035d4e179506720f05a39310808607de2f15a033322fb009",
         "bytes": 192441
       },
       "outputs/ranking_riesgo_fraccionamiento.csv": {
         "existe": true,
-        "sha256": "9f7bfdb24dc67fd3d4453badc2719fbb253de493b6cd3bfd9536a02e7ab5326f",
-        "bytes": 20164
+        "sha256": "d87318d9447ee9d63496562f7a743c76d4db34838c50b2060c6729b7b8dbad30",
+        "bytes": 20160
       },
       "outputs/ranking_vinculos_proveedor_funcionario.csv": {
         "existe": true,
@@ -562,17 +757,17 @@
       },
       "outputs/spark_favoritismo_resumen.json": {
         "existe": true,
-        "sha256": "21dde8f3b8f85cb369320c7b1485ce4c13073a7ea9dd02aa1a6fa229227eba81",
-        "bytes": 1089
+        "sha256": "9d5a24660e1568e82a9c2167d90cda6a45f76fec260eb9c2a4537b6f8382e2b2",
+        "bytes": 1118
       },
       "outputs/spark_fraccionamiento_resumen.json": {
         "existe": true,
-        "sha256": "3e8fb80e7325601aab58c0aca935dfe60543092acaca6c03a81bb80f8e71fe31",
+        "sha256": "0f2384b706f91bf91e7d34829290de47400ec229acde3655af0be8b7358f5f86",
         "bytes": 964
       },
       "outputs/graphframes_resumen.json": {
         "existe": true,
-        "sha256": "4cfb139562f5d2d0d118ccfcf233dfda25ecd07c31144382d274feccfa2133f6",
+        "sha256": "4c507ea712668dfc65fb9b0f940a8282e75eb23a33240f9bca428733e3a3147f",
         "bytes": 603
       },
       "outputs/ranking_riesgo_favoritismo_spark.csv": {
@@ -582,7 +777,7 @@
       },
       "outputs/ranking_riesgo_fraccionamiento_spark.csv": {
         "existe": true,
-        "sha256": "06909e9d11173401ef49effa26c30312d08291d15764316040bee4c5d8c2292a",
+        "sha256": "50222997fb35e6b826af62d52192fac604535dc5c4b4917fd0546ea149262ab8",
         "bytes": 14042
       },
       "outputs/vinculos_graphframes_sospechosos.csv": {
@@ -595,21 +790,32 @@
         "sha256": "035acdb7a696eb8724fc0b724df9692dea5cd613c06f8b78d1db636ec79d4a58",
         "bytes": 372
       },
+      "lakehouse/oro/resumen_pagos_contrato.csv": {
+        "existe": true,
+        "sha256": "2c06ba423a7e22cde405124ece2dd2814c76dcf9315ec24c298a18fd8433849e",
+        "bytes": 633812
+      },
+      "lakehouse/oro/resumen_modalidades_regimen.csv": {
+        "existe": true,
+        "sha256": "bc00f06363d45c801e2a35ea4948cd19f36c3da8c2a973d49fcb788aad38fc6b",
+        "bytes": 1907
+      },
       "data/diccionario_datos.csv": {
         "existe": true,
-        "sha256": "9f1b25c9d15981eb8031cb3a417c4e97d8727b52e1fc2a08af5605fd81f33feb",
-        "bytes": 4198
+        "sha256": "dac75186dfaba3043432e9426791241fa710d8b1f3b9a13dcb619d9dc3c31e86",
+        "bytes": 6059
       },
       "outputs/linaje_datos.csv": {
         "existe": true,
-        "sha256": "8e2019eb66df25cda3499df1d797442a95736bdd888f8c380e635033d533dd52",
-        "bytes": 4818
+        "sha256": "792084cd24dbb1e7548ccc91f2c0f0703f711a33ecc72cef1a591a51e45da499",
+        "bytes": 6309
       }
     }
   },
   "estado_componentes": {
     "implementado_y_probado": [
       "EDA y feature engineering",
+      "análisis sintético de pagos, montos contractuales y modalidades",
       "Random Forest para priorización de favoritismo",
       "Isolation Forest + regla interpretable para posible fraccionamiento",
       "SHAP para explicabilidad del modelo supervisado",
@@ -620,10 +826,11 @@
       "Delta Lake local con time travel sujeto a retención",
       "esquema T-SQL y RDL de SSRS como artefactos de despliegue",
       "CI de regresión y smoke del pipeline sintético",
-      "autoevaluación que genera candidato sin promoción automática"
+      "autoevaluación que genera candidato sin promoción automática",
+      "TRAIN/INFERENCE con favoritismo operacional basado en monto_capped congelado"
     ],
     "dependencia_institucional_no_demostrada": [
-      "acceso al Datamart y fuentes internas CGR",
+      "acceso al Datamart y fuentes internas CGR, incluidos pagos SIAF reales",
       "despliegue real DEV/QA/PROD institucional",
       "Git y CI/CD institucionales",
       "SQL Server/SSRS/SSAS/Power BI institucionales ejecutados",
@@ -639,6 +846,8 @@
     "permitir_conteo_obsoleto_solo_como_antecedente_explicito": true,
     "prohibir_pct_no_competitiva": true,
     "prohibir_umbral_fijo_400k_como_regla_general": true,
-    "promocion_modelo_requiere_revision_humana": true
+    "promocion_modelo_requiere_revision_humana": true,
+    "pagos_sinteticos_no_equivalen_siaf_real": true,
+    "modalidad_requiere_contexto_juridico": true
   }
 }

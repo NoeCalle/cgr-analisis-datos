@@ -7,7 +7,7 @@
       "artifacts": {
         "favoritismo_model": {
           "path": "outputs/champions/modelo_favoritismo_rf.joblib",
-          "sha256": "04d1698802f32fe2b89a0d9f843e7ab5a28f86d2a8e4f463613a6d62db53b305"
+          "sha256": "f5dae4835db4ac8e8eb813504d6df13c64f16e16ea2a75f348c2d4cf0e1bb830"
         },
         "fraccionamiento_model": {
           "path": "outputs/champions/modelo_fraccionamiento_isoforest.joblib",
@@ -26,10 +26,11 @@
           "sha256": "8314ed1e6d320aaea9d512f4765317492a667c751e7d73137e9a8c3c45e750fd"
         }
       },
-      "champion_id": "poc-d6ae88ac265eb845",
+      "champion_id": "poc-f4db62d69c71d044",
       "models": {
         "favoritismo": {
           "algorithm": "RandomForestClassifier",
+          "amount_source": "monto_capped",
           "features": [
             "n_contratos",
             "monto_total",
@@ -53,6 +54,7 @@
         },
         "fraccionamiento": {
           "algorithm": "IsolationForest + StandardScaler",
+          "amount_source": "monto",
           "features": [
             "n_contratos_grupo",
             "max_contratos_ventana_15d",
@@ -78,8 +80,10 @@
       "training": {
         "config": "config/local-training.yaml",
         "contracts_rows": 3709,
+        "favoritismo_amount_source": "monto_capped",
         "favoritismo_positives": 6,
         "favoritismo_rows": 2328,
+        "fraccionamiento_amount_source": "monto",
         "fraccionamiento_positives": 8,
         "fraccionamiento_rows": 180,
         "ground_truth_required": true,
@@ -96,25 +100,26 @@
       "artifacts": {
         "favoritismo_model": {
           "path": "outputs/champions_spark/modelo_favoritismo_rf",
-          "sha256": "461f0f76bce41bd39c527c20b72561ea85da8401fc6c888b67e5d155b8e7a24a"
+          "sha256": "e5bbc3bbf4cc5951301ed03196a88fedfd102cc4719f04b55aab51b2ab1b78fa"
         },
         "fraccionamiento_model": {
           "path": "outputs/champions_spark/modelo_fraccionamiento_kmeans",
-          "sha256": "69be21c3916e5addb87cb9a7ddff2b33136a323cc22df294b6fee860ccaa9f78"
+          "sha256": "45bd52ffce8f50b089f8930c0a213d19a59845b3d0419ade7967369ecfc00b10"
         },
         "fraccionamiento_scaler": {
           "path": "outputs/champions_spark/scaler_fraccionamiento",
-          "sha256": "6c83c9a7dd11c3d6081278ccb017a1576a70634ef1135a1cd5c2da49160d7465"
+          "sha256": "ed8e1e907f47926eb5fe2844d02408b267ef35a8ced65571215e98cafae7c6e1"
         },
         "preprocessor_json": {
           "path": "outputs/champions_spark/preprocesador_contratos.json",
           "sha256": "8314ed1e6d320aaea9d512f4765317492a667c751e7d73137e9a8c3c45e750fd"
         }
       },
-      "champion_id": "spark-poc-52bee25ed7a30b85",
+      "champion_id": "spark-poc-ed2839dd3761c36d",
       "models": {
         "favoritismo": {
           "algorithm": "RandomForestClassificationModel",
+          "amount_source": "monto_capped",
           "features": [
             "n_contratos",
             "monto_total",
@@ -138,6 +143,7 @@
         },
         "fraccionamiento": {
           "algorithm": "StandardScalerModel + KMeansModel + distancia al centroide",
+          "amount_source": "monto",
           "features": [
             "n_contratos_grupo",
             "max_contratos_ventana_15d",
@@ -162,8 +168,10 @@
         "config": "config/local-training.yaml",
         "contracts_rows": 3709,
         "engine": "Apache Spark MLlib",
+        "favoritismo_amount_source": "monto_capped",
         "favoritismo_positives": 6,
         "favoritismo_rows": 2328,
+        "fraccionamiento_amount_source": "monto",
         "fraccionamiento_positives": 8,
         "fraccionamiento_rows": 180,
         "ground_truth_required": true,
