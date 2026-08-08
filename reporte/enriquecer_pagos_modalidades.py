@@ -1,7 +1,9 @@
 """Añade el análisis Sprint 4 a los DOCX formales antes de actualizar índices.
 
 El contenido se deriva exclusivamente de ``outputs/analisis_pagos_modalidades.json``.
-No modifica la evidencia histórica del RC1 ni usa datos SIAF reales.
+No modifica la evidencia histórica del RC1 ni usa datos SIAF reales. El anexo se
+inserta antes de ``Referencias Bibliográficas`` para conservar las referencias al
+final del documento, conforme a la estructura documental existente.
 """
 
 from __future__ import annotations
@@ -25,6 +27,7 @@ DESTINOS = [
 ]
 
 MARCADOR = "ANEXO TÉCNICO SPRINT 4 — ANÁLISIS DE PAGOS Y MODALIDADES"
+REFERENCIAS = "Referencias Bibliográficas"
 
 
 def _formatear_parrafo(parrafo, negrita=False):
@@ -77,6 +80,21 @@ def _agregar_tabla(doc, pagos: dict, modalidades: dict):
     return table
 
 
+def _mover_bloque_antes_de_referencias(doc, marcador_parrafo) -> None:
+    referencia = next((p for p in doc.paragraphs if p.text.strip() == REFERENCIAS), None)
+    if referencia is None:
+        return
+
+    nuevos = []
+    elem = marcador_parrafo._p
+    while elem is not None and not elem.tag.endswith("}sectPr"):
+        nuevos.append(elem)
+        elem = elem.getnext()
+
+    for nuevo in nuevos:
+        referencia._p.addprevious(nuevo)
+
+
 def enriquecer(ruta: Path, evidencia: dict):
     if not ruta.exists():
         raise FileNotFoundError(ruta)
@@ -88,7 +106,7 @@ def enriquecer(ruta: Path, evidencia: dict):
     pagos = evidencia["payments"]
     modalidades = evidencia["modalidades"]
 
-    _agregar_heading(doc, MARCADOR, 1)
+    marcador = _agregar_heading(doc, MARCADOR, 1)
     _agregar_texto(
         doc,
         "Este anexo cubre la actividad del TDR referida al análisis estadístico y exploratorio de patrones de pagos, montos contractuales y modalidades de contratación. La evidencia del PoC usa pagos sintéticos vinculados a contratos sintéticos; no representa información SIAF real ni determina la legalidad de una modalidad.",
@@ -118,6 +136,8 @@ def enriquecer(ruta: Path, evidencia: dict):
         doc,
         "El cierre literal con pagos SIAF/SEACE institucionales, diccionarios reales, validación jurídica/funcional y permisos de consulta depende de la CGR y se mantiene registrado en el catálogo de dependencias institucionales.",
     )
+
+    _mover_bloque_antes_de_referencias(doc, marcador)
     doc.save(ruta)
     return True
 
