@@ -1,17 +1,10 @@
 """
-Modelo de posible Fraccionamiento con Apache Spark MLlib — implementación
-objetivo del PoC para el componente no supervisado del TDR.
+Modelo de posible Fraccionamiento con Apache Spark MLlib.
 
-MLlib no incluye Isolation Forest nativo, por lo que este módulo usa KMeans +
-distancia al centroide como detector no supervisado distribuible y conserva la
-ventana temporal Spark SQL como señal interpretable complementaria.
-
-Sprint A:
-- consume únicamente la capa Plata;
-- usa categoría estructurada + motor normativo;
-- persiste ranking y resumen machine-readable vigentes;
-- guarda el modelo Spark en `outputs/runtime/` (no versionado);
-- no presenta el sanity check sintético como métrica productiva.
+MLlib no incluye Isolation Forest nativo; la ruta objetivo usa KMeans + distancia
+al centroide y una señal temporal interpretable. Sprint 3 separa FIT de scoring:
+StandardScalerModel y KMeansModel se ajustan únicamente en TRAIN, se persisten
+por separado y luego pueden cargarse para INFERENCE sin labels.
 """
 
 from __future__ import annotations
@@ -42,11 +35,15 @@ MODEL_DIR = Path(os.environ.get(
     "CGR_SPARK_FRACCIONAMIENTO_MODEL_DIR",
     "outputs/runtime/modelo_fraccionamiento_spark_kmeans",
 ))
+SCALER_DIR = Path(os.environ.get(
+    "CGR_SPARK_FRACCIONAMIENTO_SCALER_DIR",
+    "outputs/runtime/modelo_fraccionamiento_spark_scaler",
+))
 
 
-def crear_sesion():
+def crear_sesion(app_name: str = "cgr-fraccionamiento-poc"):
     return (
-        SparkSession.builder.appName("cgr-fraccionamiento-poc")
+        SparkSession.builder.appName(app_name)
         .master("local[*]")
         .config("spark.ui.showConsoleProgress", "false")
         .config("spark.sql.shuffle.partitions", "4")
@@ -54,16 +51,19 @@ def crear_sesion():
     )
 
 
-def construir_features_ventana(spark):
-    """Construye features desde Plata usando ventanas Spark SQL."""
-    df = spark.read.csv("lakehouse/plata/contratos_procesados.csv", header=True, inferSchema=True)
+def construir_features_ventana_desde_df(
+    df,
+    label_col: str | None = "es_fraccionamiento_real",
+):
     requeridas = {
         "id_proveedor", "id_entidad", "objeto", "categoria_principal", "fecha_contrato",
-        "monto", "id_contrato", "es_fraccionamiento_real",
+        "monto", "id_contrato",
     }
+    if label_col is not None:
+        requeridas.add(label_col)
     faltantes = requeridas - set(df.columns)
     if faltantes:
-        raise ValueError(f"Plata no contiene columnas requeridas: {sorted(faltantes)}")
+        raise ValueError(f"Datos Spark no contienen columnas requeridas: {sorted(faltantes)}")
 
     df = df.withColumn("ts", F.col("fecha_contrato").cast("timestamp").cast("long"))
     w = (
@@ -88,15 +88,23 @@ def construir_features_ventana(spark):
         "bajo_umbral", (F.col("monto") < F.col("umbral_aplicable") * 0.95).cast("int")
     )
 
-    grupos = df.groupBy("id_proveedor", "id_entidad", "objeto").agg(
+    expresiones = [
         F.count("id_contrato").alias("n_contratos_grupo"),
         F.max("contratos_ventana_15d").alias("max_contratos_ventana_15d"),
         F.max("monto_ventana_15d").alias("monto_total_ventana_15d"),
         F.avg("bajo_umbral").alias("pct_montos_bajo_umbral"),
         F.sum("monto").alias("monto_total_grupo"),
-        F.max(F.col("es_fraccionamiento_real").cast("int")).alias("label"),
-    )
+    ]
+    if label_col is not None:
+        expresiones.append(F.max(F.col(label_col).cast("int")).alias("label"))
+
+    grupos = df.groupBy("id_proveedor", "id_entidad", "objeto").agg(*expresiones)
     return grupos.filter(F.col("n_contratos_grupo") >= 2)
+
+
+def construir_features_ventana(spark):
+    df = spark.read.csv("lakehouse/plata/contratos_procesados.csv", header=True, inferSchema=True)
+    return construir_features_ventana_desde_df(df)
 
 
 def aplicar_senal_interpretable(df):
@@ -107,28 +115,42 @@ def aplicar_senal_interpretable(df):
     )
 
 
-def detectar_anomalias_kmeans(df, k=2):
-    assembler = VectorAssembler(inputCols=FEATURES, outputCol="features_raw")
-    df_vec = assembler.transform(df)
-    scaler = StandardScaler(
-        inputCol="features_raw", outputCol="features", withMean=True, withStd=True
-    )
-    df_scaled = scaler.fit(df_vec).transform(df_vec)
-    modelo = KMeans(featuresCol="features", predictionCol="cluster", k=k, seed=42).fit(df_scaled)
-    df_pred = modelo.transform(df_scaled)
+def _agregar_score_distancia(df_pred, modelo):
     centros = modelo.clusterCenters()
 
     def distancia_centroide(vec, cluster):
         import numpy as np
         return float(np.linalg.norm(np.asarray(vec) - np.asarray(centros[cluster])))
 
-    return (
-        df_pred.withColumn(
-            "score_anomalia",
-            F.udf(distancia_centroide, "double")(F.col("features"), F.col("cluster")),
-        ),
-        modelo,
+    return df_pred.withColumn(
+        "score_anomalia",
+        F.udf(distancia_centroide, "double")(F.col("features"), F.col("cluster")),
     )
+
+
+def entrenar_modelos_kmeans(df, k=2):
+    """FIT exclusivo de TRAIN: assembler -> scaler.fit -> kmeans.fit."""
+    assembler = VectorAssembler(inputCols=FEATURES, outputCol="features_raw")
+    df_vec = assembler.transform(df)
+    scaler_model = StandardScaler(
+        inputCol="features_raw", outputCol="features", withMean=True, withStd=True
+    ).fit(df_vec)
+    df_scaled = scaler_model.transform(df_vec)
+    modelo = KMeans(featuresCol="features", predictionCol="cluster", k=k, seed=42).fit(df_scaled)
+    return _agregar_score_distancia(modelo.transform(df_scaled), modelo), modelo, scaler_model
+
+
+def puntuar_con_modelos(df, modelo, scaler_model):
+    """TRANSFORM puro: no contiene ningún fit."""
+    assembler = VectorAssembler(inputCols=FEATURES, outputCol="features_raw")
+    df_vec = assembler.transform(df)
+    df_scaled = scaler_model.transform(df_vec)
+    return _agregar_score_distancia(modelo.transform(df_scaled), modelo)
+
+
+def detectar_anomalias_kmeans(df, k=2):
+    """Alias de compatibilidad para la corrida reproducible."""
+    return entrenar_modelos_kmeans(df, k=k)
 
 
 def validar_sanity(df_pred):
@@ -161,12 +183,13 @@ def guardar_resumen(modelo, sanity, duracion_s):
         "modo": "local[*]",
         "implementacion_objetivo_tdr": True,
         "dataset": "lakehouse/plata/contratos_procesados.csv",
-        "algoritmo": "KMeans + distancia al centroide",
+        "algoritmo": "StandardScaler + KMeans + distancia al centroide",
         "k": int(modelo.getK()),
         "features": FEATURES,
         "sanity_sintetico": sanity,
         "ranking": str(OUTPUT_RANKING),
         "modelo_runtime": str(MODEL_DIR),
+        "scaler_runtime": str(SCALER_DIR),
         "duracion_s": round(float(duracion_s), 3),
         "advertencia": (
             "Sanity check sobre benchmark sintético; no estima desempeño productivo. "
@@ -187,7 +210,7 @@ def main():
     )
     try:
         features = aplicar_senal_interpretable(construir_features_ventana(spark))
-        pred, modelo = detectar_anomalias_kmeans(features)
+        pred, modelo, scaler_model = entrenar_modelos_kmeans(features)
         sanity = validar_sanity(pred)
 
         ranking = pred.select(
@@ -199,6 +222,7 @@ def main():
         ranking.toPandas().to_csv(OUTPUT_RANKING, index=False)
         MODEL_DIR.parent.mkdir(parents=True, exist_ok=True)
         modelo.write().overwrite().save(str(MODEL_DIR))
+        scaler_model.write().overwrite().save(str(SCALER_DIR))
         guardar_resumen(modelo, sanity, time.time() - t0)
         print(f"Spark MLlib verificado en entorno local en {time.time()-t0:.1f}s; clúster CGR pendiente.")
     finally:
