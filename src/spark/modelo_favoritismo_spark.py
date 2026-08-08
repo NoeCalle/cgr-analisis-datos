@@ -1,17 +1,10 @@
 """
 Modelo de Favoritismo con Apache Spark MLlib — implementación objetivo del PoC.
 
-Consume `lakehouse/plata/contratos_procesados.csv`, evitando reimplementar una
-segunda limpieza paralela a la capa Plata. Contratación Directa y Comparación
-de Precios son features separadas. `local[*]` demuestra ejecución Spark real,
-pero no equivale a despliegue CGR.
-
-Sprint A:
-- validación cruzada con folds estratificados y orden pseudoaleatorio determinístico;
-- AUC-PR como métrica primaria, coherente con el benchmark sklearn;
-- evidencia machine-readable de parámetros/métrica CV;
-- modelo binario generado en `outputs/runtime/` (no se versiona);
-- ranking Spark vigente sí se versiona como evidencia reproducible.
+Consume la capa Plata para la corrida reproducible. Sprint 3 reutiliza el mismo
+feature engineering en serving: la función de construcción acepta un label
+opcional, de modo que INFERENCE puede puntuar contratos actuales sin ground
+truth y sin reentrenar el RandomForest champion.
 """
 
 from __future__ import annotations
@@ -43,9 +36,9 @@ MODEL_DIR = Path(os.environ.get(
 N_FOLDS = 3
 
 
-def crear_sesion():
+def crear_sesion(app_name: str = "cgr-modulo-favoritismo-poc"):
     return (
-        SparkSession.builder.appName("cgr-modulo-favoritismo-poc")
+        SparkSession.builder.appName(app_name)
         .master("local[*]")
         .config("spark.ui.showConsoleProgress", "false")
         .config("spark.sql.shuffle.partitions", "4")
@@ -62,8 +55,8 @@ def cargar_plata(spark):
     return df
 
 
-def construir_features_favoritismo(df):
-    agg = df.groupBy("id_proveedor", "id_entidad").agg(
+def construir_features_favoritismo(df, label_col: str | None = "es_favoritismo_real"):
+    expresiones = [
         F.count("id_contrato").alias("n_contratos"),
         F.sum("monto").alias("monto_total"),
         F.avg("monto").alias("monto_promedio"),
@@ -73,8 +66,13 @@ def construir_features_favoritismo(df):
         F.countDistinct("id_funcionario").alias("n_funcionarios_distintos"),
         F.min("fecha_contrato").alias("fecha_min"),
         F.max("fecha_contrato").alias("fecha_max"),
-        F.max(F.col("es_favoritismo_real").cast("int")).alias("label"),
-    )
+    ]
+    if label_col is not None:
+        if label_col not in df.columns:
+            raise ValueError(f"Label Spark de favoritismo no existe: {label_col}")
+        expresiones.append(F.max(F.col(label_col).cast("int")).alias("label"))
+
+    agg = df.groupBy("id_proveedor", "id_entidad").agg(*expresiones)
     agg = agg.withColumn("dias_actividad", F.greatest(F.datediff("fecha_max", "fecha_min"), F.lit(1)))
     agg = agg.withColumn("concentracion_objeto", 1 - (F.col("n_objetos_unicos") / F.col("n_contratos")))
     agg = agg.withColumn("contratos_por_mes", F.col("n_contratos") / (F.col("dias_actividad") / 30))
@@ -85,13 +83,11 @@ def construir_features_favoritismo(df):
     return agg.drop("fecha_min", "fecha_max")
 
 
-def _agregar_folds_estratificados(df_vec):
-    """Distribuye cada clase de forma balanceada y pseudoaleatoria determinística.
+def vectorizar(df_feat):
+    return VectorAssembler(inputCols=FEATURES, outputCol="features").transform(df_feat)
 
-    Con seis positivos, un fold vacío haría inválido AUC-PR. A la vez, ordenar
-    por identificador puede introducir un sesgo artificial. Se usa xxhash64 de
-    las claves como orden estable y luego round-robin dentro de cada clase.
-    """
+
+def _agregar_folds_estratificados(df_vec):
     orden_hash = F.xxhash64(
         F.col("id_proveedor"), F.col("id_entidad"), F.lit("cgr-sprint-a-folds-v2")
     )
@@ -104,6 +100,8 @@ def _agregar_folds_estratificados(df_vec):
 
 
 def entrenar(df_feat):
+    if "label" not in df_feat.columns:
+        raise ValueError("TRAIN Spark de favoritismo requiere label.")
     n_pos = df_feat.filter(F.col("label") == 1).count()
     n_neg = df_feat.filter(F.col("label") == 0).count()
     if n_pos < N_FOLDS or n_neg < N_FOLDS:
@@ -117,8 +115,7 @@ def entrenar(df_feat):
         "peso", F.when(F.col("label") == 1, F.lit(peso_pos)).otherwise(F.lit(peso_neg))
     )
 
-    df_vec = VectorAssembler(inputCols=FEATURES, outputCol="features").transform(df_feat)
-    df_vec = _agregar_folds_estratificados(df_vec)
+    df_vec = _agregar_folds_estratificados(vectorizar(df_feat))
     rf = RandomForestClassifier(featuresCol="features", labelCol="label", weightCol="peso", seed=42)
     param_grid = (
         ParamGridBuilder().addGrid(rf.numTrees, [100, 300]).addGrid(rf.maxDepth, [3, 6]).build()
@@ -146,15 +143,18 @@ def entrenar(df_feat):
     return modelo, modelo.transform(df_vec), mejor_auc_pr, n_pos, n_total
 
 
-def generar_ranking(predicciones):
+def generar_ranking(predicciones, include_label: bool = True):
     prob_positiva = F.udf(lambda v: float(v[1]), "double")
-    return predicciones.withColumn(
-        "score_riesgo_favoritismo", prob_positiva(F.col("probability"))
-    ).select(
+    cols = [
         "id_proveedor", "id_entidad", "n_contratos",
         "pct_contratacion_directa", "pct_comparacion_precios",
-        "score_riesgo_favoritismo", "label",
-    ).orderBy(F.desc("score_riesgo_favoritismo"))
+        "score_riesgo_favoritismo",
+    ]
+    if include_label and "label" in predicciones.columns:
+        cols.append("label")
+    return predicciones.withColumn(
+        "score_riesgo_favoritismo", prob_positiva(F.col("probability"))
+    ).select(*cols).orderBy(F.desc("score_riesgo_favoritismo"))
 
 
 def guardar_resumen(modelo, auc_pr_cv, n_pos, n_total, duracion_s):
