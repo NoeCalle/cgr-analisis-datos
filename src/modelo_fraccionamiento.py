@@ -26,6 +26,7 @@ FEATURES = [
 ]
 DEFAULT_PARAMS = {"n_estimators": 100, "max_samples": 0.8, "contamination": "auto"}
 TUNING_PATH = Path("outputs/tuning_fraccionamiento_resumen.json")
+SENAL_PRIORIZACION = "senal_priorizacion_fraccionamiento"
 
 
 def cargar():
@@ -64,7 +65,7 @@ def detectar_anomalias(df, params):
 
 def regla_interpretable(df):
     df = df.copy()
-    df["cumple_regla_fraccionamiento"] = (
+    df[SENAL_PRIORIZACION] = (
         (df["max_contratos_ventana_15d"] >= 3)
         & (df["pct_montos_bajo_umbral"] >= 0.7)
     )
@@ -77,8 +78,8 @@ def validar_sanity_check(df):
         top_n = df.nlargest(n_reales, "score_anomalia")
         aciertos = int(top_n["label_fraccionamiento_real"].sum())
         print(f"Sanity check in-sample Isolation Forest: {aciertos}/{n_reales} en top-{n_reales}.")
-    regla_total = int(df["cumple_regla_fraccionamiento"].sum())
-    regla_aciertos = int(df.loc[df["cumple_regla_fraccionamiento"], "label_fraccionamiento_real"].sum())
+    regla_total = int(df[SENAL_PRIORIZACION].sum())
+    regla_aciertos = int(df.loc[df[SENAL_PRIORIZACION], "label_fraccionamiento_real"].sum())
     print(
         f"Sanity check regla: {regla_total} grupos marcados, {regla_aciertos} sembrados. "
         "Consultar tuning_fraccionamiento_resumen.json para el holdout independiente."
