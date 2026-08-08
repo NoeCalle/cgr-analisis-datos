@@ -4,7 +4,7 @@ DAG de reproducibilidad integral del PoC.
 Este DAG reconstruye datos sintéticos, pagos sintéticos, análisis de montos y
 modalidades, benchmarks, implementaciones Spark, grafos y evidencia documental.
 Desde Sprint 2 NO se considera el flujo operacional de scoring porque
- deliberadamente mezcla reconstrucción, tuning y entrenamiento para demostrar
+deliberadamente mezcla reconstrucción, tuning y entrenamiento para demostrar
 reproducibilidad técnica.
 
 Flujo de evidencia:
@@ -73,7 +73,7 @@ with DAG(
     )
     analizar_pagos_modalidades = BashOperator(
         task_id="analizar_pagos_montos_modalidades",
-        bash_command=comando("src/analisis_pagos_modalidades.py", "--config config/local.yaml"),
+        bash_command=comando("src/analisis_pagos_modalidades.py", "--config config/local-tdr.yaml"),
     )
 
     # Benchmark/referencia metodológica sklearn.
