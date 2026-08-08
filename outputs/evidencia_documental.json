@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "generado_utc": "2026-08-07T23:54:59.368870+00:00",
-  "git_commit": "92657577bc7e7eb5157148767b3daf37fd6c43ca",
+  "generado_utc": "2026-08-08T00:02:29.028482+00:00",
+  "git_commit": "f723f52e6792e4a1898a136c8436f5c809e388cf",
   "naturaleza": "Prototipo independiente. Las métricas sintéticas evalúan el PoC y no estiman desempeño productivo. Las salidas sobre datos públicos son señales de priorización para revisión y no constituyen hallazgos ni determinaciones de irregularidad.",
   "sintetico": {
     "contratos": 3709,
