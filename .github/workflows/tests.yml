@@ -33,6 +33,9 @@ jobs:
             numpy==2.4.4 \
             scikit-learn==1.8.0 \
             joblib==1.5.3 \
+            matplotlib==3.10.8 \
+            shap==0.52.0 \
+            networkx==3.6.1 \
             pytest==9.0.2 \
             python-docx==1.2.0
 
@@ -46,11 +49,15 @@ jobs:
           python src/lakehouse_capas.py bronce
           python src/lakehouse_capas.py plata
 
-      - name: Run model-selection smoke tests
+      - name: Run model selection and training
         run: |
           python src/comparar_modelos_favoritismo.py
           python src/tuning_favoritismo.py
           python src/tuning_fraccionamiento.py
+          python src/modelo_favoritismo.py
+          python src/modelo_fraccionamiento.py
+          python src/modelo_grafos.py
+          python src/lakehouse_capas.py oro
 
       - name: Build documentary evidence
         run: python src/generar_evidencia_documental.py
@@ -63,11 +70,19 @@ jobs:
 
           fav = pd.read_csv('lakehouse/plata/dataset_favoritismo.csv')
           frac = pd.read_csv('lakehouse/plata/dataset_fraccionamiento.csv')
+          ranking_fav = pd.read_csv('outputs/ranking_riesgo_favoritismo.csv')
+          ranking_frac = pd.read_csv('outputs/ranking_riesgo_fraccionamiento.csv')
+
           assert 'pct_contratacion_directa' in fav.columns
           assert 'pct_comparacion_precios' in fav.columns
           assert 'pct_no_competitiva' not in fav.columns
-          assert fav['label_favoritismo_real'].sum() > 0
-          assert frac['label_fraccionamiento_real'].sum() > 0
+          assert 'pct_no_competitiva' not in ranking_fav.columns
+          assert fav['label_favoritismo_real'].sum() == 6
+          assert len(fav) == 2328
+          assert frac['label_fraccionamiento_real'].sum() == 8
+          assert len(frac) == 180
+          assert len(ranking_fav) == len(fav)
+          assert len(ranking_frac) == len(frac)
 
           with open('outputs/comparacion_modelos_favoritismo.json', encoding='utf-8') as f:
               comparacion = json.load(f)
@@ -89,7 +104,7 @@ jobs:
 
           assert evidencia['validacion_datos_publicos']['integridad_ocds']['contratos_analiticos_validos'] == 47254
           assert evidencia['criterios_documentales']['permitir_conteo_obsoleto_solo_como_antecedente_explicito'] is True
-          print('Smoke P1 + evidencia documental OK')
+          print('Smoke P1/P2 + datos + rankings + evidencia documental OK')
           PY
 
       - name: Setup Node
@@ -168,13 +183,38 @@ jobs:
             reporte/productos_formales/Producto_*.docx
           retention-days: 14
 
-      - name: Persist verified evidence and documentation
+      - name: Persist verified reproducible artifacts
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor != 'github-actions[bot]'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add \
+            data/contratos_siaf_seace.csv \
+            data/contratos_procesados.csv \
+            data/dataset_favoritismo.csv \
+            data/dataset_fraccionamiento.csv \
+            data/proveedores.csv \
+            data/entidades.csv \
+            data/funcionarios.csv \
+            lakehouse/bronce/contratos_siaf_seace.csv \
+            lakehouse/bronce/proveedores.csv \
+            lakehouse/bronce/entidades.csv \
+            lakehouse/bronce/funcionarios.csv \
+            lakehouse/plata/contratos_procesados.csv \
+            lakehouse/plata/dataset_favoritismo.csv \
+            lakehouse/plata/dataset_fraccionamiento.csv \
+            lakehouse/plata/proveedores.csv \
+            lakehouse/plata/entidades.csv \
+            lakehouse/plata/funcionarios.csv \
+            lakehouse/plata/proveedores_contacto.csv \
+            lakehouse/plata/funcionarios_contacto.csv \
+            outputs/ranking_riesgo_favoritismo.csv \
+            outputs/ranking_riesgo_fraccionamiento.csv \
+            outputs/ranking_vinculos_proveedor_funcionario.csv \
+            lakehouse/oro/ranking_riesgo_favoritismo.csv \
+            lakehouse/oro/ranking_riesgo_fraccionamiento.csv \
+            lakehouse/oro/ranking_vinculos_proveedor_funcionario.csv \
             outputs/comparacion_modelos_favoritismo.json \
             outputs/comparacion_modelos_favoritismo.csv \
             outputs/tuning_favoritismo_resumen.json \
@@ -188,6 +228,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No hay artefactos verificados nuevos que persistir."
           else
-            git commit -m "docs: regenerar evidencia y documentación verificada [skip ci]"
+            git commit -m "chore: regenerar artefactos reproducibles verificados [skip ci]"
             git push
           fi
