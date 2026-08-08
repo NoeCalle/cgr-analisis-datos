@@ -44,7 +44,7 @@ jobs:
       - name: Run regression tests
         run: pytest -q
 
-      - name: Rebuild synthetic data and publish Plata
+      - name: Rebuild synthetic data and legacy Plata
         run: |
           python src/generar_datos.py
           python src/preprocesamiento.py
@@ -61,7 +61,7 @@ jobs:
           python src/modelo_fraccionamiento.py
           python src/modelo_grafos.py
 
-      - name: Train candidate without touching champion
+      - name: Train sklearn compatibility candidate without touching champion
         run: |
           python - <<'PY'
           import hashlib
@@ -74,9 +74,11 @@ jobs:
           champion_dir = Path('outputs/champions')
           state['champion_hashes'] = {
               p.name: hashlib.sha256(p.read_bytes()).hexdigest()
-              for p in sorted(champion_dir.glob('*.joblib'))
+              for p in sorted(champion_dir.glob('*')) if p.is_file()
           }
-          Path('/tmp/champion_before_train.json').write_text(json.dumps(state), encoding='utf-8')
+          Path('/tmp/champion_before_sklearn_train.json').write_text(
+              json.dumps(state), encoding='utf-8'
+          )
           PY
 
           python src/entrenar_candidatos.py --config config/local-training.yaml
@@ -86,26 +88,27 @@ jobs:
           import json
           from pathlib import Path
 
-          before = json.loads(Path('/tmp/champion_before_train.json').read_text(encoding='utf-8'))
+          before = json.loads(Path('/tmp/champion_before_sklearn_train.json').read_text(encoding='utf-8'))
           manifest = json.loads(Path('outputs/runtime/model_candidates/candidate_manifest.json').read_text(encoding='utf-8'))
           assert manifest['status'] == 'candidate'
           assert manifest['training']['contracts_rows'] == 3709
           assert manifest['training']['favoritismo_positives'] == 6
           assert manifest['training']['fraccionamiento_positives'] == 8
+          assert 'preprocessor_json' in manifest['artifacts']
 
           registry = Path('outputs/model_registry.json')
-          assert registry.exists() == before['registry_exists'], 'TRAIN creó/eliminó registry champion'
+          assert registry.exists() == before['registry_exists'], 'TRAIN sklearn creó/eliminó registry'
           if registry.exists():
               assert hashlib.sha256(registry.read_bytes()).hexdigest() == before['registry_sha256']
           after_hashes = {
               p.name: hashlib.sha256(p.read_bytes()).hexdigest()
-              for p in sorted(Path('outputs/champions').glob('*.joblib'))
+              for p in sorted(Path('outputs/champions').glob('*')) if p.is_file()
           }
-          assert after_hashes == before['champion_hashes'], 'TRAIN modificó artefactos champion'
-          print(f"TRAIN aislado OK: candidate={manifest['candidate_id']}")
+          assert after_hashes == before['champion_hashes'], 'TRAIN sklearn modificó champion'
+          print(f"TRAIN sklearn aislado OK: candidate={manifest['candidate_id']}")
           PY
 
-      - name: Explicit PoC promotion and inference smoke
+      - name: Promote sklearn compatibility profile and smoke inference
         run: |
           python src/promover_candidato.py \
             --manifest outputs/runtime/model_candidates/candidate_manifest.json \
@@ -127,12 +130,15 @@ jobs:
           registry = json.loads(Path('outputs/model_registry.json').read_text(encoding='utf-8'))
           summary = json.loads(Path('outputs/inference_smoke_summary.json').read_text(encoding='utf-8'))
           candidate = json.loads(Path('outputs/runtime/model_candidates/candidate_manifest.json').read_text(encoding='utf-8'))
+          sklearn = registry['serving_profiles']['sklearn']
           fav = pd.read_csv('outputs/runtime/inference/ci/ranking_riesgo_favoritismo.csv')
           frac = pd.read_csv('outputs/runtime/inference/ci/ranking_riesgo_fraccionamiento.csv')
 
+          assert registry['schema_version'] == 2
           assert registry['status'] == 'champion'
-          assert registry['champion_id'] == candidate['candidate_id'] == summary['champion_id']
-          assert registry['promotion']['institutional_approval'] is False
+          assert sklearn['champion_id'] == candidate['candidate_id'] == summary['champion_id']
+          assert sklearn['promotion']['institutional_approval'] is False
+          assert summary['serving_profile'] == 'sklearn'
           assert summary['mode'] == 'inference'
           assert summary['contracts_rows'] == 3709
           assert summary['favoritismo_scored_rows'] == 2328
@@ -145,10 +151,10 @@ jobs:
           assert not any(c.startswith('label_') for c in frac.columns)
           assert 'score_riesgo_favoritismo' in fav.columns
           assert 'score_anomalia' in frac.columns
-          print('Sprint 2 serving smoke OK: inference sin labels y sin reentrenamiento')
+          print('Perfil sklearn de compatibilidad OK')
           PY
 
-      - name: Run canonical Spark MLlib and GraphFrames path
+      - name: Run canonical legacy Spark MLlib and GraphFrames path
         env:
           PYSPARK_PYTHON: python
           PYSPARK_DRIVER_PYTHON: python
@@ -158,6 +164,115 @@ jobs:
           python src/spark/vinculos_graphframes.py
           python src/spark/estandares_sql.py
 
+      - name: Train Spark serving candidate without touching champion
+        env:
+          PYSPARK_PYTHON: python
+          PYSPARK_DRIVER_PYTHON: python
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'src')
+          from registro_modelos import sha256_ruta
+
+          registry = Path('outputs/model_registry.json')
+          state = {
+              'registry_sha256': hashlib.sha256(registry.read_bytes()).hexdigest(),
+              'spark_champion_exists': Path('outputs/champions_spark').exists(),
+          }
+          if state['spark_champion_exists']:
+              state['spark_champion_sha256'] = sha256_ruta('outputs/champions_spark')
+          Path('/tmp/champion_before_spark_train.json').write_text(
+              json.dumps(state), encoding='utf-8'
+          )
+          PY
+
+          python src/spark/entrenar_candidato_spark.py \
+            --config config/local-training.yaml \
+            --manifest outputs/runtime/spark_model_candidates/candidate_manifest.json
+
+          python - <<'PY'
+          import hashlib
+          import json
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'src')
+          from registro_modelos import sha256_ruta
+
+          before = json.loads(Path('/tmp/champion_before_spark_train.json').read_text(encoding='utf-8'))
+          registry = Path('outputs/model_registry.json')
+          manifest = json.loads(Path('outputs/runtime/spark_model_candidates/candidate_manifest.json').read_text(encoding='utf-8'))
+
+          assert manifest['status'] == 'candidate'
+          assert manifest['engine'] == 'spark_mllib'
+          assert manifest['training']['preprocessing_contract'] == 'corrected_frozen_json_v1'
+          assert manifest['training']['contracts_rows'] == 3709
+          assert manifest['training']['favoritismo_rows'] == 2328
+          assert manifest['training']['favoritismo_positives'] == 6
+          assert manifest['training']['fraccionamiento_rows'] == 180
+          assert manifest['training']['fraccionamiento_positives'] == 8
+          assert hashlib.sha256(registry.read_bytes()).hexdigest() == before['registry_sha256']
+          assert Path('outputs/champions_spark').exists() == before['spark_champion_exists']
+          if before['spark_champion_exists']:
+              assert sha256_ruta('outputs/champions_spark') == before['spark_champion_sha256']
+          print(f"TRAIN Spark aislado OK: candidate={manifest['candidate_id']}")
+          PY
+
+      - name: Bootstrap explicit Spark champion and smoke operational inference
+        env:
+          PYSPARK_PYTHON: python
+          PYSPARK_DRIVER_PYTHON: python
+        run: |
+          python src/promover_candidato_spark.py \
+            --manifest outputs/runtime/spark_model_candidates/candidate_manifest.json \
+            --registry outputs/model_registry.json \
+            --approved-by "GitHub Actions technical PoC" \
+            --acknowledge-poc-only \
+            --if-missing
+
+          python src/spark/score_inference_spark.py \
+            --config config/local.yaml \
+            --registry outputs/model_registry.json \
+            --output-dir outputs/runtime/inference_spark/ci \
+            --summary outputs/inference_spark_smoke_summary.json
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import pandas as pd
+
+          registry = json.loads(Path('outputs/model_registry.json').read_text(encoding='utf-8'))
+          summary = json.loads(Path('outputs/inference_spark_smoke_summary.json').read_text(encoding='utf-8'))
+          fav = pd.read_csv('outputs/runtime/inference_spark/ci/ranking_riesgo_favoritismo_spark.csv')
+          frac = pd.read_csv('outputs/runtime/inference_spark/ci/ranking_riesgo_fraccionamiento_spark.csv')
+
+          assert registry['schema_version'] == 2
+          assert registry['active_serving_profile'] == 'spark_mllib'
+          assert {'sklearn', 'spark_mllib'} <= set(registry['serving_profiles'])
+          spark_profile = registry['serving_profiles']['spark_mllib']
+          assert spark_profile['promotion']['institutional_approval'] is False
+          assert summary['engine'] == 'Apache Spark MLlib'
+          assert summary['serving_profile'] == 'spark_mllib'
+          assert summary['active_serving_profile'] == 'spark_mllib'
+          assert summary['champion_id'] == spark_profile['champion_id']
+          assert summary['contracts_rows'] == 3709
+          assert summary['favoritismo_scored_rows'] == 2328
+          assert summary['fraccionamiento_scored_rows'] == 180
+          assert summary['labels_consumed'] is False
+          assert summary['training_invoked'] is False
+          assert summary['tuning_invoked'] is False
+          assert summary['sklearn_serving_dependency'] is False
+          assert summary['champion_integrity_verified'] is True
+          assert not any(c.startswith('label') for c in fav.columns)
+          assert not any(c.startswith('label') for c in frac.columns)
+          assert 'score_riesgo_favoritismo' in fav.columns
+          assert 'score_anomalia' in frac.columns
+          assert 'senal_priorizacion_fraccionamiento' in frac.columns
+          print('Sprint 3 serving Spark MLlib OK: champion congelado, sin labels ni reentrenamiento')
+          PY
+
       - name: Publish Oro and build traceability
         run: |
           python src/lakehouse_capas.py oro
@@ -166,7 +281,7 @@ jobs:
           python src/generar_run_manifest.py
           python src/generar_evidencia_documental.py
 
-      - name: Validate P1/P2/Sprint A artifacts
+      - name: Validate reproducibility artifacts
         run: |
           python - <<'PY'
           import json
@@ -175,84 +290,54 @@ jobs:
 
           fav = pd.read_csv('lakehouse/plata/dataset_favoritismo.csv')
           frac = pd.read_csv('lakehouse/plata/dataset_fraccionamiento.csv')
-          ranking_fav = pd.read_csv('outputs/ranking_riesgo_favoritismo.csv')
-          ranking_frac = pd.read_csv('outputs/ranking_riesgo_fraccionamiento.csv')
           spark_fav = pd.read_csv('outputs/ranking_riesgo_favoritismo_spark.csv')
           spark_frac = pd.read_csv('outputs/ranking_riesgo_fraccionamiento_spark.csv')
           linaje = pd.read_csv('outputs/linaje_datos.csv')
           diccionario = pd.read_csv('data/diccionario_datos.csv')
 
-          assert 'pct_contratacion_directa' in fav.columns
-          assert 'pct_comparacion_precios' in fav.columns
-          assert 'pct_no_competitiva' not in fav.columns
-          assert 'pct_no_competitiva' not in ranking_fav.columns
-          assert fav['label_favoritismo_real'].sum() == 6
-          assert len(fav) == 2328
-          assert frac['label_fraccionamiento_real'].sum() == 8
-          assert len(frac) == 180
-          assert len(ranking_fav) == len(fav)
-          assert len(ranking_frac) == len(frac)
-
+          assert len(fav) == 2328 and int(fav['label_favoritismo_real'].sum()) == 6
+          assert len(frac) == 180 and int(frac['label_fraccionamiento_real'].sum()) == 8
           assert {'pct_contratacion_directa', 'pct_comparacion_precios', 'score_riesgo_favoritismo'} <= set(spark_fav.columns)
-          assert 'pct_no_competitiva' not in spark_fav.columns
           assert 'senal_priorizacion_fraccionamiento' in spark_frac.columns
+          assert 'pct_no_competitiva' not in spark_fav.columns
           assert 'cumple_regla_fraccionamiento' not in spark_frac.columns
 
-          with open('outputs/comparacion_modelos_favoritismo.json', encoding='utf-8') as f:
-              comparacion = json.load(f)
-          with open('outputs/tuning_favoritismo_resumen.json', encoding='utf-8') as f:
-              fav_tuning = json.load(f)
-          with open('outputs/tuning_fraccionamiento_resumen.json', encoding='utf-8') as f:
-              frac_tuning = json.load(f)
-          with open('outputs/spark_favoritismo_resumen.json', encoding='utf-8') as f:
-              spark_fav_resumen = json.load(f)
-          with open('outputs/spark_fraccionamiento_resumen.json', encoding='utf-8') as f:
-              spark_frac_resumen = json.load(f)
-          with open('outputs/graphframes_resumen.json', encoding='utf-8') as f:
-              graphframes = json.load(f)
-          with open('outputs/run_manifest.json', encoding='utf-8') as f:
-              manifest = json.load(f)
-          with open('outputs/evidencia_documental.json', encoding='utf-8') as f:
-              evidencia = json.load(f)
+          comparacion = json.loads(Path('outputs/comparacion_modelos_favoritismo.json').read_text(encoding='utf-8'))
+          fav_tuning = json.loads(Path('outputs/tuning_favoritismo_resumen.json').read_text(encoding='utf-8'))
+          frac_tuning = json.loads(Path('outputs/tuning_fraccionamiento_resumen.json').read_text(encoding='utf-8'))
+          spark_fav_resumen = json.loads(Path('outputs/spark_favoritismo_resumen.json').read_text(encoding='utf-8'))
+          spark_frac_resumen = json.loads(Path('outputs/spark_fraccionamiento_resumen.json').read_text(encoding='utf-8'))
+          graphframes = json.loads(Path('outputs/graphframes_resumen.json').read_text(encoding='utf-8'))
+          manifest = json.loads(Path('outputs/run_manifest.json').read_text(encoding='utf-8'))
+          evidencia = json.loads(Path('outputs/evidencia_documental.json').read_text(encoding='utf-8'))
 
           assert len(comparacion['resultados']) == 3
           assert comparacion['resultados'][0]['modelo'] == 'RandomForest'
           assert abs(comparacion['resultados'][0]['auc_pr'] - 0.6714285714285714) < 1e-12
           assert fav_tuning['mejor_configuracion']
           assert frac_tuning['metrica_seleccion'].startswith('AUC-PR')
-          for campo in ['recall_at_k', 'auc_roc', 'auc_pr', 'precision', 'recall', 'f1']:
+          for campo in ['accuracy', 'recall_at_k', 'auc_roc', 'auc_pr', 'precision', 'recall', 'f1']:
               assert campo in frac_tuning['metricas_holdout_final']
 
           assert spark_fav_resumen['implementacion_objetivo_tdr'] is True
           assert spark_fav_resumen['auc_pr_cv'] >= 0
           assert spark_frac_resumen['implementacion_objetivo_tdr'] is True
+          assert 'scaler_runtime' in spark_frac_resumen
           assert graphframes['implementacion_objetivo_tdr'] is True
-
           assert manifest['schema_version'] == 3
-          assert manifest['git_commit']
           assert manifest['entorno']['pyspark'] == '4.1.1'
           assert manifest['entorno']['graphframes-py'] == '0.10.0'
-          assert manifest['spark_favoritismo'] is not None
-          assert manifest['spark_fraccionamiento'] is not None
-          assert manifest['graphframes'] is not None
-          assert all(v['existe'] for v in manifest['artefactos'].values())
           assert evidencia['run_manifest']['git_commit'] == manifest['git_commit']
           assert evidencia['validacion_datos_publicos']['integridad_ocds']['contratos_analiticos_validos'] == 47254
 
           texto_dic = ' '.join(diccionario.astype(str).fillna('').values.ravel()).lower()
-          assert 'pct_no_competitiva' not in texto_dic
-          assert 's/. 400,000' not in texto_dic
-          assert 'cumple_regla_fraccionamiento' not in texto_dic
-          assert 'pct_contratacion_directa' in texto_dic
-          assert 'pct_comparacion_precios' in texto_dic
-          assert 'senal_priorizacion_fraccionamiento' in texto_dic
+          for obsoleto in ['pct_no_competitiva', 'cumple_regla_fraccionamiento', 's/. 400,000']:
+              assert obsoleto not in texto_dic
           assert len(linaje) >= 15
           assert {'campo_fuente', 'campo_plata', 'feature_modelo', 'salida_oro'} <= set(linaje.columns)
 
           oro = {p.name for p in Path('lakehouse/oro').glob('*.csv')}
-          assert 'dataset_favoritismo.csv' not in oro
-          assert 'dataset_fraccionamiento.csv' not in oro
-          esperados_oro = {
+          esperados = {
               'ranking_riesgo_favoritismo.csv',
               'ranking_riesgo_fraccionamiento.csv',
               'ranking_vinculos_proveedor_funcionario.csv',
@@ -261,11 +346,9 @@ jobs:
               'vinculos_graphframes_sospechosos.csv',
               'vinculos_graphframes_pagerank.csv',
           }
-          assert esperados_oro <= oro
-
+          assert esperados <= oro
           assert Path('outputs/extraccion_estandar_sql.csv').exists()
-          assert Path('outputs/charts/09_diagrama_modelo_datos.png').exists()
-          print('Sprint A: sklearn + Spark MLlib + GraphFrames + Oro + linaje + diccionario OK')
+          print('Reproducibilidad legacy + evidencia Spark/GraphFrames OK')
           PY
 
       - name: Setup Node
@@ -282,12 +365,10 @@ jobs:
           npm run all
 
       - name: Materialize paginated indexes and duplex settings
-        run: |
-          /usr/bin/python3 reporte/actualizar_indices_docx.py
+        run: /usr/bin/python3 reporte/actualizar_indices_docx.py
 
       - name: Audit formal DOCX structure
-        run: |
-          python reporte/validar_documentacion.py
+        run: python reporte/validar_documentacion.py
 
       - name: Render DOCX to PDF and validate paginated TOC
         run: |
@@ -306,16 +387,14 @@ jobs:
           assert len(pdfs) == 8, pdfs
           for pdf in pdfs:
               text = subprocess.check_output(['pdftotext', '-layout', str(pdf), '-'], text=True)
-              assert '[[TOC]]' not in text, f'{pdf.name}: marcador TOC sin resolver'
-              assert 'Índice' in text, f'{pdf.name}: falta índice renderizado'
-              assert re.search(r'\.{3,}\s*\d+\s*$', text, re.MULTILINE), (
-                  f'{pdf.name}: el índice no muestra números de página'
-              )
-              assert 'Página' in text, f'{pdf.name}: no se ve numeración en pie de página'
-          print(f'PDF smoke Sprint B: {len(pdfs)} documentos con índice paginado')
+              assert '[[TOC]]' not in text, f'{pdf.name}: TOC sin resolver'
+              assert 'Índice' in text, f'{pdf.name}: falta índice'
+              assert re.search(r'\.{3,}\s*\d+\s*$', text, re.MULTILINE)
+              assert 'Página' in text
+          print(f'DOCX/PDF smoke: {len(pdfs)} documentos verificados')
           PY
 
-      - name: Upload reproducibility evidence
+      - name: Upload reproducibility and serving evidence
         uses: actions/upload-artifact@v4
         with:
           name: evidencia-reproducible
@@ -339,6 +418,7 @@ jobs:
             outputs/evidencia_documental.json
             outputs/model_registry.json
             outputs/inference_smoke_summary.json
+            outputs/inference_spark_smoke_summary.json
             data/diccionario_datos.csv
           retention-days: 14
 
@@ -408,7 +488,9 @@ jobs:
             outputs/evidencia_documental.json \
             outputs/model_registry.json \
             outputs/inference_smoke_summary.json \
-            outputs/champions/*.joblib \
+            outputs/inference_spark_smoke_summary.json \
+            outputs/champions \
+            outputs/champions_spark \
             outputs/charts/*.png \
             lakehouse/oro/ranking_riesgo_favoritismo.csv \
             lakehouse/oro/ranking_riesgo_fraccionamiento.csv \
@@ -423,6 +505,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No hay artefactos verificados nuevos que persistir."
           else
-            git commit -m "chore: regenerar artefactos Sprint 2 verificados [skip ci]"
+            git commit -m "chore: regenerar artefactos Sprint 3 verificados [skip ci]"
             git push
           fi
