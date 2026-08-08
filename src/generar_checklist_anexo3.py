@@ -14,6 +14,8 @@ import json
 from collections import Counter
 from pathlib import Path
 
+from dependencias_cgr import POR_ID, validar_catalogo
+
 ROOT = Path(__file__).resolve().parents[1]
 OUT_JSON = ROOT / "outputs" / "checklist_anexo3.json"
 OUT_MD = ROOT / "docs" / "Checklist_Anexo_03.md"
@@ -23,21 +25,33 @@ def ok(*rutas: str) -> bool:
     return all((ROOT / ruta).exists() for ruta in rutas)
 
 
-def item(numero, criterio, categoria, estado, evidencia, residual, verificacion=True):
+def deps(*ids: str) -> list[str]:
+    for dep_id in ids:
+        if dep_id not in POR_ID:
+            raise ValueError(f"Dependencia CGR desconocida: {dep_id}")
+    return list(ids)
+
+
+def item(numero, criterio, categoria, estado, evidencia, residual, dependencias=None, verificacion=True):
+    dependencias = dependencias or []
     if estado in {"✅", "🟡"} and not verificacion:
         estado = "🔴"
         residual = "Falta evidencia local esperada; revisar pipeline/CI antes de considerar el criterio cubierto."
+    if estado in {"🟡", "🔵"} and not dependencias:
+        raise ValueError(f"Criterio {numero} {estado} sin dependencia CGR canónica")
     return {
         "numero": numero,
         "criterio": criterio,
         "categoria": categoria,
         "estado": estado,
         "evidencia_repo": evidencia,
+        "dependencias_cgr": dependencias,
         "residual": residual,
     }
 
 
 def construir():
+    validar_catalogo()
     items = [
         item(
             1,
@@ -45,8 +59,8 @@ def construir():
             "Documentación",
             "✅",
             ["src/eda.py", "outputs/charts/01_distribucion_montos.png", "outputs/charts/04_serie_temporal.png"],
-            "Sin residual técnico relevante para el PoC; la EDA deberá repetirse sobre datos internos cuando CGR los habilite.",
-            ok("src/eda.py", "outputs/charts/01_distribucion_montos.png", "outputs/charts/04_serie_temporal.png"),
+            "Sin residual técnico relevante para el PoC; la EDA se repetirá sobre datos internos al desplegar institucionalmente.",
+            verificacion=ok("src/eda.py", "outputs/charts/01_distribucion_montos.png", "outputs/charts/04_serie_temporal.png"),
         ),
         item(
             2,
@@ -54,7 +68,8 @@ def construir():
             "Preparación de Datos",
             "🟡",
             ["lakehouse/plata/dataset_favoritismo.csv", "lakehouse/plata/dataset_fraccionamiento.csv", "src/preprocesamiento.py", "reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx"],
-            "El PoC usa Plata/Oro locales y documenta nulos/outliers; el requisito literal de Datamart institucional solo puede validarse dentro de CGR.",
+            "El PoC usa Plata/Oro locales y documenta nulos/outliers; el requisito literal del Datamart institucional requiere CGR-DEP-01 y CGR-DEP-06.",
+            deps("CGR-DEP-01", "CGR-DEP-06"),
             ok("lakehouse/plata/dataset_favoritismo.csv", "lakehouse/plata/dataset_fraccionamiento.csv", "src/preprocesamiento.py"),
         ),
         item(
@@ -63,7 +78,8 @@ def construir():
             "Estándares de Código",
             "🟡",
             ["src/spark/estandares_sql.py", "outputs/extraccion_estandar_sql.csv"],
-            "Las técnicas están demostradas localmente; la conformidad literal con reglas, esquemas y planes de ejecución institucionales requiere revisión/ejecución en CGR.",
+            "Las técnicas están demostradas localmente; la conformidad literal requiere CGR-DEP-01, CGR-DEP-02 y CGR-DEP-06.",
+            deps("CGR-DEP-01", "CGR-DEP-02", "CGR-DEP-06"),
             ok("src/spark/estandares_sql.py", "outputs/extraccion_estandar_sql.csv"),
         ),
         item(
@@ -72,7 +88,8 @@ def construir():
             "Analítica Avanzada",
             "🟡",
             ["outputs/comparacion_modelos_favoritismo.json", "outputs/tuning_favoritismo_resumen.json", "outputs/tuning_fraccionamiento_resumen.json"],
-            "El TDR público provisto exige umbrales mínimos pero no consigna sus valores numéricos; no se inventan. Además, la validación productiva requiere ground truth y ambientes CGR.",
+            "El TDR público exige umbrales mínimos pero no consigna sus valores; la conformidad productiva requiere CGR-DEP-03 y CGR-DEP-06.",
+            deps("CGR-DEP-03", "CGR-DEP-06"),
             ok("outputs/comparacion_modelos_favoritismo.json", "outputs/tuning_favoritismo_resumen.json", "outputs/tuning_fraccionamiento_resumen.json"),
         ),
         item(
@@ -81,8 +98,8 @@ def construir():
             "Valor de Negocio",
             "✅",
             ["outputs/charts/05_importancia_favoritismo.png", "outputs/charts/07_shap_summary_favoritismo.png", "outputs/charts/08_shap_waterfall_caso.png"],
-            "Los artefactos están disponibles en el PoC; su interpretación final debe contextualizarse con casos y datos institucionales.",
-            ok("outputs/charts/05_importancia_favoritismo.png", "outputs/charts/07_shap_summary_favoritismo.png", "outputs/charts/08_shap_waterfall_caso.png"),
+            "Los artefactos están disponibles en el PoC; su interpretación final deberá contextualizarse con casos institucionales.",
+            verificacion=ok("outputs/charts/05_importancia_favoritismo.png", "outputs/charts/07_shap_summary_favoritismo.png", "outputs/charts/08_shap_waterfall_caso.png"),
         ),
         item(
             6,
@@ -90,7 +107,8 @@ def construir():
             "Infraestructura",
             "🔵",
             [".github/workflows/tests.yml", "airflow_home/dags/modulo_analisis_datos_1_8_2.py", "outputs/run_manifest.json"],
-            "Git institucional, autenticación, despliegue y operación en ambientes CGR no son accesibles desde el repositorio público independiente.",
+            "El PoC demuestra CI/MLOps local; el cierre literal requiere CGR-DEP-04 y CGR-DEP-06.",
+            deps("CGR-DEP-04", "CGR-DEP-06"),
             True,
         ),
         item(
@@ -99,7 +117,8 @@ def construir():
             "Integración",
             "🟡",
             ["ssrs/schema_sql_server.sql", "ssrs/ReporteRiesgoFavoritismo.rdl", "ssrs/ReporteRiesgoFraccionamiento.rdl", "outputs/ssrs_publicacion_manifest.json"],
-            "Contrato SQL/RDL y publicación stand-in están verificados; falta ejecutar DDL, autenticación, despliegue y pruebas en SQL Server/SSRS CGR.",
+            "Contrato SQL/RDL y publicación stand-in verificados; el despliegue literal requiere CGR-DEP-05 y CGR-DEP-06.",
+            deps("CGR-DEP-05", "CGR-DEP-06"),
             ok("ssrs/schema_sql_server.sql", "ssrs/ReporteRiesgoFavoritismo.rdl", "ssrs/ReporteRiesgoFraccionamiento.rdl", "outputs/ssrs_publicacion_manifest.json"),
         ),
         item(
@@ -108,8 +127,8 @@ def construir():
             "Documentación Técnica",
             "✅",
             ["outputs/linaje_datos.csv", "data/diccionario_datos.csv", "outputs/run_manifest.json"],
-            "Linaje técnico del PoC cubierto; las fuentes/tablas institucionales deberán sustituir los nodos locales al desplegar en CGR.",
-            ok("outputs/linaje_datos.csv", "data/diccionario_datos.csv", "outputs/run_manifest.json"),
+            "Linaje técnico del PoC cubierto; al desplegar, los nodos locales se sustituyen por fuentes institucionales.",
+            verificacion=ok("outputs/linaje_datos.csv", "data/diccionario_datos.csv", "outputs/run_manifest.json"),
         ),
         item(
             9,
@@ -117,8 +136,8 @@ def construir():
             "Analítica Avanzada",
             "✅",
             ["outputs/tuning_favoritismo_resumen.json", "outputs/tuning_fraccionamiento_resumen.json", "outputs/spark_favoritismo_resumen.json", "outputs/spark_fraccionamiento_resumen.json"],
-            "Documentados y versionados para el PoC; deben recalibrarse con datos institucionales antes de producción.",
-            ok("outputs/tuning_favoritismo_resumen.json", "outputs/tuning_fraccionamiento_resumen.json", "outputs/spark_favoritismo_resumen.json", "outputs/spark_fraccionamiento_resumen.json"),
+            "Documentados y versionados para el PoC; deberán recalibrarse con datos institucionales antes de producción.",
+            verificacion=ok("outputs/tuning_favoritismo_resumen.json", "outputs/tuning_fraccionamiento_resumen.json", "outputs/spark_favoritismo_resumen.json", "outputs/spark_fraccionamiento_resumen.json"),
         ),
         item(
             10,
@@ -127,7 +146,7 @@ def construir():
             "✅",
             ["outputs/comparacion_modelos_favoritismo.json", "outputs/tuning_fraccionamiento_resumen.json", "reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx"],
             "Métricas del benchmark reproducible cubiertas; no se presentan como desempeño productivo.",
-            ok("outputs/comparacion_modelos_favoritismo.json", "outputs/tuning_fraccionamiento_resumen.json"),
+            verificacion=ok("outputs/comparacion_modelos_favoritismo.json", "outputs/tuning_fraccionamiento_resumen.json"),
         ),
         item(
             11,
@@ -135,8 +154,8 @@ def construir():
             "Valor de Negocio",
             "✅",
             ["reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx", "README.md"],
-            "Las recomendaciones están documentadas; priorización institucional dependerá de usuarios, ground truth y capacidad operativa CGR.",
-            ok("reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx", "README.md"),
+            "Las recomendaciones están documentadas; su priorización institucional corresponde a la etapa de despliegue/operación.",
+            verificacion=ok("reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx", "README.md"),
         ),
     ]
     return items
@@ -146,8 +165,9 @@ def main():
     items = construir()
     counts = Counter(x["estado"] for x in items)
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "fuente": "Anexo N.º 03 del TDR público del Proyecto Interno 1.8.2, mayo de 2026",
+        "catalogo_dependencias": "outputs/dependencias_cgr.json",
         "leyenda": {
             "✅": "cubierto por evidencia verificable del PoC",
             "🟡": "PoC parcial / cierre literal requiere información o validación institucional",
@@ -169,6 +189,8 @@ def main():
         "",
         "> Prototipo independiente. Esta matriz separa evidencia reproducible del PoC de los requisitos que solo pueden cerrarse dentro de la infraestructura y gobierno de la CGR.",
         "",
+        "Las dependencias institucionales se definen una sola vez en `docs/Dependencias_Institucionales_CGR.md` y se referencian aquí mediante IDs `CGR-DEP-XX`.",
+        "",
         "## Leyenda",
         "",
         "- ✅ cubierto por evidencia verificable del PoC.",
@@ -178,12 +200,13 @@ def main():
         "",
         "## Checklist",
         "",
-        "| N.º | Estado | Criterio | Evidencia en repo | Residual |",
-        "|---:|:---:|---|---|---|",
+        "| N.º | Estado | Criterio | Evidencia en repo | Dependencias CGR | Residual |",
+        "|---:|:---:|---|---|---|---|",
     ]
     for x in items:
         evidencia = "<br>".join(f"`{p}`" for p in x["evidencia_repo"])
-        lineas.append(f"| {x['numero']} | {x['estado']} | {x['criterio']} | {evidencia} | {x['residual']} |")
+        referencias = "<br>".join(x["dependencias_cgr"]) or "—"
+        lineas.append(f"| {x['numero']} | {x['estado']} | {x['criterio']} | {evidencia} | {referencias} | {x['residual']} |")
 
     lineas += [
         "",
@@ -196,7 +219,7 @@ def main():
         "",
         "**Criterio 4:** el TDR público provisto exige superar umbrales mínimos de Accuracy, F1-Score y AUC-ROC, pero no consigna sus valores numéricos. Por ello esta auditoría no inventa umbrales ni declara conformidad cuantitativa institucional.",
         "",
-        "El objetivo de cierre externo se considera alcanzado únicamente si el conteo 🔴 es cero. Los estados 🟡/🔵 deben mantenerse visibles hasta disponer de datos, reglas, ambientes, accesos y validaciones CGR.",
+        "El objetivo de cierre externo se considera alcanzado únicamente si el conteo 🔴 es cero. Los estados 🟡/🔵 deben mantenerse visibles hasta disponer de la evidencia definida en el catálogo CGR.",
         "",
     ]
     OUT_MD.write_text("\n".join(lineas), encoding="utf-8")
