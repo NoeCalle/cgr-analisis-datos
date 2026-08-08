@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "fuente": "Anexo N.º 03 del TDR público del Proyecto Interno 1.8.2, mayo de 2026",
+  "leyenda": {
+    "✅": "cubierto por evidencia verificable del PoC",
+    "🟡": "PoC parcial / cierre literal requiere información o validación institucional",
+    "🔵": "dependencia institucional CGR",
+    "🔴": "brecha técnica cerrable en el repositorio"
+  },
+  "resumen": {
+    "✅": 6,
+    "🟡": 4,
+    "🔵": 1
+  },
+  "criterios": [
+    {
+      "numero": 1,
+      "criterio": "Exploración del análisis de datos",
+      "categoria": "Documentación",
+      "estado": "✅",
+      "evidencia_repo": [
+        "src/eda.py",
+        "outputs/charts/01_distribucion_montos.png",
+        "outputs/charts/04_serie_temporal.png"
+      ],
+      "residual": "Sin residual técnico relevante para el PoC; la EDA deberá repetirse sobre datos internos cuando CGR los habilite."
+    },
+    {
+      "numero": 2,
+      "criterio": "Calidad e ingeniería de características: uso exclusivo de capas Plata/Oro del Datamart institucional y justificación estadística de nulos/outliers",
+      "categoria": "Preparación de Datos",
+      "estado": "🟡",
+      "evidencia_repo": [
+        "lakehouse/plata/dataset_favoritismo.csv",
+        "lakehouse/plata/dataset_fraccionamiento.csv",
+        "src/preprocesamiento.py",
+        "reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx"
+      ],
+      "residual": "El PoC usa Plata/Oro locales y documenta nulos/outliers; el requisito literal de Datamart institucional solo puede validarse dentro de CGR."
+    },
+    {
+      "numero": 3,
+      "criterio": "Estándares institucionales de extracción SQL: LEFT JOIN, lógica de cortocircuito y prohibición de Full Table Scans en tablas de hechos",
+      "categoria": "Estándares de Código",
+      "estado": "🟡",
+      "evidencia_repo": [
+        "src/spark/estandares_sql.py",
+        "outputs/extraccion_estandar_sql.csv"
+      ],
+      "residual": "Las técnicas están demostradas localmente; la conformidad literal con reglas, esquemas y planes de ejecución institucionales requiere revisión/ejecución en CGR."
+    },
+    {
+      "numero": 4,
+      "criterio": "Performance y validación del modelo: superar umbrales mínimos de Accuracy, F1-Score y AUC-ROC",
+      "categoria": "Analítica Avanzada",
+      "estado": "🟡",
+      "evidencia_repo": [
+        "outputs/comparacion_modelos_favoritismo.json",
+        "outputs/tuning_favoritismo_resumen.json",
+        "outputs/tuning_fraccionamiento_resumen.json"
+      ],
+      "residual": "El TDR público provisto exige umbrales mínimos pero no consigna sus valores numéricos; no se inventan. Además, la validación productiva requiere ground truth y ambientes CGR."
+    },
+    {
+      "numero": 5,
+      "criterio": "Interpretabilidad orientada a auditoría (SHAP, LIME o Feature Importance)",
+      "categoria": "Valor de Negocio",
+      "estado": "✅",
+      "evidencia_repo": [
+        "outputs/charts/05_importancia_favoritismo.png",
+        "outputs/charts/07_shap_summary_favoritismo.png",
+        "outputs/charts/08_shap_waterfall_caso.png"
+      ],
+      "residual": "Los artefactos están disponibles en el PoC; su interpretación final debe contextualizarse con casos y datos institucionales."
+    },
+    {
+      "numero": 6,
+      "criterio": "Despliegue, autenticación y MLOps: código versionado en Git institucional",
+      "categoria": "Infraestructura",
+      "estado": "🔵",
+      "evidencia_repo": [
+        ".github/workflows/tests.yml",
+        "airflow_home/dags/modulo_analisis_datos_1_8_2.py",
+        "outputs/run_manifest.json"
+      ],
+      "residual": "Git institucional, autenticación, despliegue y operación en ambientes CGR no son accesibles desde el repositorio público independiente."
+    },
+    {
+      "numero": 7,
+      "criterio": "Integración para ecosistema SSRS: resultados del modelo, predicciones y puntajes de riesgo",
+      "categoria": "Integración",
+      "estado": "🟡",
+      "evidencia_repo": [
+        "ssrs/schema_sql_server.sql",
+        "ssrs/ReporteRiesgoFavoritismo.rdl",
+        "ssrs/ReporteRiesgoFraccionamiento.rdl",
+        "outputs/ssrs_publicacion_manifest.json"
+      ],
+      "residual": "Contrato SQL/RDL y publicación stand-in están verificados; falta ejecutar DDL, autenticación, despliegue y pruebas en SQL Server/SSRS CGR."
+    },
+    {
+      "numero": 8,
+      "criterio": "Documentación de linaje y diccionario de datos desde la fuente hasta el modelo final",
+      "categoria": "Documentación Técnica",
+      "estado": "✅",
+      "evidencia_repo": [
+        "outputs/linaje_datos.csv",
+        "data/diccionario_datos.csv",
+        "outputs/run_manifest.json"
+      ],
+      "residual": "Linaje técnico del PoC cubierto; las fuentes/tablas institucionales deberán sustituir los nodos locales al desplegar en CGR."
+    },
+    {
+      "numero": 9,
+      "criterio": "Hiperparámetros de los modelos y sus explicaciones",
+      "categoria": "Analítica Avanzada",
+      "estado": "✅",
+      "evidencia_repo": [
+        "outputs/tuning_favoritismo_resumen.json",
+        "outputs/tuning_fraccionamiento_resumen.json",
+        "outputs/spark_favoritismo_resumen.json",
+        "outputs/spark_fraccionamiento_resumen.json"
+      ],
+      "residual": "Documentados y versionados para el PoC; deben recalibrarse con datos institucionales antes de producción."
+    },
+    {
+      "numero": 10,
+      "criterio": "Reporte completo de métricas de desempeño de los modelos",
+      "categoria": "Analítica Avanzada",
+      "estado": "✅",
+      "evidencia_repo": [
+        "outputs/comparacion_modelos_favoritismo.json",
+        "outputs/tuning_fraccionamiento_resumen.json",
+        "reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx"
+      ],
+      "residual": "Métricas del benchmark reproducible cubiertas; no se presentan como desempeño productivo."
+    },
+    {
+      "numero": 11,
+      "criterio": "Oportunidades de mejora para la evolución del modelo",
+      "categoria": "Valor de Negocio",
+      "estado": "✅",
+      "evidencia_repo": [
+        "reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx",
+        "README.md"
+      ],
+      "residual": "Las recomendaciones están documentadas; priorización institucional dependerá de usuarios, ground truth y capacidad operativa CGR."
+    }
+  ],
+  "nota_performance": "El TDR público provisto no incluye valores numéricos de los umbrales mínimos del criterio 4; el repositorio no inventa dichos valores.",
+  "conclusion": "No deben existir criterios 🔴 para considerar cerrado el trabajo realizable fuera de CGR."
+}

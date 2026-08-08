@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "fecha_ejecucion": "2026-08-08T02:22:16.580334+00:00",
+  "git_commit_evidencia": "c440d76cfb54b29248829d5d9e44a4f35c31bc36",
+  "naturaleza": "stand-in SQLite para validar contrato SSRS; SQL Server/SSRS CGR no ejecutado",
+  "fuentes_oro": {
+    "favoritismo": {
+      "ruta": "lakehouse/oro/ranking_riesgo_favoritismo.csv",
+      "sha256": "0f04779ca5e147604f2c54d00ad6d99821adafc06cab6ccd33adea082e29b24c"
+    },
+    "fraccionamiento": {
+      "ruta": "lakehouse/oro/ranking_riesgo_fraccionamiento.csv",
+      "sha256": "d87318d9447ee9d63496562f7a743c76d4db34838c50b2060c6729b7b8dbad30"
+    },
+    "vinculos": {
+      "ruta": "lakehouse/oro/ranking_vinculos_proveedor_funcionario.csv",
+      "sha256": "800dfae46978faaa6d504c8feb7e4ad5b3e0e823e6be67ca4331e2768ad8ccca"
+    }
+  },
+  "validacion": {
+    "conteos_tablas": {
+      "PrediccionesFavoritismo": 2328,
+      "PrediccionesFraccionamiento": 180,
+      "VinculosProveedorFuncionario": 2995
+    },
+    "consulta_smoke_favoritismo_umbral_0_5": 6,
+    "consulta_smoke_fraccionamiento_top_25": 25
+  },
+  "artefactos_sql_server": [
+    "ssrs/schema_sql_server.sql",
+    "ssrs/ReporteRiesgoFavoritismo.rdl",
+    "ssrs/ReporteRiesgoFraccionamiento.rdl"
+  ],
+  "pendiente_institucional": [
+    "cadena de conexión y autenticación CGR",
+    "ejecución del DDL en SQL Server institucional",
+    "despliegue de RDL en SSRS institucional",
+    "pruebas de permisos, rendimiento y operación en DEV/QA/PROD CGR"
+  ]
+}
