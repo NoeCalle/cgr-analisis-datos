@@ -34,6 +34,10 @@ outputs/ranking_riesgo_favoritismo_REAL.csv
 outputs/ranking_riesgo_fraccionamiento_REAL.csv
 outputs/ranking_vinculos_organizacionales_REAL.csv
 
+# Modelos Spark generados por cada ejecución. Se conserva evidencia JSON/CSV,
+# no binarios/metadata con timestamps que producirían diffs no reproducibles.
+outputs/runtime/
+
 # Warehouse local de HMS
 outputs/hms_warehouse/
 metastore_db/
