@@ -1,0 +1,88 @@
+{
+  "artifacts": {
+    "favoritismo_model": {
+      "path": "outputs/champions/modelo_favoritismo_rf.joblib",
+      "sha256": "04d1698802f32fe2b89a0d9f843e7ab5a28f86d2a8e4f463613a6d62db53b305"
+    },
+    "fraccionamiento_model": {
+      "path": "outputs/champions/modelo_fraccionamiento_isoforest.joblib",
+      "sha256": "dc2c5789ceffe56f55c135892b32c35b5dc0b9dc8a257cd0d1f45e630b8d43f6"
+    },
+    "fraccionamiento_scaler": {
+      "path": "outputs/champions/scaler_fraccionamiento.joblib",
+      "sha256": "521ef4fd2a39b48cea778ad1739a59007b8e3adefdd853147731ea9618df3f4e"
+    },
+    "preprocessor": {
+      "path": "outputs/champions/preprocesador_contratos.joblib",
+      "sha256": "1dd9e0fa07749b9402b730bb979c1d8547fcec2cd1de5bd8d294be62be29e426"
+    }
+  },
+  "champion_id": "poc-d6ae88ac265eb845",
+  "models": {
+    "favoritismo": {
+      "algorithm": "RandomForestClassifier",
+      "features": [
+        "n_contratos",
+        "monto_total",
+        "monto_promedio",
+        "n_objetos_unicos",
+        "pct_contratacion_directa",
+        "pct_comparacion_precios",
+        "n_funcionarios_distintos",
+        "dias_actividad",
+        "concentracion_objeto",
+        "contratos_por_mes",
+        "monto_por_funcionario"
+      ],
+      "framework": "scikit-learn",
+      "label": "label_favoritismo",
+      "params": {
+        "max_depth": 3,
+        "min_samples_leaf": 1,
+        "n_estimators": 100
+      }
+    },
+    "fraccionamiento": {
+      "algorithm": "IsolationForest + StandardScaler",
+      "features": [
+        "n_contratos_grupo",
+        "max_contratos_ventana_15d",
+        "monto_total_ventana_15d",
+        "pct_montos_bajo_umbral",
+        "monto_total_grupo"
+      ],
+      "framework": "scikit-learn",
+      "label": "label_fraccionamiento",
+      "params": {
+        "contamination": "auto",
+        "max_samples": 0.5,
+        "n_estimators": 100
+      }
+    }
+  },
+  "nature": "PoC público independiente; no constituye aprobación ni despliegue CGR",
+  "promotion": {
+    "approved_by": "GitHub Actions technical PoC",
+    "institutional_approval": false,
+    "scope": "poc_technical_serving",
+    "trigger": "explicit_command"
+  },
+  "schema_version": 1,
+  "status": "champion",
+  "training": {
+    "config": "config/local-training.yaml",
+    "contracts_rows": 3709,
+    "favoritismo_positives": 6,
+    "favoritismo_rows": 2328,
+    "fraccionamiento_positives": 8,
+    "fraccionamiento_rows": 180,
+    "ground_truth_required": true,
+    "source_type": "local_csv",
+    "training_data_fingerprint_sha256": "cc965662fe78c476b59d08e2065450d5e9a47561be184f73a843899fc096eff2",
+    "validation_evidence": [
+      "outputs/comparacion_modelos_favoritismo.json",
+      "outputs/tuning_favoritismo_resumen.json",
+      "outputs/tuning_fraccionamiento_resumen.json"
+    ]
+  }
+}
