@@ -2,9 +2,8 @@
 Modelo de Favoritismo con Apache Spark MLlib — implementación objetivo del PoC.
 
 Consume la capa Plata para la corrida reproducible. Sprint 3 reutiliza el mismo
-feature engineering en serving: la función de construcción acepta un label
-opcional, de modo que INFERENCE puede puntuar contratos actuales sin ground
-truth y sin reentrenar el RandomForest champion.
+feature engineering en serving. Sprint 4 parametriza la columna monetaria:
+legacy conserva ``monto`` y TRAIN/INFERENCE operacional usan ``monto_capped``.
 """
 
 from __future__ import annotations
@@ -55,11 +54,17 @@ def cargar_plata(spark):
     return df
 
 
-def construir_features_favoritismo(df, label_col: str | None = "es_favoritismo_real"):
+def construir_features_favoritismo(
+    df,
+    label_col: str | None = "es_favoritismo_real",
+    monto_col: str = "monto",
+):
+    if monto_col not in df.columns:
+        raise ValueError(f"Columna de monto Spark para favoritismo no existe: {monto_col!r}")
     expresiones = [
         F.count("id_contrato").alias("n_contratos"),
-        F.sum("monto").alias("monto_total"),
-        F.avg("monto").alias("monto_promedio"),
+        F.sum(monto_col).alias("monto_total"),
+        F.avg(monto_col).alias("monto_promedio"),
         F.countDistinct("objeto").alias("n_objetos_unicos"),
         F.avg(F.col("es_contratacion_directa").cast("double")).alias("pct_contratacion_directa"),
         F.avg(F.col("es_comparacion_precios").cast("double")).alias("pct_comparacion_precios"),
@@ -174,6 +179,7 @@ def guardar_resumen(modelo, auc_pr_cv, n_pos, n_total, duracion_s):
         },
         "auc_pr_cv": auc_pr_cv,
         "features": FEATURES,
+        "amount_source": "monto",
         "ranking": str(OUTPUT_RANKING),
         "modelo_runtime": str(MODEL_DIR),
         "duracion_s": round(float(duracion_s), 3),
@@ -192,6 +198,7 @@ def main():
     spark = crear_sesion()
     spark.sparkContext.setLogLevel("ERROR")
     try:
+        # Ruta legacy: monto bruto/imputado para reproducir las métricas históricas.
         modelo, predicciones, auc_pr_cv, n_pos, n_total = entrenar(
             construir_features_favoritismo(cargar_plata(spark))
         )
