@@ -60,6 +60,30 @@ def test_mapping_arbitrario_produce_esquema_canonico_inference_sin_labels():
     assert "label_fraccionamiento" not in validated.columns
 
 
+def test_integration_permite_nulos_imputables_pero_exige_la_columna():
+    source = _source_df()
+    source.loc[0, "IMP_ADJ"] = None
+    source.loc[0, "TIP_PROC"] = None
+    source.loc[1, "DESC_OBJ"] = None
+    canonical = aplicar_mapping(source, "contracts", _mapping())
+    validated = validar_dataframe(canonical, "contracts", mode="inference")
+
+    assert validated["monto"].isna().sum() == 1
+    assert validated["modalidad"].isna().sum() == 1
+    assert validated["objeto"].isna().sum() == 1
+
+    with pytest.raises(ValueError, match="monto"):
+        validar_dataframe(validated.drop(columns=["monto"]), "contracts", mode="inference")
+
+
+def test_integration_rechaza_nulos_en_claves_estructurales():
+    source = _source_df()
+    source.loc[0, "NRO_CONTRATO"] = None
+    canonical = aplicar_mapping(source, "contracts", _mapping())
+    with pytest.raises(ValueError, match="id_contrato contiene 1 nulos"):
+        validar_dataframe(canonical, "contracts", mode="inference")
+
+
 def test_training_exige_ground_truth_pero_inference_no():
     canonical = aplicar_mapping(_source_df(), "contracts", _mapping())
     validar_dataframe(canonical, "contracts", mode="inference")
