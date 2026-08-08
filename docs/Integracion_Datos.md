@@ -44,6 +44,8 @@ Es el modo para contratos actuales. No exige ground truth. Campos mínimos de `c
 - `modalidad`
 - `objeto`
 
+Que una columna sea obligatoria significa que **debe existir en la fuente/mapping**. En esta capa de entrada se permiten nulos en campos que el quality gate ya sabe tratar (`monto`, `modalidad`, `objeto`); no se imputan silenciosamente aquí. Las claves estructurales (`id_contrato`, `id_proveedor`, `id_entidad`) y `fecha_contrato` no pueden llegar nulas porque no existe una recuperación segura genérica.
+
 Los labels no forman parte del contrato obligatorio de inferencia.
 
 ### training
@@ -53,7 +55,7 @@ Extiende el contrato anterior y exige:
 - `label_favoritismo`
 - `label_fraccionamiento`
 
-Estos nombres son canónicos. Una fuente histórica puede mapear cualquier columna aprobada de ground truth a esos campos.
+Estos nombres son canónicos y no pueden ser nulos en entrenamiento. Una fuente histórica puede mapear cualquier columna aprobada de ground truth a esos campos.
 
 ## Dominios canónicos
 
@@ -71,7 +73,7 @@ El Sprint 1 define contratos para:
 
 ### local_csv
 
-Mantiene la reproducción actual del PoC. Configuración ejecutable: `config/local.yaml`.
+Mantiene la reproducción actual del PoC. Configuración ejecutable: `config/local.yaml`. El conector lee inicialmente como texto para conservar identificadores con ceros a la izquierda; el esquema canónico convierte después montos, fechas y booleanos.
 
 ### sqlserver
 
@@ -83,11 +85,11 @@ source:
   connection_env: CGR_SOURCE_DATABASE_URL
 ```
 
-La cadena real no se versiona. El entorno institucional deberá proporcionar `pyodbc` y el driver ODBC aprobado.
+La cadena real no se versiona. El entorno institucional deberá proporcionar `pyodbc` y el driver ODBC aprobado. Tablas y columnas se tratan como identificadores T-SQL escapados, no como fragmentos de SQL libre.
 
 ### spark_sql
 
-Usa tablas o vistas accesibles mediante `SparkSession.table`. El conector no fuerza `local[*]`; toma la configuración del entorno Spark que lo ejecute.
+Usa tablas o vistas accesibles mediante `SparkSession.table`. El conector no fuerza `local[*]`; toma la configuración del entorno Spark que lo ejecute y selecciona columnas mediante la API de DataFrame.
 
 ## Validación sin conectarse
 
@@ -97,7 +99,7 @@ La plantilla institucional puede validarse sin disponer de infraestructura:
 python src/ingestar_canonico.py --config config/cgr.example.yaml --validate-only
 ```
 
-Esto comprueba estructura, dominios, mappings y ausencia de secrets inline.
+Esto comprueba estructura, dominios, campos canónicos, mappings duplicados, correspondencia entre mappings y fuentes y ausencia de secrets inline.
 
 ## Preview local end-to-end
 
