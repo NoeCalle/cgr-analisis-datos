@@ -1,88 +1,184 @@
 {
-  "artifacts": {
-    "favoritismo_model": {
-      "path": "outputs/champions/modelo_favoritismo_rf.joblib",
-      "sha256": "04d1698802f32fe2b89a0d9f843e7ab5a28f86d2a8e4f463613a6d62db53b305"
-    },
-    "fraccionamiento_model": {
-      "path": "outputs/champions/modelo_fraccionamiento_isoforest.joblib",
-      "sha256": "dc2c5789ceffe56f55c135892b32c35b5dc0b9dc8a257cd0d1f45e630b8d43f6"
-    },
-    "fraccionamiento_scaler": {
-      "path": "outputs/champions/scaler_fraccionamiento.joblib",
-      "sha256": "521ef4fd2a39b48cea778ad1739a59007b8e3adefdd853147731ea9618df3f4e"
-    },
-    "preprocessor": {
-      "path": "outputs/champions/preprocesador_contratos.joblib",
-      "sha256": "1dd9e0fa07749b9402b730bb979c1d8547fcec2cd1de5bd8d294be62be29e426"
-    }
-  },
-  "champion_id": "poc-d6ae88ac265eb845",
-  "models": {
-    "favoritismo": {
-      "algorithm": "RandomForestClassifier",
-      "features": [
-        "n_contratos",
-        "monto_total",
-        "monto_promedio",
-        "n_objetos_unicos",
-        "pct_contratacion_directa",
-        "pct_comparacion_precios",
-        "n_funcionarios_distintos",
-        "dias_actividad",
-        "concentracion_objeto",
-        "contratos_por_mes",
-        "monto_por_funcionario"
-      ],
-      "framework": "scikit-learn",
-      "label": "label_favoritismo",
-      "params": {
-        "max_depth": 3,
-        "min_samples_leaf": 1,
-        "n_estimators": 100
-      }
-    },
-    "fraccionamiento": {
-      "algorithm": "IsolationForest + StandardScaler",
-      "features": [
-        "n_contratos_grupo",
-        "max_contratos_ventana_15d",
-        "monto_total_ventana_15d",
-        "pct_montos_bajo_umbral",
-        "monto_total_grupo"
-      ],
-      "framework": "scikit-learn",
-      "label": "label_fraccionamiento",
-      "params": {
-        "contamination": "auto",
-        "max_samples": 0.5,
-        "n_estimators": 100
-      }
-    }
-  },
+  "active_serving_profile": "spark_mllib",
   "nature": "PoC público independiente; no constituye aprobación ni despliegue CGR",
-  "promotion": {
-    "approved_by": "GitHub Actions technical PoC",
-    "institutional_approval": false,
-    "scope": "poc_technical_serving",
-    "trigger": "explicit_command"
+  "schema_version": 2,
+  "serving_profiles": {
+    "sklearn": {
+      "artifacts": {
+        "favoritismo_model": {
+          "path": "outputs/champions/modelo_favoritismo_rf.joblib",
+          "sha256": "04d1698802f32fe2b89a0d9f843e7ab5a28f86d2a8e4f463613a6d62db53b305"
+        },
+        "fraccionamiento_model": {
+          "path": "outputs/champions/modelo_fraccionamiento_isoforest.joblib",
+          "sha256": "dc2c5789ceffe56f55c135892b32c35b5dc0b9dc8a257cd0d1f45e630b8d43f6"
+        },
+        "fraccionamiento_scaler": {
+          "path": "outputs/champions/scaler_fraccionamiento.joblib",
+          "sha256": "521ef4fd2a39b48cea778ad1739a59007b8e3adefdd853147731ea9618df3f4e"
+        },
+        "preprocessor": {
+          "path": "outputs/champions/preprocesador_contratos.joblib",
+          "sha256": "1dd9e0fa07749b9402b730bb979c1d8547fcec2cd1de5bd8d294be62be29e426"
+        },
+        "preprocessor_json": {
+          "path": "outputs/champions/preprocesador_contratos.json",
+          "sha256": "8314ed1e6d320aaea9d512f4765317492a667c751e7d73137e9a8c3c45e750fd"
+        }
+      },
+      "champion_id": "poc-d6ae88ac265eb845",
+      "models": {
+        "favoritismo": {
+          "algorithm": "RandomForestClassifier",
+          "features": [
+            "n_contratos",
+            "monto_total",
+            "monto_promedio",
+            "n_objetos_unicos",
+            "pct_contratacion_directa",
+            "pct_comparacion_precios",
+            "n_funcionarios_distintos",
+            "dias_actividad",
+            "concentracion_objeto",
+            "contratos_por_mes",
+            "monto_por_funcionario"
+          ],
+          "framework": "scikit-learn",
+          "label": "label_favoritismo",
+          "params": {
+            "max_depth": 3,
+            "min_samples_leaf": 1,
+            "n_estimators": 100
+          }
+        },
+        "fraccionamiento": {
+          "algorithm": "IsolationForest + StandardScaler",
+          "features": [
+            "n_contratos_grupo",
+            "max_contratos_ventana_15d",
+            "monto_total_ventana_15d",
+            "pct_montos_bajo_umbral",
+            "monto_total_grupo"
+          ],
+          "framework": "scikit-learn",
+          "label": "label_fraccionamiento",
+          "params": {
+            "contamination": "auto",
+            "max_samples": 0.5,
+            "n_estimators": 100
+          }
+        }
+      },
+      "promotion": {
+        "approved_by": "GitHub Actions technical PoC",
+        "institutional_approval": false,
+        "scope": "poc_technical_serving",
+        "trigger": "explicit_command"
+      },
+      "training": {
+        "config": "config/local-training.yaml",
+        "contracts_rows": 3709,
+        "favoritismo_positives": 6,
+        "favoritismo_rows": 2328,
+        "fraccionamiento_positives": 8,
+        "fraccionamiento_rows": 180,
+        "ground_truth_required": true,
+        "source_type": "local_csv",
+        "training_data_fingerprint_sha256": "cc965662fe78c476b59d08e2065450d5e9a47561be184f73a843899fc096eff2",
+        "validation_evidence": [
+          "outputs/comparacion_modelos_favoritismo.json",
+          "outputs/tuning_favoritismo_resumen.json",
+          "outputs/tuning_fraccionamiento_resumen.json"
+        ]
+      }
+    },
+    "spark_mllib": {
+      "artifacts": {
+        "favoritismo_model": {
+          "path": "outputs/champions_spark/modelo_favoritismo_rf",
+          "sha256": "461f0f76bce41bd39c527c20b72561ea85da8401fc6c888b67e5d155b8e7a24a"
+        },
+        "fraccionamiento_model": {
+          "path": "outputs/champions_spark/modelo_fraccionamiento_kmeans",
+          "sha256": "69be21c3916e5addb87cb9a7ddff2b33136a323cc22df294b6fee860ccaa9f78"
+        },
+        "fraccionamiento_scaler": {
+          "path": "outputs/champions_spark/scaler_fraccionamiento",
+          "sha256": "6c83c9a7dd11c3d6081278ccb017a1576a70634ef1135a1cd5c2da49160d7465"
+        },
+        "preprocessor_json": {
+          "path": "outputs/champions_spark/preprocesador_contratos.json",
+          "sha256": "8314ed1e6d320aaea9d512f4765317492a667c751e7d73137e9a8c3c45e750fd"
+        }
+      },
+      "champion_id": "spark-poc-52bee25ed7a30b85",
+      "models": {
+        "favoritismo": {
+          "algorithm": "RandomForestClassificationModel",
+          "features": [
+            "n_contratos",
+            "monto_total",
+            "monto_promedio",
+            "n_objetos_unicos",
+            "pct_contratacion_directa",
+            "pct_comparacion_precios",
+            "n_funcionarios_distintos",
+            "dias_actividad",
+            "concentracion_objeto",
+            "contratos_por_mes",
+            "monto_por_funcionario"
+          ],
+          "framework": "Apache Spark MLlib",
+          "label": "label_favoritismo",
+          "params": {
+            "maxDepth": 3,
+            "numTrees": 100,
+            "selection_source": "spark_cv_summary"
+          }
+        },
+        "fraccionamiento": {
+          "algorithm": "StandardScalerModel + KMeansModel + distancia al centroide",
+          "features": [
+            "n_contratos_grupo",
+            "max_contratos_ventana_15d",
+            "monto_total_ventana_15d",
+            "pct_montos_bajo_umbral",
+            "monto_total_grupo"
+          ],
+          "framework": "Apache Spark MLlib",
+          "label": "label_fraccionamiento",
+          "params": {
+            "k": 2
+          }
+        }
+      },
+      "promotion": {
+        "approved_by": "GitHub Actions technical PoC",
+        "institutional_approval": false,
+        "scope": "poc_technical_serving",
+        "trigger": "explicit_command"
+      },
+      "training": {
+        "config": "config/local-training.yaml",
+        "contracts_rows": 3709,
+        "engine": "Apache Spark MLlib",
+        "favoritismo_positives": 6,
+        "favoritismo_rows": 2328,
+        "fraccionamiento_positives": 8,
+        "fraccionamiento_rows": 180,
+        "ground_truth_required": true,
+        "preprocessing_contract": "corrected_frozen_json_v1",
+        "source_type": "local_csv",
+        "spark_mode": "local[*]",
+        "training_data_fingerprint_sha256": "cc965662fe78c476b59d08e2065450d5e9a47561be184f73a843899fc096eff2",
+        "validation_evidence": [
+          "outputs/spark_favoritismo_resumen.json",
+          "outputs/spark_fraccionamiento_resumen.json",
+          "outputs/comparacion_modelos_favoritismo.json",
+          "outputs/tuning_fraccionamiento_resumen.json"
+        ]
+      }
+    }
   },
-  "schema_version": 1,
-  "status": "champion",
-  "training": {
-    "config": "config/local-training.yaml",
-    "contracts_rows": 3709,
-    "favoritismo_positives": 6,
-    "favoritismo_rows": 2328,
-    "fraccionamiento_positives": 8,
-    "fraccionamiento_rows": 180,
-    "ground_truth_required": true,
-    "source_type": "local_csv",
-    "training_data_fingerprint_sha256": "cc965662fe78c476b59d08e2065450d5e9a47561be184f73a843899fc096eff2",
-    "validation_evidence": [
-      "outputs/comparacion_modelos_favoritismo.json",
-      "outputs/tuning_favoritismo_resumen.json",
-      "outputs/tuning_fraccionamiento_resumen.json"
-    ]
-  }
+  "status": "champion"
 }

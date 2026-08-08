@@ -1,4 +1,5 @@
 {
+  "active_serving_profile": "sklearn",
   "champion_id": "poc-d6ae88ac265eb845",
   "champion_integrity_verified": true,
   "contracts_rows": 3709,
@@ -6,6 +7,7 @@
     "favoritismo": "outputs/runtime/inference/ci/ranking_riesgo_favoritismo.csv",
     "fraccionamiento": "outputs/runtime/inference/ci/ranking_riesgo_fraccionamiento.csv"
   },
+  "engine": "scikit-learn",
   "favoritismo_scored_rows": 2328,
   "fraccionamiento_scored_rows": 180,
   "id_funcionario_missing_input_rows": 0,
@@ -13,8 +15,9 @@
   "institutional_approval": false,
   "labels_consumed": false,
   "mode": "inference",
-  "notice": "Scores de priorización del PoC; no constituyen hallazgos de control ni decisión jurídica.",
+  "notice": "Perfil sklearn conservado como benchmark/compatibilidad. Desde Sprint 3 el serving objetivo del TDR es spark_mllib.",
   "schema_version": 1,
+  "serving_profile": "sklearn",
   "source_type": "local_csv",
   "training_invoked": false,
   "tuning_invoked": false

@@ -1,0 +1,19 @@
+{
+  "modalidad_moda": "Adjudicación Simplificada",
+  "monto_mediana_global": 61736.55,
+  "monto_mediana_por_objeto": {
+    "Adquisición de bienes de oficina": 68426.36,
+    "Adquisición de equipos informáticos": 61617.31,
+    "Adquisición de materiales de construcción": 67303.73000000001,
+    "Consultoría en ingeniería": 58093.85,
+    "Obra de rehabilitación vial": 58734.94,
+    "Servicio de capacitación": 62970.775,
+    "Servicio de limpieza y vigilancia": 65565.18,
+    "Servicio de mantenimiento de infraestructura": 58898.515,
+    "Servicio de transporte": 61663.99,
+    "Suministro de combustible": 60986.26
+  },
+  "monto_p99": 733415.782800001,
+  "objeto_moda": "Adquisición de materiales de construcción",
+  "schema_version": 1
+}
