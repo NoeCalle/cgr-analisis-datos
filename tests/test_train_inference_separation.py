@@ -12,9 +12,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from core.config import cargar_config
 from preprocesamiento import (
-    FEATURES if False else PREPROCESSOR_SCHEMA_VERSION,  # evita import implícito de modelos
-)
-from preprocesamiento import (
+    PREPROCESSOR_SCHEMA_VERSION,
     ajustar_estado_preprocesamiento,
     features_favoritismo,
     features_fraccionamiento,
