@@ -1,4 +1,4 @@
-# TRAIN / INFERENCE — Sprint 2
+# TRAIN / INFERENCE — Sprints 2 y 3
 
 Este documento describe la separación operacional incorporada después del release candidate `v1.0.0-rc.1` del PoC público independiente.
 
@@ -6,146 +6,166 @@ Este documento describe la separación operacional incorporada después del rele
 
 ## Objetivo
 
-Evitar que una ejecución destinada a puntuar contratos actuales pueda:
+Una ejecución destinada a puntuar contratos actuales no debe poder:
 
 - requerir ground truth;
 - recalcular estadísticas de preprocesamiento;
 - ejecutar tuning;
 - reentrenar modelos;
-- sobrescribir el modelo que se usa para scoring.
+- sobrescribir el modelo servido.
 
-El contrato queda dividido en tres acciones distintas:
-
-```text
-TRAIN -> candidate -> promoción explícita -> champion
-                                      |
-                                      +-> INFERENCE usa únicamente champion
-```
-
-La promoción del PoC **no equivale a aprobación institucional CGR**. El registry persiste `institutional_approval=false` de forma explícita.
-
-## 1. TRAIN
-
-Configuración de demostración: `config/local-training.yaml`.
-
-TRAIN requiere ground truth canónico:
-
-- `label_favoritismo`
-- `label_fraccionamiento`
-
-La fuente física puede usar otros nombres; Sprint 1 los adapta mediante YAML. En el PoC local se mapean desde las etiquetas sintéticas únicamente para reproducibilidad.
-
-Ejecución:
-
-```bash
-python src/entrenar_candidatos.py --config config/local-training.yaml
-```
-
-TRAIN realiza:
+Desde Sprint 3 el contrato objetivo es:
 
 ```text
-fuente histórica con labels
-    -> integración canónica
-    -> FIT del preprocesador
-    -> TRANSFORM de TRAIN
-    -> feature engineering
-    -> entrenamiento
-    -> candidate manifest + artefactos candidate
+TRAIN Spark -> candidate Spark -> promoción explícita -> champion Spark
+                                                  |
+                                                  +-> INFERENCE Spark
+                                                      sin labels / fit / tuning
 ```
 
-Los candidatos se guardan en `outputs/runtime/model_candidates/`, ruta ignorada por Git. Generar un candidato **no modifica** `outputs/model_registry.json` ni los binarios champion.
+`scikit-learn` se conserva como benchmark metodológico y perfil de compatibilidad. El perfil operacional activo del PoC es `spark_mllib`.
 
-El manifest registra, entre otros:
+La promoción técnica del PoC **no equivale a aprobación institucional CGR**. El registry persiste `institutional_approval=false`.
 
-- fingerprint SHA-256 del contenido canónico usado para entrenamiento;
-- número de filas y positivos;
-- lista exacta de features;
-- hiperparámetros;
-- hashes SHA-256 de los artefactos candidate;
-- rutas de evidencia de validación/tuning del PoC.
+## 1. Dos rutas que no deben confundirse
+
+### Reproducibilidad histórica
+
+La ruta `reproducibilidad_poc_1_8_2` reconstruye la evidencia congelada del RC1. Incluye la Plata legacy, benchmarks sklearn, Spark MLlib y GraphFrames. Puede entrenar porque su función es reconstruir evidencia.
+
+### Serving operacional
+
+TRAIN e INFERENCE usan la integración canónica de Sprint 1 y el preprocesamiento corregido introducido en Sprint 2. No consumen la Plata legacy como fuente de serving.
+
+Esta separación es deliberada: promover directamente un modelo Spark entrenado sobre la Plata legacy y puntuarlo con el preprocesamiento corregido produciría *train-serving skew*.
 
 ## 2. Preprocesamiento: FIT solo en TRAIN
 
-`src/preprocesamiento.py` separa ahora:
+`src/preprocesamiento.py` mantiene:
 
 - `ajustar_estado_preprocesamiento(...)`: aprende estadísticas;
 - `aplicar_estado_preprocesamiento(...)`: aplica estadísticas ya aprendidas;
-- `preparar_para_features_entrenamiento(...)`: FIT + TRANSFORM;
-- `preparar_para_features_inferencia(...)`: solo TRANSFORM.
+- `preparar_para_features_entrenamiento(...)`: FIT + TRANSFORM sklearn;
+- `preparar_para_features_inferencia(...)`: TRANSFORM sklearn.
 
-El estado persistido contiene actualmente:
+El estado aprendido contiene:
 
 - mediana de monto por objeto;
 - mediana global de monto;
 - moda de modalidad;
 - moda de objeto;
 - P99 de monto;
-- versión del esquema de preprocesamiento.
+- versión del esquema.
 
-Esto evita *train-serving skew*: un lote de contratos actuales no puede redefinir sus propias medianas, modas ni P99 antes de ser puntuado.
+Sprint 3 lo exporta además como JSON framework-neutral. `src/spark/preprocesamiento_serving_spark.py` aplica ese JSON con expresiones Spark y **no contiene ningún `.fit()`**.
 
-### Corrección de un comportamiento legacy
+### Corrección legacy preservada sin contaminar serving
 
-Durante las pruebas de Sprint 2 se detectó un efecto del pipeline histórico: la expresión
+Durante Sprint 2 se detectó que el pipeline histórico:
 
 ```python
 df.groupby("objeto")["monto"].transform(...)
 ```
 
-excluía por defecto las filas con `objeto` nulo. Al reasignar el resultado del `transform`, un monto originalmente válido podía convertirse en `NaN` y luego ser reemplazado por la mediana global.
+podía excluir filas con `objeto` nulo y sustituir posteriormente un `monto` válido por la mediana global. El caso de regresión `C002938` tenía `objeto` nulo y monto observado `117888.71`.
 
-Ejemplo sintético versionado detectado por la regresión:
+La ruta legacy conserva esa semántica únicamente para reconstruir las métricas históricas de `v1.0.0-rc.1`. TRAIN/INFERENCE nuevos preservan siempre un monto observado válido.
 
-- contrato `C002938`;
-- `objeto` nulo;
-- monto observado: `117888.71`.
+## 3. TRAIN Spark operacional
 
-La ruta nueva TRAIN/INFERENCE conserva el monto observado. La función legacy `limpiar_e_imputar(...)` mantiene deliberadamente la semántica anterior **solo para reconstruir las métricas históricas de `v1.0.0-rc.1`**. De esta forma no se reescribe retrospectivamente la evidencia del RC1 y, al mismo tiempo, el serving nuevo no hereda el defecto.
+Configuración de demostración: `config/local-training.yaml`.
 
-## 3. Candidate no es Champion
+TRAIN requiere:
 
-`src/registro_modelos.py` mantiene un registry mínimo para demostrar el control de promoción.
+- `label_favoritismo`;
+- `label_fraccionamiento`.
 
-Un candidate debe pasar validación de:
-
-- `schema_version`;
-- estado `candidate`;
-- presencia de todos los artefactos requeridos;
-- integridad SHA-256 de cada archivo.
-
-La promoción se realiza con un comando separado:
+Ejecución objetivo:
 
 ```bash
-python src/promover_candidato.py \
-  --manifest outputs/runtime/model_candidates/candidate_manifest.json \
+python src/spark/entrenar_candidato_spark.py \
+  --config config/local-training.yaml
+```
+
+Flujo:
+
+```text
+fuente histórica con labels
+    -> integración canónica
+    -> FIT estado de preprocesamiento corregido
+    -> JSON congelado
+    -> TRANSFORM Spark
+    -> features Spark
+    -> RandomForestClassifier MLlib
+    -> StandardScalerModel + KMeansModel MLlib
+    -> candidate Spark
+```
+
+Los artefactos candidate quedan bajo `outputs/runtime/spark_model_candidates/`, ignorado por Git. TRAIN no modifica `outputs/model_registry.json` ni `outputs/champions_spark/`; CI compara hashes antes y después para impedir regresiones.
+
+Para favoritismo, el entrenamiento final reutiliza la configuración seleccionada por la evidencia metodológica Spark cuando está disponible (`outputs/spark_favoritismo_resumen.json`), pero **no vuelve a ejecutar tuning dentro de INFERENCE**. Para fraccionamiento se persisten por separado el `StandardScalerModel` y el `KMeansModel`.
+
+## 4. Registry unificado
+
+`outputs/model_registry.json` usa `schema_version: 2` y admite múltiples perfiles:
+
+```text
+serving_profiles
+├── sklearn
+└── spark_mllib   <- active_serving_profile
+```
+
+El perfil `sklearn` conserva:
+
+- RandomForestClassifier;
+- IsolationForest;
+- StandardScaler;
+- preprocesador joblib/JSON.
+
+El perfil `spark_mllib` conserva:
+
+- `RandomForestClassificationModel`;
+- `KMeansModel`;
+- `StandardScalerModel`;
+- estado de preprocesamiento JSON.
+
+Los modelos Spark son directorios MLlib. `src/registro_modelos.py` calcula una huella SHA-256 determinística sobre sus archivos y excluye únicamente los `.crc` locales de Hadoop, que no forman parte del artefacto versionado.
+
+El loader sigue aceptando en memoria el registry schema 1 del Sprint 2 y lo migra a un perfil `sklearn`, evitando romper la trazabilidad histórica.
+
+## 5. Candidate no es Champion
+
+TRAIN solo produce `status: candidate`. La promoción Spark se ejecuta por separado:
+
+```bash
+python src/promover_candidato_spark.py \
+  --manifest outputs/runtime/spark_model_candidates/candidate_manifest.json \
   --approved-by "operador técnico del PoC" \
   --acknowledge-poc-only
 ```
 
-Sin `--acknowledge-poc-only`, la promoción se bloquea.
+Sin `--acknowledge-poc-only` la operación se bloquea.
 
-El champion se materializa en:
+El bootstrap CI utiliza además `--if-missing`: crea el primer champion Spark, pero una nueva corrida TRAIN posterior **no lo reemplaza silenciosamente**. La promoción de una versión nueva debe seguir siendo una acción explícita.
+
+Los artefactos activos quedan en:
 
 ```text
 outputs/model_registry.json
-outputs/champions/preprocesador_contratos.joblib
-outputs/champions/modelo_favoritismo_rf.joblib
-outputs/champions/modelo_fraccionamiento_isoforest.joblib
-outputs/champions/scaler_fraccionamiento.joblib
+outputs/champions_spark/preprocesador_contratos.json
+outputs/champions_spark/modelo_favoritismo_rf/
+outputs/champions_spark/modelo_fraccionamiento_kmeans/
+outputs/champions_spark/scaler_fraccionamiento/
 ```
 
-El registry registra los SHA-256 y vuelve a verificarlos cuando INFERENCE carga el champion.
+## 6. INFERENCE Spark MLlib
 
-## 4. INFERENCE
-
-Configuración local: `config/local.yaml`.
-
-No incluye labels.
+Configuración local: `config/local.yaml`. No contiene labels.
 
 Ejecución:
 
 ```bash
-python src/score_inference.py \
+python src/spark/score_inference_spark.py \
   --config config/local.yaml \
   --registry outputs/model_registry.json
 ```
@@ -155,85 +175,83 @@ Flujo:
 ```text
 contratos actuales SIN labels
     -> integración canónica
-    -> carga registry champion + verificación SHA-256
-    -> carga preprocesador champion
-    -> TRANSFORM sin FIT
-    -> feature engineering sin labels
-    -> predict / decision_function
-    -> rankings de priorización
-    -> segunda verificación SHA-256 de champion
+    -> carga registry schema 2
+    -> verificación SHA-256 champion Spark
+    -> carga estado JSON congelado
+    -> TRANSFORM Spark sin FIT
+    -> feature engineering Spark sin labels
+    -> load RandomForestClassificationModel
+    -> load StandardScalerModel + KMeansModel
+    -> scores de priorización
+    -> segunda verificación SHA-256 champion
 ```
 
-El código de `src/score_inference.py` no contiene llamadas a `.fit()`, constructores de los algoritmos de entrenamiento ni tuning.
+`src/spark/score_inference_spark.py` no importa sklearn/joblib, no instancia algoritmos de entrenamiento y no contiene `.fit()`.
 
-Las salidas detalladas se escriben por defecto bajo `outputs/runtime/inference/`, porque una futura fuente institucional podría contener identificadores que no deben versionarse.
+Las salidas detalladas permanecen bajo `outputs/runtime/inference_spark/`. La evidencia agregada reproducible se conserva en `outputs/inference_spark_smoke_summary.json`.
 
-La evidencia agregada del smoke reproducible se conserva en `outputs/inference_smoke_summary.json`.
+## 7. Perfil sklearn de compatibilidad
 
-## 5. Airflow: tres responsabilidades diferentes
+`src/score_inference.py` continúa disponible para regresión y comparación. Carga explícitamente el perfil `sklearn`; ya no define cuál es el serving activo.
 
-### Reproducibilidad integral del PoC
+Su evidencia queda en `outputs/inference_smoke_summary.json` y permite comprobar que la evolución a MLlib no destruyó el contrato probado en Sprint 2.
 
-`airflow_home/dags/dag_modulo_analisis_datos.py`
+## 8. Airflow: responsabilidades separadas
 
-DAG ID:
+### Reproducibilidad
 
 ```text
-reproducibilidad_poc_1_8_2
+DAG: reproducibilidad_poc_1_8_2
 ```
 
-Reconstruye datos sintéticos, benchmarks, Spark MLlib, GraphFrames, Oro y evidencia documental. Deliberadamente puede entrenar porque su finalidad es reproducir la evidencia, **no servir predicciones operacionales**.
+Reconstruye benchmark/evidencia legacy.
 
-### TRAIN
-
-`airflow_home/dags/dag_entrenamiento_modelos.py`
-
-DAG ID:
+### TRAIN operacional
 
 ```text
-entrenamiento_candidato_1_8_2
+DAG: entrenamiento_candidato_1_8_2
 ```
 
-Genera candidate. No contiene una tarea de promoción.
+Llama `src/spark/entrenar_candidato_spark.py`. Genera candidate; no promueve.
 
-### INFERENCE
-
-`airflow_home/dags/dag_inferencia_modelos.py`
-
-DAG ID:
+### INFERENCE operacional
 
 ```text
-inferencia_modelos_1_8_2
+DAG: inferencia_modelos_1_8_2
 ```
 
-Solo llama `src/score_inference.py`. No genera datos sintéticos, no ejecuta tuning y no entrena.
+Llama `src/spark/score_inference_spark.py`. No genera datos sintéticos, no ejecuta tuning y no entrena.
 
-## 6. Evidencia CI de cierre
+## 9. Evidencia CI vigente
 
 GitHub Actions valida automáticamente que:
 
-1. las regresiones legacy siguen reproduciendo los artefactos del RC1;
-2. el nuevo preprocesamiento no sustituye un monto válido por tener `objeto` nulo;
-3. TRAIN genera un candidate y no cambia registry/champion;
-4. la promoción requiere reconocimiento explícito de alcance PoC;
-5. INFERENCE recibe la configuración sin labels;
-6. INFERENCE no ejecuta training ni tuning;
-7. los hashes champion son idénticos antes y después del scoring;
-8. se producen 2,328 scores de favoritismo y 180 scores de fraccionamiento para los 3,709 contratos sintéticos actuales;
-9. después de ese smoke continúan pasando Spark MLlib, GraphFrames, Oro y los ocho DOCX formales.
+1. las regresiones legacy siguen reconstruyendo RC1;
+2. el preprocesamiento nuevo conserva montos válidos aunque `objeto` sea nulo;
+3. TRAIN sklearn de compatibilidad no modifica champion;
+4. TRAIN Spark operacional no modifica registry/champion;
+5. el candidate Spark declara `preprocessing_contract=corrected_frozen_json_v1`;
+6. la promoción exige reconocimiento explícito del alcance PoC;
+7. `active_serving_profile` termina en `spark_mllib`;
+8. INFERENCE Spark consume cero labels y ejecuta cero training/tuning;
+9. `sklearn_serving_dependency=false`;
+10. los hashes del champion Spark permanecen idénticos durante scoring;
+11. para el dataset sintético vigente se producen 2,328 scores de favoritismo y 180 de fraccionamiento a partir de 3,709 contratos;
+12. después del serving smoke siguen pasando Spark legacy, GraphFrames, Oro, trazabilidad y los ocho DOCX formales.
 
-El champion actual de demostración queda identificado por `champion_id` dentro de `outputs/model_registry.json`; ese identificador es técnico y reproducible, no institucional.
+El champion Spark vigente del PoC se identifica mediante `champion_id` dentro del registry. El identificador es técnico; no es una aprobación ni versión institucional.
 
-## 7. Qué sigue dependiendo de CGR
+## 10. Qué sigue dependiendo de CGR
 
-Sprint 2 resuelve el **contrato de software** entre entrenamiento y scoring. No puede resolver desde este repositorio:
+La separación TRAIN/INFERENCE y el serving MLlib resuelven el **contrato de software** dentro del PoC. No pueden resolver desde este repositorio:
 
-- quién tiene autoridad institucional para aprobar/promover un modelo;
-- el registry/MLOps corporativo que CGR decida utilizar;
+- autoridad institucional para aprobar/promover modelos;
+- registry/MLOps corporativo que defina CGR;
 - credenciales, roles y segregación DEV/QA/PROD;
-- fuentes históricas con ground truth institucional;
-- clúster Spark/Lakehouse institucional;
+- fuentes históricas y ground truth institucional;
+- HDFS/YARN/Lakehouse y clúster Spark institucional;
+- políticas de recursos, particionamiento y tuning del clúster real;
 - criterios numéricos de aceptación productiva no consignados en el TDR público;
-- despliegue, marcha blanca, certificación y transferencia formal.
+- despliegue SQL Server/SSRS real, marcha blanca, certificación y transferencia formal.
 
-Esas responsabilidades deben integrarse mediante los controles y plataformas que defina la CGR.
+Esas responsabilidades deben integrarse mediante los controles, plataformas y autorizaciones que defina la CGR.
