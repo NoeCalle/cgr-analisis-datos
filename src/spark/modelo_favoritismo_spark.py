@@ -7,7 +7,7 @@ de Precios son features separadas. `local[*]` demuestra ejecución Spark real,
 pero no equivale a despliegue CGR.
 
 Sprint A:
-- validación cruzada con folds estratificados determinísticos;
+- validación cruzada con folds estratificados y orden pseudoaleatorio determinístico;
 - AUC-PR como métrica primaria, coherente con el benchmark sklearn;
 - evidencia machine-readable de parámetros/métrica CV;
 - modelo binario generado en `outputs/runtime/` (no se versiona);
@@ -86,13 +86,16 @@ def construir_features_favoritismo(df):
 
 
 def _agregar_folds_estratificados(df_vec):
-    """Distribuye cada clase determinísticamente entre los tres folds.
+    """Distribuye cada clase de forma balanceada y pseudoaleatoria determinística.
 
-    Con seis positivos sintéticos, la asignación aleatoria de CrossValidator
-    podría producir un fold sin positivos. Esta columna garantiza dos positivos
-    por fold sin usar la etiqueta para ninguna otra decisión del modelo.
+    Con seis positivos, un fold vacío haría inválido AUC-PR. A la vez, ordenar
+    por identificador puede introducir un sesgo artificial. Se usa xxhash64 de
+    las claves como orden estable y luego round-robin dentro de cada clase.
     """
-    w = Window.partitionBy("label").orderBy("id_proveedor", "id_entidad")
+    orden_hash = F.xxhash64(
+        F.col("id_proveedor"), F.col("id_entidad"), F.lit("cgr-sprint-a-folds-v2")
+    )
+    w = Window.partitionBy("label").orderBy(orden_hash)
     return (
         df_vec.withColumn("_rn_label", F.row_number().over(w) - F.lit(1))
         .withColumn("fold", F.pmod(F.col("_rn_label"), F.lit(N_FOLDS)).cast("int"))
@@ -162,7 +165,7 @@ def guardar_resumen(modelo, auc_pr_cv, n_pos, n_total, duracion_s):
         "dataset": "lakehouse/plata/contratos_procesados.csv",
         "algoritmo": "RandomForestClassifier",
         "metrica_seleccion": "AUC-PR CV",
-        "cv": f"{N_FOLDS}-fold estratificado determinístico mediante foldCol",
+        "cv": f"{N_FOLDS}-fold estratificado con orden xxhash64 determinístico",
         "n_registros": int(n_total),
         "positivos": int(n_pos),
         "mejor_configuracion": {
@@ -174,7 +177,10 @@ def guardar_resumen(modelo, auc_pr_cv, n_pos, n_total, duracion_s):
         "ranking": str(OUTPUT_RANKING),
         "modelo_runtime": str(MODEL_DIR),
         "duracion_s": round(float(duracion_s), 3),
-        "advertencia": "Ejecución Spark real local; no equivale a clúster ni producción CGR.",
+        "advertencia": (
+            "Benchmark sintético con solo 6 positivos: la métrica CV es de alta varianza y no se usa "
+            "como estimación de desempeño productivo. Ejecución Spark real local; clúster CGR pendiente."
+        ),
     }
     OUTPUT_RESUMEN.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_RESUMEN.write_text(json.dumps(resumen, ensure_ascii=False, indent=2), encoding="utf-8")
