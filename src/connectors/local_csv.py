@@ -17,7 +17,9 @@ class LocalCsvConnector(DataConnector):
         path = Path(self.datasets[domain])
         if not path.exists():
             raise FileNotFoundError(f"Dataset CSV no encontrado para {domain!r}: {path}")
-        df = pd.read_csv(path)
+        # La fuente se lee como texto para no destruir identificadores con ceros
+        # a la izquierda. El contrato canónico convierte después monto/fecha/bool.
+        df = pd.read_csv(path, dtype="string")
         if columns is not None:
             missing = sorted(set(columns) - set(df.columns))
             if missing:
