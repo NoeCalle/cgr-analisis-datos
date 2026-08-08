@@ -1,8 +1,9 @@
-"""INFERENCE sklearn de compatibilidad del Sprint 2.
+"""INFERENCE sklearn de compatibilidad del Sprint 2/Sprint 4.
 
 Desde Sprint 3 el serving objetivo es Spark MLlib. Este módulo se conserva para
 benchmark/regresión y carga explícitamente el perfil ``sklearn`` del registry
-unificado. Sigue sin entrenar, tunear ni requerir labels.
+unificado. Sigue sin entrenar, tunear ni requerir labels. Sprint 4 aplica el
+mismo ``monto_capped`` congelado que vio el candidate operacional.
 """
 
 from __future__ import annotations
@@ -28,6 +29,7 @@ from registro_modelos import (
 )
 
 DEFAULT_OUTPUT_DIR = Path("outputs/runtime/inference/latest")
+FAVORITISMO_MONTO_OPERACIONAL = "monto_capped"
 
 
 def _cargar_artefacto(registry: dict, nombre: str):
@@ -76,7 +78,11 @@ def ejecutar_inference(
     )
 
     procesado = preparar_para_features_inferencia(contracts, preprocessor)
-    fav = features_favoritismo(procesado, label_col=None)
+    fav = features_favoritismo(
+        procesado,
+        label_col=None,
+        monto_col=FAVORITISMO_MONTO_OPERACIONAL,
+    )
     frac = features_fraccionamiento(procesado, label_col=None)
 
     fav_features = registry["models"]["favoritismo"]["features"]
@@ -132,6 +138,8 @@ def ejecutar_inference(
         "contracts_rows": int(len(contracts)),
         "favoritismo_scored_rows": int(len(ranking_fav)),
         "fraccionamiento_scored_rows": int(len(ranking_frac)),
+        "favoritismo_amount_source": FAVORITISMO_MONTO_OPERACIONAL,
+        "fraccionamiento_amount_source": "monto",
         "labels_consumed": False,
         "training_invoked": False,
         "tuning_invoked": False,
