@@ -9,6 +9,11 @@ Sprint 2:
 - Contratación Directa y Comparación de Precios permanecen separadas;
 - fraccionamiento mantiene montos reales/imputados para comparaciones normativas.
 
+Sprint 4 hace consumible el tratamiento P99 en favoritismo: la función acepta
+``monto_col``. La reconstrucción legacy mantiene ``monto`` para reproducir RC1;
+TRAIN/INFERENCE modernos usan ``monto_capped``. Fraccionamiento continúa usando
+monto sin capar porque compara cuantías contra umbrales normativos.
+
 La función `limpiar_e_imputar` conserva deliberadamente la semántica histórica
 usada para reconstruir las métricas del RC1. Esa ruta presentaba un efecto de
 `groupby(..., dropna=True)`: cuando `objeto` era nulo, el `transform` reemplazaba
@@ -42,8 +47,6 @@ def ajustar_estado_preprocesamiento(df: pd.DataFrame) -> dict:
         .dropna()
         .to_dict()
     )
-    # A diferencia de la ruta legacy, fillna preserva todo monto válido aunque
-    # la clave `objeto` sea nula. Solo se imputan montos realmente faltantes.
     monto_parcial = base["monto"].fillna(base["objeto"].map(medianas_objeto))
     mediana_global = float(monto_parcial.median())
     monto_imputado = monto_parcial.fillna(mediana_global)
@@ -112,9 +115,6 @@ def limpiar_e_imputar(df):
     out = df.copy()
     n_antes = int(out.isnull().sum().sum())
 
-    # IMPORTANTE: esta asignación reproduce el comportamiento histórico. Las
-    # filas con objeto nulo quedan fuera del groupby y reciben NaN en el transform,
-    # aunque su monto original fuese válido; luego pasan a mediana global.
     out["monto"] = out.groupby("objeto")["monto"].transform(
         lambda s: s.fillna(s.median())
     )
@@ -148,11 +148,14 @@ def features_favoritismo(
     df: pd.DataFrame,
     label_col: str | None = "es_favoritismo_real",
     output_label: str | None = None,
+    monto_col: str = "monto",
 ) -> pd.DataFrame:
+    if monto_col not in df.columns:
+        raise ValueError(f"Columna de monto para favoritismo no existe: {monto_col!r}")
     aggs = {
         "n_contratos": ("id_contrato", "count"),
-        "monto_total": ("monto", "sum"),
-        "monto_promedio": ("monto", "mean"),
+        "monto_total": (monto_col, "sum"),
+        "monto_promedio": (monto_col, "mean"),
         "n_objetos_unicos": ("objeto", "nunique"),
         "pct_contratacion_directa": ("es_contratacion_directa", "mean"),
         "pct_comparacion_precios": ("es_comparacion_precios", "mean"),
