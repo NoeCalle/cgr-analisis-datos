@@ -1,4 +1,4 @@
-"""Pruebas de regresión para correcciones metodológicas P1."""
+"""Pruebas de regresión para correcciones metodológicas P1/Sprint A."""
 
 import sys
 from pathlib import Path
@@ -8,6 +8,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from autoevaluacion import UMBRAL_RECALL_MINIMO, dividir_lote_para_reentrenamiento
+from generar_diccionario_diagrama import DICCIONARIO
 from preprocesamiento import codificar_y_normalizar, features_favoritismo
 
 
@@ -59,3 +60,14 @@ def test_holdout_reentrenamiento_no_se_superpone_con_nuevo_train():
 
 def test_umbral_recall_es_absoluto_y_explicito():
     assert UMBRAL_RECALL_MINIMO == 0.80
+
+
+def test_diccionario_no_reintroduce_nombres_obsoletos():
+    texto = " ".join(str(valor) for fila in DICCIONARIO for valor in fila).lower()
+
+    assert "pct_no_competitiva" not in texto
+    assert "cumple_regla_fraccionamiento" not in texto
+    assert "s/. 400,000" not in texto
+    assert "pct_contratacion_directa" in texto
+    assert "pct_comparacion_precios" in texto
+    assert "senal_priorizacion_fraccionamiento" in texto
