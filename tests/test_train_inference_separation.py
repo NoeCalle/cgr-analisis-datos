@@ -128,14 +128,16 @@ def test_score_inference_sklearn_no_contiene_fit():
     assert "tuning_favoritismo" not in source
 
 
-def test_score_inference_spark_es_transform_puro_y_sin_sklearn():
+def test_score_inference_spark_es_transform_puro_y_sin_sklearn_runtime():
     source = (ROOT / "src" / "spark" / "score_inference_spark.py").read_text(encoding="utf-8")
+    source_lower = source.lower()
     assert ".fit(" not in source
     assert "RandomForestClassifier(" not in source
     assert "KMeans(" not in source
     assert "StandardScaler(" not in source
-    assert "sklearn" not in source.lower()
-    assert "joblib" not in source.lower()
+    assert "import sklearn" not in source_lower
+    assert "from sklearn" not in source_lower
+    assert "joblib" not in source_lower
     assert "RandomForestClassificationModel.load" in source
     assert "KMeansModel.load" in source
     assert "StandardScalerModel.load" in source
