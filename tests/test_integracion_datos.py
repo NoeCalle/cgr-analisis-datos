@@ -42,8 +42,8 @@ def _mapping(include_labels=False):
         "objeto": "DESC_OBJ",
     }
     if include_labels:
-        mapping["es_favoritismo_real"] = "GT_FAV"
-        mapping["es_fraccionamiento_real"] = "GT_FRAC"
+        mapping["label_favoritismo"] = "GT_FAV"
+        mapping["label_fraccionamiento"] = "GT_FRAC"
     return mapping
 
 
@@ -54,20 +54,28 @@ def test_mapping_arbitrario_produce_esquema_canonico_inference_sin_labels():
     assert list(validated.columns) == list(_mapping())
     assert validated["id_contrato"].tolist() == ["X-001", "X-002"]
     assert pd.api.types.is_datetime64_any_dtype(validated["fecha_contrato"])
-    assert "es_favoritismo_real" not in validated.columns
-    assert "es_fraccionamiento_real" not in validated.columns
+    assert "label_favoritismo" not in validated.columns
+    assert "label_fraccionamiento" not in validated.columns
 
 
 def test_training_exige_ground_truth_pero_inference_no():
     canonical = aplicar_mapping(_source_df(), "contracts", _mapping())
     validar_dataframe(canonical, "contracts", mode="inference")
 
-    with pytest.raises(ValueError, match="es_favoritismo_real"):
+    with pytest.raises(ValueError, match="label_favoritismo"):
         validar_dataframe(canonical, "contracts", mode="training")
 
     canonical_train = aplicar_mapping(_source_df(True), "contracts", _mapping(True))
     validated_train = validar_dataframe(canonical_train, "contracts", mode="training")
-    assert validated_train["es_favoritismo_real"].astype(bool).tolist() == [False, True]
+    assert validated_train["label_favoritismo"].astype(bool).tolist() == [False, True]
+
+
+def test_training_rechaza_label_nulo():
+    source = _source_df(True)
+    source.loc[0, "GT_FAV"] = None
+    canonical = aplicar_mapping(source, "contracts", _mapping(True))
+    with pytest.raises(ValueError, match="label_favoritismo contiene 1 nulos"):
+        validar_dataframe(canonical, "contracts", mode="training")
 
 
 def test_mapping_no_permite_una_columna_fisica_para_dos_campos():
@@ -107,7 +115,7 @@ def test_config_local_integracion_end_to_end_con_datos_sinteticos():
     assert summary["contains_secrets"] is False
     assert len(results["contracts"]) > 0
     assert {"contracts", "suppliers", "entities", "officials"}.issubset(results)
-    assert "es_favoritismo_real" not in results["contracts"].columns
+    assert "label_favoritismo" not in results["contracts"].columns
 
 
 def test_local_csv_lee_solo_columnas_mapeadas(tmp_path):
