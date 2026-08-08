@@ -1,0 +1,49 @@
+# EJEMPLO DE INTEGRACIÓN INSTITUCIONAL — NO CONTIENE NOMBRES REALES CGR.
+# Copiar fuera del repositorio como config/cgr.yaml y reemplazar tablas/columnas
+# por las aprobadas institucionalmente. Las credenciales solo se referencian
+# mediante variables de entorno.
+mode: inference
+
+source:
+  type: sqlserver
+  connection_env: CGR_SOURCE_DATABASE_URL
+  tables:
+    contracts: dbo.VW_CONTRATOS_MODULO
+    suppliers: dbo.VW_PROVEEDORES_MODULO
+    entities: dbo.VW_ENTIDADES_MODULO
+    officials: dbo.VW_FUNCIONARIOS_MODULO
+    payments: dbo.VW_PAGOS_MODULO
+
+# Dirección del mapping: campo_canónico: columna_física_de_la_fuente
+mapping:
+  contracts:
+    id_contrato: ID_CONTRATO_FUENTE
+    id_proveedor: ID_PROVEEDOR_FUENTE
+    id_entidad: ID_ENTIDAD_FUENTE
+    id_funcionario: ID_FUNCIONARIO_FUENTE
+    monto: MONTO_CONTRATO_FUENTE
+    fecha_contrato: FECHA_CONTRATO_FUENTE
+    modalidad: MODALIDAD_FUENTE
+    objeto: OBJETO_CONTRATO_FUENTE
+    categoria_principal: CATEGORIA_PRINCIPAL_FUENTE
+    fecha_actualizacion: FECHA_ACTUALIZACION_FUENTE
+  suppliers:
+    id_proveedor: ID_PROVEEDOR_FUENTE
+    nombre_proveedor: NOMBRE_PROVEEDOR_FUENTE
+    ruc: RUC_PROVEEDOR_FUENTE
+  entities:
+    id_entidad: ID_ENTIDAD_FUENTE
+    nombre_entidad: NOMBRE_ENTIDAD_FUENTE
+  officials:
+    id_funcionario: ID_FUNCIONARIO_FUENTE
+    id_entidad: ID_ENTIDAD_FUENTE
+    nombre_funcionario: NOMBRE_FUNCIONARIO_FUENTE
+  payments:
+    id_pago: ID_PAGO_FUENTE
+    id_contrato: ID_CONTRATO_FUENTE
+    fecha_devengado: FECHA_DEVENGADO_FUENTE
+    fecha_girado: FECHA_GIRADO_FUENTE
+    fecha_pagado: FECHA_PAGADO_FUENTE
+    monto_devengado: MONTO_DEVENGADO_FUENTE
+    monto_pagado: MONTO_PAGADO_FUENTE
+    estado: ESTADO_PAGO_FUENTE
