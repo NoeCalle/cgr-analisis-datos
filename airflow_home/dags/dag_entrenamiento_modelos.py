@@ -1,9 +1,9 @@
-"""DAG explícito de TRAIN — Sprint 2.
+"""DAG explícito de TRAIN operacional — Sprint 3.
 
-Genera un candidate manifest y sus artefactos. Deliberadamente NO contiene una
-tarea de promoción; mover un candidato a champion requiere el comando separado
-`src/promover_candidato.py` y, en un entorno institucional, el control de
-aprobación definido por la CGR.
+Genera un candidate Spark MLlib con el mismo preprocesamiento corregido que usa
+INFERENCE. Deliberadamente NO contiene promoción: pasar candidate -> champion
+requiere ``src/promover_candidato_spark.py`` y, en un entorno institucional, el
+gate de aprobación definido por la CGR.
 """
 
 from datetime import datetime
@@ -20,8 +20,8 @@ PROYECTO = os.environ.get(
 PY = os.environ.get("CGR_PROJECT_PYTHON", os.path.join(PROYECTO, ".venv", "bin", "python"))
 CONFIG = os.environ.get("CGR_TRAIN_CONFIG", "config/local-training.yaml")
 MANIFEST = os.environ.get(
-    "CGR_CANDIDATE_MANIFEST",
-    "outputs/runtime/model_candidates/candidate_manifest.json",
+    "CGR_SPARK_CANDIDATE_MANIFEST",
+    "outputs/runtime/spark_model_candidates/candidate_manifest.json",
 )
 
 
@@ -30,21 +30,21 @@ def comando_train():
     python = shlex.quote(PY)
     return (
         f"test -x {python} || (echo 'Python de proyecto no encontrado: {PY}' >&2; exit 2); "
-        f"cd {proyecto} && {python} src/entrenar_candidatos.py "
+        f"cd {proyecto} && {python} src/spark/entrenar_candidato_spark.py "
         f"--config {shlex.quote(CONFIG)} --manifest {shlex.quote(MANIFEST)}"
     )
 
 
 with DAG(
     dag_id="entrenamiento_candidato_1_8_2",
-    description="TRAIN separado: genera candidato y nunca lo promueve automáticamente",
+    description="TRAIN Spark separado: genera candidate y nunca lo promueve automáticamente",
     start_date=datetime(2026, 8, 8),
     schedule=None,
     catchup=False,
     default_args={"owner": "prototipo-independiente", "retries": 0},
-    tags=["1.8.2", "training", "candidate", "poc"],
+    tags=["1.8.2", "training", "spark", "mllib", "candidate", "poc"],
 ) as dag:
     entrenar_candidate = BashOperator(
-        task_id="entrenar_y_persistir_candidate",
+        task_id="entrenar_spark_y_persistir_candidate",
         bash_command=comando_train(),
     )
