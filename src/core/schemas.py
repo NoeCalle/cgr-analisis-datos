@@ -6,6 +6,11 @@ no de nombres físicos de tablas/columnas de CGR, SIAF, SEACE u otra fuente.
 Sprint 1 distingue explícitamente dos usos:
 - inference: contratos actuales, sin etiquetas obligatorias;
 - training: histórico con ground truth requerido para los modelos entrenables.
+
+`required_*` significa que la columna debe existir. `nullable=False` se reserva
+para claves/campos que la capa de integración no puede recuperar de forma
+segura. Nulos imputables de negocio (monto, modalidad, objeto) se permiten aquí
+y se resuelven o rechazan posteriormente en el quality gate/preprocesamiento.
 """
 
 from __future__ import annotations
@@ -30,10 +35,12 @@ SCHEMAS: dict[str, tuple[FieldSpec, ...]] = {
         FieldSpec("id_proveedor", "string", True, True, False),
         FieldSpec("id_entidad", "string", True, True, False),
         FieldSpec("id_funcionario", "string"),
-        FieldSpec("monto", "number", True, True, False),
+        # La columna monto debe existir, pero el PoC ya contempla imputación de
+        # nulos en preprocesamiento; no se debe rechazar antes de ese quality gate.
+        FieldSpec("monto", "number", True, True, True),
         FieldSpec("fecha_contrato", "datetime", True, True, False),
-        FieldSpec("modalidad", "string", True, True, False),
-        FieldSpec("objeto", "string", True, True, False),
+        FieldSpec("modalidad", "string", True, True, True),
+        FieldSpec("objeto", "string", True, True, True),
         FieldSpec("categoria_principal", "string"),
         FieldSpec("fecha_actualizacion", "datetime"),
         # Ground truth canónico. Los nombres físicos/sintéticos se adaptan vía mapping.
@@ -122,7 +129,7 @@ def validar_dataframe(
     *,
     coerce: bool = True,
 ) -> pd.DataFrame:
-    """Valida presencia, tipos básicos y nulos de un DataFrame canónico.
+    """Valida presencia, tipos básicos y nulabilidad estructural.
 
     Devuelve una copia tipada. No imputa ni corrige calidad de negocio: esa
     responsabilidad pertenece al preprocesamiento/quality gate posterior.
