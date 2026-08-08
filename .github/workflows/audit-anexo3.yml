@@ -32,7 +32,7 @@ jobs:
       - name: Generate Annex 3 checklist
         run: python src/generar_checklist_anexo3.py
 
-      - name: Validate zero red gaps
+      - name: Validate zero red gaps and required metrics
         run: |
           python - <<'PY'
           import json
@@ -40,16 +40,25 @@ jobs:
 
           checklist = json.loads(Path('outputs/checklist_anexo3.json').read_text(encoding='utf-8'))
           ssrs = json.loads(Path('outputs/ssrs_publicacion_manifest.json').read_text(encoding='utf-8'))
+          fav = json.loads(Path('outputs/comparacion_modelos_favoritismo.json').read_text(encoding='utf-8'))
+          frac = json.loads(Path('outputs/tuning_fraccionamiento_resumen.json').read_text(encoding='utf-8'))
 
           assert checklist['resumen'].get('🔴', 0) == 0
           assert checklist['resumen'].get('✅', 0) == 6
           assert checklist['resumen'].get('🟡', 0) == 4
           assert checklist['resumen'].get('🔵', 0) == 1
           assert len(checklist['criterios']) == 11
+
+          # El Anexo 3 menciona Accuracy, F1 y AUC-ROC. Accuracy se reporta,
+          # aunque AUC-PR sigue siendo primaria por el desbalance.
+          assert all('accuracy' in r and 'f1' in r and 'auc_roc' in r for r in fav['resultados'])
+          for metrica in ['accuracy', 'f1', 'auc_roc', 'auc_pr', 'precision', 'recall', 'recall_at_k']:
+              assert metrica in frac['metricas_holdout_final']
+
           assert ssrs['validacion']['conteos_tablas']['PrediccionesFavoritismo'] > 0
           assert ssrs['validacion']['conteos_tablas']['PrediccionesFraccionamiento'] > 0
           assert ssrs['validacion']['conteos_tablas']['VinculosProveedorFuncionario'] > 0
-          print('Sprint C: SSRS local + checklist Anexo 3 sin brechas rojas')
+          print('Sprint C: SSRS local + Accuracy/F1/AUC-ROC + checklist Anexo 3 sin brechas rojas')
           PY
 
       - name: Upload Sprint C evidence
