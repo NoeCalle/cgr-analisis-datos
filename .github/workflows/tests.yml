@@ -61,6 +61,93 @@ jobs:
           python src/modelo_fraccionamiento.py
           python src/modelo_grafos.py
 
+      - name: Train candidate without touching champion
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          state = {'registry_exists': Path('outputs/model_registry.json').exists()}
+          if state['registry_exists']:
+              state['registry_sha256'] = hashlib.sha256(Path('outputs/model_registry.json').read_bytes()).hexdigest()
+          champion_dir = Path('outputs/champions')
+          state['champion_hashes'] = {
+              p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+              for p in sorted(champion_dir.glob('*.joblib'))
+          }
+          Path('/tmp/champion_before_train.json').write_text(json.dumps(state), encoding='utf-8')
+          PY
+
+          python src/entrenar_candidatos.py --config config/local-training.yaml
+
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          before = json.loads(Path('/tmp/champion_before_train.json').read_text(encoding='utf-8'))
+          manifest = json.loads(Path('outputs/runtime/model_candidates/candidate_manifest.json').read_text(encoding='utf-8'))
+          assert manifest['status'] == 'candidate'
+          assert manifest['training']['contracts_rows'] == 3709
+          assert manifest['training']['favoritismo_positives'] == 6
+          assert manifest['training']['fraccionamiento_positives'] == 8
+
+          registry = Path('outputs/model_registry.json')
+          assert registry.exists() == before['registry_exists'], 'TRAIN creó/eliminó registry champion'
+          if registry.exists():
+              assert hashlib.sha256(registry.read_bytes()).hexdigest() == before['registry_sha256']
+          after_hashes = {
+              p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+              for p in sorted(Path('outputs/champions').glob('*.joblib'))
+          }
+          assert after_hashes == before['champion_hashes'], 'TRAIN modificó artefactos champion'
+          print(f"TRAIN aislado OK: candidate={manifest['candidate_id']}")
+          PY
+
+      - name: Explicit PoC promotion and inference smoke
+        run: |
+          python src/promover_candidato.py \
+            --manifest outputs/runtime/model_candidates/candidate_manifest.json \
+            --registry outputs/model_registry.json \
+            --approved-by "GitHub Actions technical PoC" \
+            --acknowledge-poc-only
+
+          python src/score_inference.py \
+            --config config/local.yaml \
+            --registry outputs/model_registry.json \
+            --output-dir outputs/runtime/inference/ci \
+            --summary outputs/inference_smoke_summary.json
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import pandas as pd
+
+          registry = json.loads(Path('outputs/model_registry.json').read_text(encoding='utf-8'))
+          summary = json.loads(Path('outputs/inference_smoke_summary.json').read_text(encoding='utf-8'))
+          candidate = json.loads(Path('outputs/runtime/model_candidates/candidate_manifest.json').read_text(encoding='utf-8'))
+          fav = pd.read_csv('outputs/runtime/inference/ci/ranking_riesgo_favoritismo.csv')
+          frac = pd.read_csv('outputs/runtime/inference/ci/ranking_riesgo_fraccionamiento.csv')
+
+          assert registry['status'] == 'champion'
+          assert registry['champion_id'] == candidate['candidate_id'] == summary['champion_id']
+          assert registry['promotion']['institutional_approval'] is False
+          assert summary['mode'] == 'inference'
+          assert summary['contracts_rows'] == 3709
+          assert summary['favoritismo_scored_rows'] == 2328
+          assert summary['fraccionamiento_scored_rows'] == 180
+          assert summary['labels_consumed'] is False
+          assert summary['training_invoked'] is False
+          assert summary['tuning_invoked'] is False
+          assert summary['champion_integrity_verified'] is True
+          assert not any(c.startswith('label_') for c in fav.columns)
+          assert not any(c.startswith('label_') for c in frac.columns)
+          assert 'score_riesgo_favoritismo' in fav.columns
+          assert 'score_anomalia' in frac.columns
+          print('Sprint 2 serving smoke OK: inference sin labels y sin reentrenamiento')
+          PY
+
       - name: Run canonical Spark MLlib and GraphFrames path
         env:
           PYSPARK_PYTHON: python
@@ -250,6 +337,8 @@ jobs:
             outputs/linaje_datos.csv
             outputs/run_manifest.json
             outputs/evidencia_documental.json
+            outputs/model_registry.json
+            outputs/inference_smoke_summary.json
             data/diccionario_datos.csv
           retention-days: 14
 
@@ -317,6 +406,9 @@ jobs:
             outputs/linaje_datos.csv \
             outputs/run_manifest.json \
             outputs/evidencia_documental.json \
+            outputs/model_registry.json \
+            outputs/inference_smoke_summary.json \
+            outputs/champions/*.joblib \
             outputs/charts/*.png \
             lakehouse/oro/ranking_riesgo_favoritismo.csv \
             lakehouse/oro/ranking_riesgo_fraccionamiento.csv \
@@ -331,6 +423,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No hay artefactos verificados nuevos que persistir."
           else
-            git commit -m "chore: regenerar artefactos Sprint B verificados [skip ci]"
+            git commit -m "chore: regenerar artefactos Sprint 2 verificados [skip ci]"
             git push
           fi
