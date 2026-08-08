@@ -8,6 +8,12 @@ Sprint 2:
   de contratos actuales no necesita ground truth;
 - Contratación Directa y Comparación de Precios permanecen separadas;
 - fraccionamiento mantiene montos reales/imputados para comparaciones normativas.
+
+La función `limpiar_e_imputar` conserva deliberadamente la semántica histórica
+usada para reconstruir las métricas del RC1. Esa ruta presentaba un efecto de
+`groupby(..., dropna=True)`: cuando `objeto` era nulo, el `transform` reemplazaba
+incluso montos válidos por NaN antes de la mediana global. El nuevo contrato
+TRAIN/INFERENCE NO replica ese defecto; un monto válido siempre se conserva.
 """
 
 from __future__ import annotations
@@ -36,6 +42,8 @@ def ajustar_estado_preprocesamiento(df: pd.DataFrame) -> dict:
         .dropna()
         .to_dict()
     )
+    # A diferencia de la ruta legacy, fillna preserva todo monto válido aunque
+    # la clave `objeto` sea nula. Solo se imputan montos realmente faltantes.
     monto_parcial = base["monto"].fillna(base["objeto"].map(medianas_objeto))
     mediana_global = float(monto_parcial.median())
     monto_imputado = monto_parcial.fillna(mediana_global)
@@ -74,8 +82,6 @@ def aplicar_estado_preprocesamiento(df: pd.DataFrame, estado: dict) -> pd.DataFr
     out["objeto"] = out["objeto"].fillna(estado["objeto_moda"])
     out["monto_capped"] = out["monto"].clip(upper=float(estado["monto_p99"]))
 
-    # La feature histórica requiere este campo. Si la fuente no lo entrega,
-    # se usa un sentinel explícito; el resumen de inference reporta la ausencia.
     if "id_funcionario" not in out.columns:
         out["id_funcionario"] = "__NO_DISPONIBLE__"
     else:
@@ -98,14 +104,28 @@ def preparar_para_features_inferencia(df: pd.DataFrame, estado: dict) -> pd.Data
 
 
 def limpiar_e_imputar(df):
-    """Compatibilidad con el pipeline histórico: fit-transform sobre el dataset PoC."""
-    n_antes = int(df.isnull().sum().sum())
-    out, estado = preparar_para_features_entrenamiento(df)
-    print(f"Valores nulos: {n_antes} → {out.isnull().sum().sum()}")
-    print(
-        f"Outliers capados al P99 (S/. {estado['monto_p99']:,.0f}): "
-        f"{(out['monto'] > estado['monto_p99']).sum()}"
+    """Reconstrucción legacy exacta del benchmark anterior a Sprint 2.
+
+    Se mantiene aislada para que `reproducibilidad_poc_1_8_2` pueda regenerar
+    métricas históricas. No debe utilizarse en TRAIN ni en INFERENCE nuevos.
+    """
+    out = df.copy()
+    n_antes = int(out.isnull().sum().sum())
+
+    # IMPORTANTE: esta asignación reproduce el comportamiento histórico. Las
+    # filas con objeto nulo quedan fuera del groupby y reciben NaN en el transform,
+    # aunque su monto original fuese válido; luego pasan a mediana global.
+    out["monto"] = out.groupby("objeto")["monto"].transform(
+        lambda s: s.fillna(s.median())
     )
+    out["monto"] = out["monto"].fillna(out["monto"].median())
+    for col in ["modalidad", "objeto"]:
+        out[col] = out[col].fillna(out[col].mode().iloc[0])
+
+    p99 = float(out["monto"].quantile(0.99))
+    out["monto_capped"] = out["monto"].clip(upper=p99)
+    print(f"Valores nulos: {n_antes} → {out.isnull().sum().sum()}")
+    print(f"Outliers capados al P99 (S/. {p99:,.0f}): {(out['monto'] > p99).sum()}")
     return out
 
 
@@ -119,7 +139,6 @@ def codificar_y_normalizar(df):
     df = pd.concat(
         [df, pd.DataFrame(modalidad_ohe, columns=modalidad_cols, index=df.index)], axis=1
     )
-    # Se recalculan de forma idempotente para preservar el artefacto legacy.
     df["es_contratacion_directa"] = df["modalidad"].eq("Contratación Directa")
     df["es_comparacion_precios"] = df["modalidad"].eq("Comparación de Precios")
     return df
@@ -214,7 +233,8 @@ def _moda_o_error(series: pd.Series, campo: str):
 
 
 def main():
-    # Pipeline reproducible legacy: conserva nombres y métricas del benchmark PoC.
+    # Reproduce los artefactos y métricas legacy del PoC. Los flujos nuevos usan
+    # `preparar_para_features_entrenamiento/inferencia` y no esta ruta.
     df = codificar_y_normalizar(limpiar_e_imputar(cargar()))
     df.to_csv("data/contratos_procesados.csv", index=False)
     fav = features_favoritismo(
