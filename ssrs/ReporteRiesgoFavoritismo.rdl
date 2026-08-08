@@ -1,23 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Reporte SSRS (Report Definition Language) — checklist Anexo 3, ítem 7.
-
-  Este .rdl es un artefacto real de SQL Server Reporting Services: se
-  puede abrir en Report Builder o desplegarse a un servidor de reportes,
-  siempre que la cadena de conexión (ver <DataSource>) apunte al SQL
-  Server real de la CGR con el esquema de ssrs/schema_sql_server.sql ya
-  cargado. Aquí NO se ejecuta (no hay un servidor SSRS ni SQL Server
-  disponible en este entorno de prueba de concepto) — es el entregable
-  listo para desplegar, no una simulación de su ejecución.
+  Reporte SSRS (Report Definition Language) — Anexo 3, ítem 7.
+  PoC independiente: el RDL y su contrato SQL son verificables, pero el
+  despliegue real requiere SQL Server/SSRS y autenticación institucional CGR.
 -->
 <Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition"
         xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
-
   <DataSources>
     <DataSource Name="CGR_SQLServer">
       <ConnectionProperties>
         <DataProvider>SQL</DataProvider>
-        <!-- Placeholder — en despliegue real apunta al SQL Server institucional descrito en el Anexo 2 -->
         <ConnectString>Data Source=SRV-CGR-SQL;Initial Catalog=ModuloAnalisisDatos_1_8_2</ConnectString>
       </ConnectionProperties>
       <rd:SecurityType>Integrated</rd:SecurityType>
@@ -30,7 +22,7 @@
         <DataSourceName>CGR_SQLServer</DataSourceName>
         <CommandText>
           SELECT id_proveedor, id_entidad, n_contratos, monto_total, score_riesgo
-          FROM dbo.PrediccionesFavoritismo
+          FROM dbo.vw_SSRS_Favoritismo
           WHERE score_riesgo &gt;= @UmbralMinimo
           ORDER BY score_riesgo DESC
         </CommandText>
@@ -62,22 +54,19 @@
     <ReportItems>
       <Textbox Name="Titulo">
         <CanGrow>true</CanGrow>
-        <Value>Ranking de Riesgo de Favoritismo — Proyecto Interno 1.8.2</Value>
-        <Style>
-          <FontSize>14pt</FontSize>
-          <FontWeight>Bold</FontWeight>
-        </Style>
-        <Top>0in</Top>
-        <Left>0in</Left>
-        <Height>0.3in</Height>
-        <Width>6.5in</Width>
+        <Value>Señales de Priorización — Posible Favoritismo — Proyecto Interno 1.8.2</Value>
+        <Style><FontSize>14pt</FontSize><FontWeight>Bold</FontWeight></Style>
+        <Top>0in</Top><Left>0in</Left><Height>0.3in</Height><Width>6.5in</Width>
+      </Textbox>
+      <Textbox Name="Nota">
+        <CanGrow>true</CanGrow>
+        <Value>Las filas son señales para revisión humana; no constituyen hallazgos ni determinaciones automáticas de favoritismo.</Value>
+        <Style><FontSize>9pt</FontSize><FontStyle>Italic</FontStyle></Style>
+        <Top>0.32in</Top><Left>0in</Left><Height>0.35in</Height><Width>6.5in</Width>
       </Textbox>
 
       <Tablix Name="TablixFavoritismo">
-        <Top>0.4in</Top>
-        <Left>0in</Left>
-        <Height>2.5in</Height>
-        <Width>6.5in</Width>
+        <Top>0.72in</Top><Left>0in</Left><Height>2.5in</Height><Width>6.5in</Width>
         <TablixCorner />
         <TablixBody>
           <TablixColumns>
@@ -105,7 +94,7 @@
                 <TablixCell><CellContents><Textbox Name="TxtEntidad"><Value>=Fields!id_entidad.Value</Value></Textbox></CellContents></TablixCell>
                 <TablixCell><CellContents><Textbox Name="TxtContratos"><Value>=Fields!n_contratos.Value</Value></Textbox></CellContents></TablixCell>
                 <TablixCell><CellContents><Textbox Name="TxtMonto"><Value>=FormatCurrency(Fields!monto_total.Value)</Value></Textbox></CellContents></TablixCell>
-                <TablixCell><CellContents><Textbox Name="TxtScore"><Value>=FormatPercent(Fields!score_riesgo.Value)</Value><Style><BackgroundColor>=IIF(Fields!score_riesgo.Value >= 0.8, "#F8CBCB", "White")</BackgroundColor></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TxtScore"><Value>=FormatPercent(Fields!score_riesgo.Value)</Value><Style><BackgroundColor>=IIF(Fields!score_riesgo.Value &gt;= 0.8, "#F8CBCB", "White")</BackgroundColor></Style></Textbox></CellContents></TablixCell>
               </TablixCells>
             </TablixRow>
           </TablixRows>
@@ -114,39 +103,22 @@
           <TablixMembers>
             <TablixMember />
             <TablixMember>
-              <Group Name="DetalleFavoritismo">
-                <GroupExpressions>
-                  <GroupExpression>=Fields!id_proveedor.Value &amp; Fields!id_entidad.Value</GroupExpression>
-                </GroupExpressions>
-              </Group>
-              <SortExpressions>
-                <SortExpression>
-                  <Value>=Fields!score_riesgo.Value</Value>
-                  <Direction>Descending</Direction>
-                </SortExpression>
-              </SortExpressions>
+              <Group Name="DetalleFavoritismo"><GroupExpressions><GroupExpression>=Fields!id_proveedor.Value &amp; Fields!id_entidad.Value</GroupExpression></GroupExpressions></Group>
+              <SortExpressions><SortExpression><Value>=Fields!score_riesgo.Value</Value><Direction>Descending</Direction></SortExpression></SortExpressions>
             </TablixMember>
           </TablixMembers>
         </TablixRowHierarchy>
-        <TablixColumnHierarchy>
-          <TablixMembers>
-            <TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember />
-          </TablixMembers>
-        </TablixColumnHierarchy>
+        <TablixColumnHierarchy><TablixMembers><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /></TablixMembers></TablixColumnHierarchy>
         <DataSetName>DatasetFavoritismo</DataSetName>
       </Tablix>
     </ReportItems>
-    <Height>3in</Height>
+    <Height>3.3in</Height>
   </Body>
 
   <Width>6.5in</Width>
   <Page>
-    <PageHeight>11in</PageHeight>
-    <PageWidth>8.5in</PageWidth>
-    <LeftMargin>0.5in</LeftMargin>
-    <RightMargin>0.5in</RightMargin>
-    <TopMargin>0.5in</TopMargin>
-    <BottomMargin>0.5in</BottomMargin>
+    <PageHeight>11in</PageHeight><PageWidth>8.5in</PageWidth>
+    <LeftMargin>0.5in</LeftMargin><RightMargin>0.5in</RightMargin>
+    <TopMargin>0.5in</TopMargin><BottomMargin>0.5in</BottomMargin>
   </Page>
-
 </Report>
