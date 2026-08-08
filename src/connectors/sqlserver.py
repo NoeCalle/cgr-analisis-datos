@@ -6,13 +6,10 @@ corresponda a su plataforma y proporcionar la cadena en `connection_env`.
 """
 
 import os
-import re
 
 import pandas as pd
 
 from connectors.base import DataConnector
-
-_IDENTIFIER = re.compile(r"^[A-Za-z0-9_\.\[\]]+$")
 
 
 class SqlServerConnector(DataConnector):
@@ -42,14 +39,8 @@ class SqlServerConnector(DataConnector):
     def read(self, domain, columns=None):
         if domain not in self.tables:
             raise KeyError(f"No hay tabla SQL Server configurada para {domain!r}.")
-        table = self.tables[domain]
-        _validate_identifier(table, "tabla")
-        if columns:
-            for column in columns:
-                _validate_identifier(column, "columna")
-            projection = ", ".join(columns)
-        else:
-            projection = "*"
+        table = _quote_qualified_identifier(self.tables[domain])
+        projection = "*" if not columns else ", ".join(_quote_identifier(c) for c in columns)
         query = f"SELECT {projection} FROM {table}"
         return pd.read_sql_query(query, self._connect())
 
@@ -59,6 +50,22 @@ class SqlServerConnector(DataConnector):
             self._conn = None
 
 
-def _validate_identifier(value, kind):
-    if not isinstance(value, str) or not _IDENTIFIER.fullmatch(value):
-        raise ValueError(f"Identificador de {kind} no permitido: {value!r}")
+def _quote_identifier(value):
+    """Escapa un identificador T-SQL sin permitir que se convierta en SQL libre."""
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"Identificador SQL Server inválido: {value!r}")
+    if "\x00" in value or ";" in value or "--" in value or "/*" in value or "*/" in value:
+        raise ValueError(f"Identificador SQL Server no permitido: {value!r}")
+    raw = value.strip()
+    if raw.startswith("[") and raw.endswith("]"):
+        raw = raw[1:-1]
+    return "[" + raw.replace("]", "]]" ) + "]"
+
+
+def _quote_qualified_identifier(value):
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"Tabla SQL Server inválida: {value!r}")
+    parts = [part.strip() for part in value.split(".")]
+    if any(not part for part in parts):
+        raise ValueError(f"Tabla SQL Server inválida: {value!r}")
+    return ".".join(_quote_identifier(part) for part in parts)
