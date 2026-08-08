@@ -35,6 +35,8 @@ OUTPUT_PAGOS = Path("outputs/resumen_pagos_contrato.csv")
 OUTPUT_MODALIDADES = Path("outputs/resumen_modalidades_regimen.csv")
 CHART_RATIO = Path("outputs/charts/11_ratio_pago_contrato.png")
 CHART_MODALIDADES = Path("outputs/charts/12_modalidades_regimen.png")
+LOCAL_BASE_CONFIG = Path("config/local.yaml")
+LOCAL_TDR_CONFIG = Path("config/local-tdr.yaml")
 
 
 def _to_float(value):
@@ -211,8 +213,26 @@ def generar_graficos(resumen_pagos: pd.DataFrame, resumen_modalidades: pd.DataFr
     plt.close(fig)
 
 
-def analizar(config_path: str | Path = "config/local-tdr.yaml") -> dict:
-    config = cargar_config(config_path)
+def _resolver_config_analisis(config_path: str | Path) -> tuple[dict, Path]:
+    """Mantiene compatibilidad con la antigua llamada local del workflow.
+
+    Solo ``config/local.yaml`` puede redirigirse al perfil TDR. Cualquier otra
+    configuración que omita payments debe fallar para no ocultar una carencia de
+    integración institucional.
+    """
+    path = Path(config_path)
+    config = cargar_config(path)
+    if "payments" not in config.get("mapping", {}):
+        if path.as_posix() == LOCAL_BASE_CONFIG.as_posix():
+            path = LOCAL_TDR_CONFIG
+            config = cargar_config(path)
+        else:
+            raise ValueError("El análisis TDR de pagos requiere mapping y fuente canónica 'payments'.")
+    return config, path
+
+
+def analizar(config_path: str | Path = LOCAL_TDR_CONFIG) -> dict:
+    config, resolved_path = _resolver_config_analisis(config_path)
     datasets, integration_summary = integrar(config)
     if "payments" not in datasets:
         raise ValueError("El análisis TDR de pagos requiere el dominio canónico 'payments'.")
@@ -231,6 +251,7 @@ def analizar(config_path: str | Path = "config/local-tdr.yaml") -> dict:
         "schema_version": 1,
         "scope": "analisis_profundo_pagos_y_modalidades_tdr_poc",
         "nature": "Datos sintéticos; no representan pagos SIAF ni decisiones de contratación reales.",
+        "config": resolved_path.as_posix(),
         "source_type": integration_summary["source_type"],
         "payments": pagos_metricas,
         "modalidades": modalidades_metricas,
@@ -253,7 +274,7 @@ def analizar(config_path: str | Path = "config/local-tdr.yaml") -> dict:
 
 def main():
     parser = argparse.ArgumentParser(description="Analiza pagos, montos y modalidades del contrato canónico.")
-    parser.add_argument("--config", default="config/local-tdr.yaml")
+    parser.add_argument("--config", default=str(LOCAL_TDR_CONFIG))
     args = parser.parse_args()
     analizar(args.config)
 
