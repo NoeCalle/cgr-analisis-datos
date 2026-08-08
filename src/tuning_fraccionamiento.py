@@ -7,7 +7,9 @@ antes del tuning y se consulta una sola vez al final.
 
 Por el fuerte desbalance y el escaso número de positivos, AUC-PR es el criterio
 primario de selección; recall@K queda como métrica secundaria de ranking. En el
-holdout final se reportan AUC-ROC, AUC-PR, precision, recall, F1 y recall@K.
+holdout final se reportan Accuracy, AUC-ROC, AUC-PR, precision, recall, F1 y
+recall@K. Accuracy se incluye por exigencia del Anexo 3, pero no se usa como
+criterio primario porque puede ser engañosa con clases desbalanceadas.
 Todo sigue siendo benchmark sintético y NO estima desempeño productivo.
 """
 
@@ -17,6 +19,7 @@ import json
 import pandas as pd
 from sklearn.ensemble import IsolationForest
 from sklearn.metrics import (
+    accuracy_score,
     average_precision_score,
     f1_score,
     precision_score,
@@ -151,6 +154,7 @@ def evaluar_holdout_final(desarrollo, test, mejor):
 
     return {
         "recall_at_k": recall_at_k_from_scores(scores, y),
+        "accuracy": float(accuracy_score(y, pred)),
         "auc_roc": float(roc_auc_score(y, scores)),
         "auc_pr": float(average_precision_score(y, scores)),
         "precision": float(precision_score(y, pred, zero_division=0)),
@@ -171,6 +175,7 @@ def main():
     resumen = {
         "diseno": "holdout final separado antes del tuning; validaciones repetidas solo en desarrollo",
         "metrica_seleccion": "AUC-PR media en validaciones repetidas",
+        "metricas_reportadas_holdout": ["accuracy", "auc_roc", "auc_pr", "precision", "recall", "f1", "recall_at_k"],
         "n_total": len(df),
         "positivos_total": int(df["label_fraccionamiento_real"].sum()),
         "n_desarrollo": len(desarrollo),
@@ -183,7 +188,7 @@ def main():
             "recall_at_k_validacion_medio": float(mejor["recall_at_k_validacion_medio"]),
         },
         "metricas_holdout_final": metricas_test,
-        "advertencia": "benchmark sintético con pocos positivos; no estima desempeño productivo",
+        "advertencia": "benchmark sintético con pocos positivos; Accuracy se reporta por el Anexo 3 pero no se usa como criterio primario",
     }
     with open("outputs/tuning_fraccionamiento_resumen.json", "w", encoding="utf-8") as f:
         json.dump(resumen, f, ensure_ascii=False, indent=2)
