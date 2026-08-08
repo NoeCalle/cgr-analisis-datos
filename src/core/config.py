@@ -12,7 +12,7 @@ from typing import Any
 
 import yaml
 
-from core.schemas import SCHEMAS, campos_requeridos
+from core.schemas import SCHEMAS, campos_canonicos, campos_requeridos
 
 ALLOWED_SOURCE_TYPES = {"local_csv", "sqlserver", "spark_sql"}
 SECRET_KEY_PATTERN = re.compile(r"(^|_)(password|passwd|pwd|token|secret|api_key|connection_string)($|_)", re.I)
@@ -60,6 +60,20 @@ def validar_config(config: dict[str, Any]) -> None:
             raise ValueError(f"mapping.{domain} debe ser un objeto no vacío.")
         if not all(isinstance(k, str) and isinstance(v, str) and k.strip() and v.strip() for k, v in domain_mapping.items()):
             raise ValueError(f"mapping.{domain} solo admite nombres de columna no vacíos.")
+
+        unknown_fields = set(domain_mapping) - set(campos_canonicos(domain))
+        if unknown_fields:
+            raise ValueError(
+                f"mapping.{domain} contiene campos canónicos desconocidos: {sorted(unknown_fields)}"
+            )
+
+        physical = list(domain_mapping.values())
+        duplicated_physical = sorted({c for c in physical if physical.count(c) > 1})
+        if duplicated_physical:
+            raise ValueError(
+                f"mapping.{domain} reutiliza columnas físicas para varios campos: {duplicated_physical}"
+            )
+
         missing = set(campos_requeridos(domain, mode)) - set(domain_mapping)
         # Contracts es el dominio mínimo obligatorio. Las dimensiones pueden
         # mapearse parcialmente hasta conocer el esquema institucional real.
