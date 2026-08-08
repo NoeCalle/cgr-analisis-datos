@@ -19,25 +19,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Java for Spark
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: pip
 
-      - name: Install test dependencies
+      - name: Install system Graphviz
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz
+
+      - name: Install project dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install \
-            pandas==3.0.2 \
-            numpy==2.4.4 \
-            scikit-learn==1.8.0 \
-            joblib==1.5.3 \
-            matplotlib==3.10.8 \
-            shap==0.52.0 \
-            networkx==3.6.1 \
-            pytest==9.0.2 \
-            python-docx==1.2.0
+          pip install -r requirements.txt
 
       - name: Run regression tests
         run: pytest -q
@@ -49,7 +51,7 @@ jobs:
           python src/lakehouse_capas.py bronce
           python src/lakehouse_capas.py plata
 
-      - name: Run model selection and training
+      - name: Run sklearn benchmark and graph baseline
         run: |
           python src/comparar_modelos_favoritismo.py
           python src/tuning_favoritismo.py
@@ -57,22 +59,40 @@ jobs:
           python src/modelo_favoritismo.py
           python src/modelo_fraccionamiento.py
           python src/modelo_grafos.py
+
+      - name: Run canonical Spark MLlib and GraphFrames path
+        env:
+          PYSPARK_PYTHON: python
+          PYSPARK_DRIVER_PYTHON: python
+        run: |
+          python src/spark/modelo_favoritismo_spark.py
+          python src/spark/modelo_fraccionamiento_spark.py
+          python src/spark/vinculos_graphframes.py
+          python src/spark/estandares_sql.py
+
+      - name: Publish Oro and build traceability
+        run: |
           python src/lakehouse_capas.py oro
+          python src/generar_diccionario_diagrama.py
+          python src/generar_linaje.py
           python src/generar_run_manifest.py
+          python src/generar_evidencia_documental.py
 
-      - name: Build documentary evidence
-        run: python src/generar_evidencia_documental.py
-
-      - name: Validate P1 artifacts
+      - name: Validate P1/P2/Sprint A artifacts
         run: |
           python - <<'PY'
           import json
+          from pathlib import Path
           import pandas as pd
 
           fav = pd.read_csv('lakehouse/plata/dataset_favoritismo.csv')
           frac = pd.read_csv('lakehouse/plata/dataset_fraccionamiento.csv')
           ranking_fav = pd.read_csv('outputs/ranking_riesgo_favoritismo.csv')
           ranking_frac = pd.read_csv('outputs/ranking_riesgo_fraccionamiento.csv')
+          spark_fav = pd.read_csv('outputs/ranking_riesgo_favoritismo_spark.csv')
+          spark_frac = pd.read_csv('outputs/ranking_riesgo_fraccionamiento_spark.csv')
+          linaje = pd.read_csv('outputs/linaje_datos.csv')
+          diccionario = pd.read_csv('data/diccionario_datos.csv')
 
           assert 'pct_contratacion_directa' in fav.columns
           assert 'pct_comparacion_precios' in fav.columns
@@ -85,12 +105,23 @@ jobs:
           assert len(ranking_fav) == len(fav)
           assert len(ranking_frac) == len(frac)
 
+          assert {'pct_contratacion_directa', 'pct_comparacion_precios', 'score_riesgo_favoritismo'} <= set(spark_fav.columns)
+          assert 'pct_no_competitiva' not in spark_fav.columns
+          assert 'senal_priorizacion_fraccionamiento' in spark_frac.columns
+          assert 'cumple_regla_fraccionamiento' not in spark_frac.columns
+
           with open('outputs/comparacion_modelos_favoritismo.json', encoding='utf-8') as f:
               comparacion = json.load(f)
           with open('outputs/tuning_favoritismo_resumen.json', encoding='utf-8') as f:
               fav_tuning = json.load(f)
           with open('outputs/tuning_fraccionamiento_resumen.json', encoding='utf-8') as f:
               frac_tuning = json.load(f)
+          with open('outputs/spark_favoritismo_resumen.json', encoding='utf-8') as f:
+              spark_fav_resumen = json.load(f)
+          with open('outputs/spark_fraccionamiento_resumen.json', encoding='utf-8') as f:
+              spark_frac_resumen = json.load(f)
+          with open('outputs/graphframes_resumen.json', encoding='utf-8') as f:
+              graphframes = json.load(f)
           with open('outputs/run_manifest.json', encoding='utf-8') as f:
               manifest = json.load(f)
           with open('outputs/evidencia_documental.json', encoding='utf-8') as f:
@@ -101,17 +132,50 @@ jobs:
           assert abs(comparacion['resultados'][0]['auc_pr'] - 0.6714285714285714) < 1e-12
           assert fav_tuning['mejor_configuracion']
           assert frac_tuning['metrica_seleccion'].startswith('AUC-PR')
-          metricas = frac_tuning['metricas_holdout_final']
           for campo in ['recall_at_k', 'auc_roc', 'auc_pr', 'precision', 'recall', 'f1']:
-              assert campo in metricas
+              assert campo in frac_tuning['metricas_holdout_final']
 
-          assert manifest['schema_version'] == 2
+          assert spark_fav_resumen['implementacion_objetivo_tdr'] is True
+          assert spark_fav_resumen['auc_pr_cv'] >= 0
+          assert spark_frac_resumen['implementacion_objetivo_tdr'] is True
+          assert graphframes['implementacion_objetivo_tdr'] is True
+
+          assert manifest['schema_version'] == 3
           assert manifest['git_commit']
+          assert manifest['entorno']['pyspark'] == '4.1.1'
+          assert manifest['entorno']['graphframes-py'] == '0.10.0'
+          assert manifest['spark_favoritismo'] is not None
+          assert manifest['spark_fraccionamiento'] is not None
+          assert manifest['graphframes'] is not None
           assert all(v['existe'] for v in manifest['artefactos'].values())
           assert evidencia['run_manifest']['git_commit'] == manifest['git_commit']
           assert evidencia['validacion_datos_publicos']['integridad_ocds']['contratos_analiticos_validos'] == 47254
-          assert evidencia['criterios_documentales']['permitir_conteo_obsoleto_solo_como_antecedente_explicito'] is True
-          print('Smoke P1/P2 + datos + rankings + manifiesto + evidencia documental OK')
+
+          texto_dic = ' '.join(diccionario.astype(str).fillna('').values.ravel()).lower()
+          assert 'pct_no_competitiva' not in texto_dic
+          assert 's/. 400,000' not in texto_dic
+          assert 'pct_contratacion_directa' in texto_dic
+          assert 'pct_comparacion_precios' in texto_dic
+          assert len(linaje) >= 15
+          assert {'campo_fuente', 'campo_plata', 'feature_modelo', 'salida_oro'} <= set(linaje.columns)
+
+          oro = {p.name for p in Path('lakehouse/oro').glob('*.csv')}
+          assert 'dataset_favoritismo.csv' not in oro
+          assert 'dataset_fraccionamiento.csv' not in oro
+          esperados_oro = {
+              'ranking_riesgo_favoritismo.csv',
+              'ranking_riesgo_fraccionamiento.csv',
+              'ranking_vinculos_proveedor_funcionario.csv',
+              'ranking_riesgo_favoritismo_spark.csv',
+              'ranking_riesgo_fraccionamiento_spark.csv',
+              'vinculos_graphframes_sospechosos.csv',
+              'vinculos_graphframes_pagerank.csv',
+          }
+          assert esperados_oro <= oro
+
+          assert Path('outputs/extraccion_estandar_sql.csv').exists()
+          assert Path('outputs/charts/09_diagrama_modelo_datos.png').exists()
+          print('Sprint A: sklearn + Spark MLlib + GraphFrames + Oro + linaje + diccionario OK')
           PY
 
       - name: Setup Node
@@ -163,14 +227,13 @@ jobs:
               assert 'conteo antiguo' in reporte and 'fue descartado' in reporte, (
                   '47,442 solo puede aparecer como antecedente explícitamente descartado'
               )
-
           print(f'DOCX validados: {len(files)}')
           PY
 
-      - name: Upload model-selection evidence
+      - name: Upload reproducibility evidence
         uses: actions/upload-artifact@v4
         with:
-          name: model-selection-evidence
+          name: evidencia-reproducible
           path: |
             outputs/comparacion_modelos_favoritismo.json
             outputs/comparacion_modelos_favoritismo.csv
@@ -178,8 +241,18 @@ jobs:
             outputs/tuning_favoritismo_resultados.csv
             outputs/tuning_fraccionamiento_resumen.json
             outputs/tuning_fraccionamiento_resultados.csv
+            outputs/spark_favoritismo_resumen.json
+            outputs/spark_fraccionamiento_resumen.json
+            outputs/graphframes_resumen.json
+            outputs/ranking_riesgo_favoritismo_spark.csv
+            outputs/ranking_riesgo_fraccionamiento_spark.csv
+            outputs/vinculos_graphframes_sospechosos.csv
+            outputs/vinculos_graphframes_pagerank.csv
+            outputs/extraccion_estandar_sql.csv
+            outputs/linaje_datos.csv
             outputs/run_manifest.json
             outputs/evidencia_documental.json
+            data/diccionario_datos.csv
           retention-days: 14
 
       - name: Upload regenerated formal documentation
@@ -197,11 +270,22 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          # Retira modelos Spark/artefactos históricos cuyo formato incorpora
+          # metadatos no determinísticos. Se regeneran en outputs/runtime/.
+          git rm -r --ignore-unmatch \
+            outputs/models/modelo_favoritismo_spark_rf \
+            outputs/models/modelo_fraccionamiento_spark_kmeans
+          git rm --ignore-unmatch outputs/models/modelo_favoritismo_rf_v2_con_drift.joblib
+          git rm --ignore-unmatch \
+            lakehouse/oro/dataset_favoritismo.csv \
+            lakehouse/oro/dataset_fraccionamiento.csv
+
           git add \
             data/contratos_siaf_seace.csv \
             data/contratos_procesados.csv \
             data/dataset_favoritismo.csv \
             data/dataset_fraccionamiento.csv \
+            data/diccionario_datos.csv \
             data/proveedores.csv \
             data/entidades.csv \
             data/funcionarios.csv \
@@ -220,23 +304,37 @@ jobs:
             outputs/ranking_riesgo_favoritismo.csv \
             outputs/ranking_riesgo_fraccionamiento.csv \
             outputs/ranking_vinculos_proveedor_funcionario.csv \
-            lakehouse/oro/ranking_riesgo_favoritismo.csv \
-            lakehouse/oro/ranking_riesgo_fraccionamiento.csv \
-            lakehouse/oro/ranking_vinculos_proveedor_funcionario.csv \
+            outputs/ranking_riesgo_favoritismo_spark.csv \
+            outputs/ranking_riesgo_fraccionamiento_spark.csv \
+            outputs/vinculos_graphframes_sospechosos.csv \
+            outputs/vinculos_graphframes_pagerank.csv \
+            outputs/extraccion_estandar_sql.csv \
+            outputs/spark_favoritismo_resumen.json \
+            outputs/spark_fraccionamiento_resumen.json \
+            outputs/graphframes_resumen.json \
             outputs/comparacion_modelos_favoritismo.json \
             outputs/comparacion_modelos_favoritismo.csv \
             outputs/tuning_favoritismo_resumen.json \
             outputs/tuning_favoritismo_resultados.csv \
             outputs/tuning_fraccionamiento_resumen.json \
             outputs/tuning_fraccionamiento_resultados.csv \
+            outputs/linaje_datos.csv \
             outputs/run_manifest.json \
             outputs/evidencia_documental.json \
+            outputs/charts/09_diagrama_modelo_datos.png \
+            lakehouse/oro/ranking_riesgo_favoritismo.csv \
+            lakehouse/oro/ranking_riesgo_fraccionamiento.csv \
+            lakehouse/oro/ranking_vinculos_proveedor_funcionario.csv \
+            lakehouse/oro/ranking_riesgo_favoritismo_spark.csv \
+            lakehouse/oro/ranking_riesgo_fraccionamiento_spark.csv \
+            lakehouse/oro/vinculos_graphframes_sospechosos.csv \
+            lakehouse/oro/vinculos_graphframes_pagerank.csv \
             reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx \
             reporte/productos_formales/Producto_*.docx
 
           if git diff --cached --quiet; then
             echo "No hay artefactos verificados nuevos que persistir."
           else
-            git commit -m "chore: regenerar artefactos reproducibles verificados [skip ci]"
+            git commit -m "chore: regenerar artefactos Sprint A verificados [skip ci]"
             git push
           fi
