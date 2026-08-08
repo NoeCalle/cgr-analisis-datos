@@ -1,20 +1,20 @@
 """
-DAG principal — orquestación ETL/ML del PoC según numeral 6 del TDR.
+DAG de reproducibilidad integral del PoC.
 
-Flujo Sprint A:
-  fuentes -> Bronce -> preprocesar/features -> Plata
+Este DAG reconstruye datos sintéticos, benchmarks, implementaciones Spark,
+grafos y evidencia documental. Desde Sprint 2 NO se considera el flujo
+operacional de scoring porque deliberadamente mezcla reconstrucción, tuning y
+entrenamiento para demostrar reproducibilidad técnica.
+
+Flujo de evidencia:
+  sintético -> Bronce -> preprocesar/features -> Plata
       |-> benchmark sklearn: comparación/tuning/modelos
       |-> implementación objetivo TDR: Spark MLlib favoritismo/fraccionamiento
       |-> vínculos NetworkX -> GraphFrames
-  -> Oro (salidas sklearn + Spark)
-  -> diccionario/diagrama -> linaje -> run manifest -> evidencia documental
+  -> Oro -> diccionario/diagrama -> linaje -> manifest -> evidencia
 
-Los DOCX formales se generan y validan adicionalmente en GitHub Actions porque
-requieren Node.js/docx. Airflow conserva la evidencia machine-readable que los
-DOCX consumen.
-
-Airflow vive en un virtualenv separado, pero las tareas usan el Python del
-proyecto (`.venv/bin/python`) o `CGR_PROJECT_PYTHON`.
+El scoring operacional sin reentrenamiento vive en `dag_inferencia_modelos.py`.
+El TRAIN explícito que solo genera candidatos vive en `dag_entrenamiento_modelos.py`.
 """
 
 from datetime import datetime
@@ -45,13 +45,13 @@ def comando(script, args=""):
 default_args = {"owner": "prototipo-independiente", "retries": 1}
 
 with DAG(
-    dag_id="modulo_analisis_datos_1_8_2",
-    description="ETL y señales de riesgo — PoC independiente del Proyecto Interno 1.8.2",
+    dag_id="reproducibilidad_poc_1_8_2",
+    description="Reconstrucción integral de evidencia del PoC; no es DAG de serving",
     start_date=datetime(2026, 8, 1),
     schedule=None,
     catchup=False,
     default_args=default_args,
-    tags=["1.8.2", "auditoria", "poc"],
+    tags=["1.8.2", "reproducibilidad", "poc"],
 ) as dag:
     generar_datos = BashOperator(
         task_id="generar_datos", bash_command=comando("src/generar_datos.py")
@@ -127,10 +127,8 @@ with DAG(
 
     mover_plata >> comparar_favoritismo >> tuning_favoritismo >> entrenar_favoritismo
     mover_plata >> tuning_fraccionamiento >> entrenar_fraccionamiento
-
     mover_plata >> spark_favoritismo
     mover_plata >> spark_fraccionamiento
-
     mover_plata >> analizar_vinculos >> graphframes
 
     [
