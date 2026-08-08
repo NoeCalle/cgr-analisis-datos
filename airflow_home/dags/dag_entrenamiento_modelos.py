@@ -1,9 +1,9 @@
 """DAG explícito de TRAIN operacional — Sprint 3.
 
 Genera un candidate Spark MLlib con el mismo preprocesamiento corregido que usa
-INFERENCE. Deliberadamente NO contiene promoción: pasar candidate -> champion
-requiere ``src/promover_candidato_spark.py`` y, en un entorno institucional, el
-gate de aprobación definido por la CGR.
+INFERENCE. Deliberadamente NO contiene ninguna tarea de promoción: pasar un
+candidate a champion es una operación separada y, en un entorno institucional,
+debe quedar detrás del gate de aprobación definido por la CGR.
 """
 
 from datetime import datetime
