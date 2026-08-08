@@ -1,86 +1,64 @@
 # Módulo de Análisis de Datos — Prototipo independiente (CGR 1.8.2)
 
-> **Prototipo independiente.** Este repositorio no constituye una
-> implementación oficial ni cuenta con aprobación institucional de la
-> Contraloría General de la República (CGR). Es un ejercicio técnico propio,
-> construido a partir de un TDR público de mayo de 2026.
+> **Prototipo independiente.** Este repositorio no constituye una implementación
+> oficial ni cuenta con aprobación institucional de la Contraloría General de la
+> República (CGR). Es un ejercicio técnico propio construido a partir de un TDR
+> público de mayo de 2026.
 
 Prueba de concepto del “Módulo de análisis de datos para dar soporte a los
-auditores durante la ejecución de los servicios de control”, con énfasis en:
+auditores durante la ejecución de los servicios de control”, orientada a:
 
-- priorización de señales de posible favoritismo;
-- priorización de señales de posible fraccionamiento;
-- análisis de vínculos proveedor–funcionario en escenario sintético;
-- Spark MLlib, Airflow, Lakehouse Bronce/Plata/Oro, SSRS y MLOps como PoC.
+- señales de posible favoritismo;
+- señales de posible fraccionamiento;
+- vínculos proveedor–funcionario en escenario sintético;
+- Spark MLlib, GraphFrames, Airflow, Lakehouse Bronce/Plata/Oro, SSRS y MLOps.
 
-Las salidas de riesgo son **señales para revisión de auditor**. No constituyen
+Las salidas son **señales para priorización de revisión**. No constituyen
 hallazgos, imputaciones ni determinaciones automáticas de irregularidad.
 
 ## Estado del cierre de brechas
 
-### ✅ P0 — Integridad OCDS y normativa: cerrado
+### ✅ P0 — Integridad OCDS y normativa
 
-La parte más crítica del pipeline de datos públicos fue reconstruida y validada:
+La relación de datos públicos fue reconstruida como:
 
-- relación OCDS correcta: `Contract -> Award -> Supplier`;
-- clave analítica: `OCID::contract.id`;
-- adjudicatarios obtenidos de `awards_suppliers.csv`, sin mezclar suppliers de
-  distintas adjudicaciones del mismo proceso;
-- consorcios preservados según la identidad adjudicataria publicada;
-- `mainProcurementCategory` (`goods/services/works`) tiene prioridad para el
-  contexto normativo;
-- motor normativo parametrizado 2018–2026 y cambio de régimen desde
-  22/04/2025 (Ley 32069);
-- tests de regresión de integridad y normativa;
-- artefactos reales identificables antiguos retirados del repositorio público.
+`Contract(main_ocid, awardID) -> Award(main_ocid, id) -> Supplier`
 
-Regeneración P0 sobre los crudos OCDS utilizados:
+La clave analítica del contrato real es `OCID::contract.id`. Se prioriza
+`mainProcurementCategory` (`goods/services/works`) y el motor normativo está
+parametrizado 2018–2026, incluido el cambio de régimen desde 22/04/2025.
 
-| Métrica | Resultado |
+| Métrica OCDS validada | Resultado |
 |---|---:|
 | Contratos crudos | 47,510 |
-| Contratos analíticos con award + supplier resolubles | **47,254** |
-| Contratos excluidos por vínculo no resoluble | 256 |
-| Adjudicatarios distintos presentes en contratos | 25,861 |
+| Contratos con award + supplier resolubles | **47,254** |
+| Excluidos por vínculo no resoluble | 256 |
+| Adjudicatarios distintos | 25,861 |
 | Entidades distintas | 2,732 |
-| Categoría `goods` | 23,630 |
-| Categoría `services` | 18,584 |
-| Categoría `works` | 5,040 |
+| `goods` | 23,630 |
+| `services` | 18,584 |
+| `works` | 5,040 |
 
-El detalle agregado y los hashes SHA-256 están en
-`outputs/validacion_p0_datos_reales.json`. El conteo anterior de 47,442 se
-conserva únicamente como antecedente explícitamente descartado; sus rankings
-`*_REAL.csv` fueron retirados.
+La evidencia agregada y hashes SHA-256 están en
+`outputs/validacion_p0_datos_reales.json`. Los rankings reales identificables no
+se publican.
 
-### ✅ P1 — Núcleo técnico de modelado/reproducibilidad: cerrado
-
-El núcleo técnico está integrado y cubierto por CI:
+### ✅ P1 — Modelado y reproducibilidad
 
 - Contratación Directa y Comparación de Precios son features separadas.
-- El dataset sintético incorpora **hard negatives** para evitar métricas
-  artificialmente perfectas por separación trivial.
-- La categoría contractual sintética también es estructurada
-  (`goods/services/works`).
-- Favoritismo compara ejecutablemente Regresión Logística, Random Forest y
-  Gradient Boosting con las mismas predicciones out-of-fold.
-- El tuning seleccionado se persiste en JSON y el modelo final consume esa
-  configuración.
-- Fraccionamiento separa un **holdout final antes del tuning**; AUC-PR es la
-  métrica primaria de selección por el fuerte desbalance.
-- Autoevaluación usa holdout independiente y produce un modelo **candidato**,
-  sin promoción automática.
-- Los modelos consumen Plata; reporting consume Oro.
-- Airflow usa el Python del proyecto, separado del entorno de Airflow.
-- `run_manifest.json` registra commit, versiones, hashes, parámetros y
-  artefactos de una ejecución completa.
+- El benchmark sintético incluye **hard negatives**.
+- Favoritismo compara Regresión Logística, Random Forest y Gradient Boosting con
+  predicciones out-of-fold.
+- El tuning se persiste y el modelo final consume la configuración elegida.
+- Fraccionamiento separa un **holdout final antes del tuning** y usa AUC-PR como
+  criterio primario.
+- La autoevaluación genera un **modelo candidato**; no hay promoción automática.
+- Los modelos consumen Plata y el reporting consume Oro.
+- Las versiones del entorno están fijadas en `requirements.txt`.
 
-#### Evidencia vigente — Favoritismo
+#### Benchmark de favoritismo
 
-Las métricas de comparación se reproducen con las versiones declaradas por el
-proyecto (`pandas 3.0.2`, `numpy 2.4.4`, `scikit-learn 1.8.0`).
-
-Comparación out-of-fold sobre **2,328 pares proveedor-entidad**, con 6 casos
-positivos sintéticos difíciles:
+Sobre 2,328 pares proveedor-entidad y 6 positivos sintéticos:
 
 | Modelo | AUC-PR | AUC-ROC | Precision | Recall | F1 |
 |---|---:|---:|---:|---:|---:|
@@ -88,91 +66,65 @@ positivos sintéticos difíciles:
 | Regresión Logística | 0.621 | 0.995 | 0.333 | **0.667** | 0.444 |
 | Gradient Boosting | 0.418 | 0.749 | 0.429 | 0.500 | **0.462** |
 
-Random Forest mantiene el mayor AUC-PR y sigue siendo el candidato preferido
-del benchmark metodológico para ranking probabilístico e interpretabilidad con
-SHAP. El F1 no se usa como criterio primario porque el objetivo es priorización
-bajo desbalance severo.
+Tuning RF sklearn: `n_estimators=100`, `max_depth=3`,
+`min_samples_leaf=1`; AUC-PR medio CV **0.844**.
 
-Tuning Random Forest sklearn:
+#### Benchmark de fraccionamiento
 
-- configuración seleccionada: `n_estimators=100`, `max_depth=3`,
-  `min_samples_leaf=1`;
-- AUC-PR medio en CV de tuning: **0.844**;
-- la configuración 300 árboles / profundidad 6 obtiene el mismo AUC-PR, por lo
-  que se conserva la alternativa más liviana.
-
-#### Evidencia vigente — Fraccionamiento
-
-El benchmark independiente deja visible una limitación importante del modelo
-estadístico puro:
-
-- dataset: 180 grupos, 8 positivos sintéticos;
-- desarrollo: 112 grupos / 5 positivos;
-- holdout final: 68 grupos / 3 positivos;
-- mejor validación repetida: AUC-PR medio **0.402**;
-- holdout final: AUC-ROC **0.856**, AUC-PR **0.171**, precision **0.176**,
+- 180 grupos / 8 positivos sintéticos;
+- desarrollo: 112 / 5 positivos;
+- holdout final: 68 / 3 positivos;
+- AUC-PR de validación medio: **0.402**;
+- holdout: AUC-ROC **0.856**, AUC-PR **0.171**, precision **0.176**,
   recall **1.000**, F1 **0.300**, recall@K **0.000**.
 
-Isolation Forest identifica una región amplia de anomalías, pero su precisión y
-ranking de positivos son débiles en este benchmark. La regla interpretable y la
-revisión humana siguen siendo complementos; ninguna señal se convierte
-automáticamente en un hallazgo jurídico.
+La debilidad del ranking de Isolation Forest queda expuesta deliberadamente; la
+regla interpretable y la revisión humana son complementarias.
 
-### ✅ P1 documental — generación automática integrada
+### ✅ Sprint A — Spark canónico y trazabilidad
 
-Los Productos 1–7 y el reporte técnico ya no mantienen cifras independientes
-escritas a mano. El flujo es:
+Spark dejó de ser una demostración paralela. La arquitectura reproducible
+separa responsabilidades:
 
-1. `src/generar_evidencia_documental.py` construye
-   `outputs/evidencia_documental.json` a partir de datasets y JSON vigentes.
-2. `reporte/evidencia.js` expone esa fuente a los generadores Node.
-3. `reporte/generar_productos_formales.js` genera Productos 1–7.
-4. `reporte/generar_reporte.js` genera el reporte técnico consolidado.
-5. GitHub Actions abre los DOCX con `python-docx`, busca afirmaciones obsoletas
-   y persiste la documentación validada en `main`.
+- **scikit-learn:** benchmark metodológico, comparación, holdout y SHAP;
+- **Apache Spark MLlib / GraphFrames:** implementación objetivo del TDR,
+  ejecutada con Spark real en `local[*]`.
 
-La documentación distingue explícitamente lo demostrado por el PoC de las
-dependencias institucionales.
+El Sprint A incorpora:
 
-### ✅ Sprint A — Spark canónico y trazabilidad: cerrado
+- Java 17 + `pyspark==4.1.1` en GitHub Actions;
+- Random Forest de favoritismo con Spark MLlib y CrossValidator;
+- KMeans MLlib + distancia al centroide + ventanas Spark SQL para
+  fraccionamiento;
+- GraphFrames sobre la misma capa Plata;
+- `src/spark/estandares_sql.py` dentro del CI para LEFT JOIN y partition pruning;
+- DAG de Airflow con ramas Spark MLlib y GraphFrames;
+- modelos binarios Spark como runtime no versionado; rankings y resúmenes JSON/CSV
+  son la evidencia reproducible;
+- Oro limitado a salidas downstream, sin datasets intermedios de features;
+- diccionario y diagrama regenerados por CI;
+- `outputs/linaje_datos.csv` con trazabilidad
+  fuente → transformación → Plata → feature → modelo → Oro;
+- `run_manifest.json` schema 3 con versiones, hashes y evidencia Spark/GraphFrames.
 
-Spark dejó de ser una ruta paralela del repositorio. La ejecución reproducible
-actual diferencia dos responsabilidades:
+El benchmark Spark de favoritismo tiene solo 6 positivos y su AUC-PR CV puede
+ser de alta varianza. **No se usa como estimación de desempeño productivo**; la
+comparación OOF sklearn es la referencia metodológica del PoC. Spark demuestra
+la implementación y ejecución de la arquitectura objetivo.
 
-- **scikit-learn:** benchmark metodológico, comparación de candidatos,
-  validación independiente y explicabilidad;
-- **Apache Spark MLlib / GraphFrames:** implementación objetivo del TDR que se
-  ejecuta de forma real en `local[*]` dentro del pipeline reproducible.
+En esta área, lo pendiente requiere infraestructura CGR: HDFS/YARN distribuido,
+Lakehouse/Datamart institucional, fuentes internas y validación de desempeño en
+el clúster institucional.
 
-El cierre del Sprint A incluye:
+### ✅ Documentación reproducible
 
-- Java 17 + `pyspark==4.1.1` instalados y ejecutados en GitHub Actions;
-- Random Forest de favoritismo implementado y ejecutado con Spark MLlib,
-  `CrossValidator`, AUC-PR y folds estratificados determinísticos;
-- KMeans MLlib + distancia al centroide + ventanas Spark SQL para el componente
-  no supervisado de fraccionamiento;
-- GraphFrames ejecutado sobre la misma capa Plata usada por el resto del PoC;
-- `src/spark/estandares_sql.py` ejecutado en CI para LEFT JOIN y evidencia de
-  partition pruning;
-- DAG principal de Airflow con las ramas Spark MLlib/GraphFrames incorporadas;
-- modelos binarios Spark tratados como artefactos de runtime; la evidencia
-  reproducible versionada son rankings y resúmenes JSON/CSV;
-- Oro contiene solo salidas downstream, incluidas las salidas Spark/GraphFrames,
-  y ya no conserva datasets intermedios de feature engineering;
-- diccionario y diagrama se regeneran en la misma ejecución CI;
-- `outputs/linaje_datos.csv` documenta explícitamente
-  fuente → transformación → Plata → feature → implementación → salida Oro;
-- `run_manifest.json` usa schema 3 y registra también las versiones y evidencias
-  de Spark/GraphFrames.
+Los Productos 1–7 y el reporte técnico se regeneran desde evidencia
+machine-readable. El flujo es:
 
-La métrica Spark de favoritismo no se usa como estimación de desempeño: el
-benchmark solo contiene seis positivos. Por ello la comparación OOF de sklearn
-permanece como evidencia metodológica principal, mientras Spark demuestra la
-implementación y ejecución de la arquitectura exigida por el TDR.
+`run_manifest.json -> evidencia_documental.json -> generadores DOCX -> QA CI`
 
-Lo que sigue pendiente en esta área requiere infraestructura institucional:
-HDFS/YARN distribuido, Lakehouse/Datamart real de CGR, fuentes internas y
-validación de desempeño en el clúster institucional.
+Los DOCX verificados quedan versionados en `main`, no solo como artifacts de
+GitHub Actions.
 
 ## Correspondencia resumida con el TDR
 
@@ -180,17 +132,17 @@ validación de desempeño en el clúster institucional.
 |---|---|
 | EDA y calidad de datos | Implementado |
 | Feature engineering | Implementado y endurecido |
-| Favoritismo supervisado | Benchmark OOF/tuning/SHAP + implementación Spark MLlib ejecutada en CI |
-| Fraccionamiento no supervisado | Isolation Forest con holdout + Spark MLlib KMeans + señal interpretable |
-| Spark MLlib | **Ejecutado y validado en CI con Spark real `local[*]`; clúster CGR pendiente** |
+| Favoritismo supervisado | Benchmark OOF/tuning/SHAP + Spark MLlib en CI |
+| Fraccionamiento no supervisado | Isolation Forest con holdout + Spark MLlib KMeans |
+| Spark MLlib | **Ejecutado en CI con Spark real `local[*]`; clúster CGR pendiente** |
 | Grafos | NetworkX de referencia + **GraphFrames ejecutado en CI** |
-| Airflow DAGs | Implementados; incluyen rutas sklearn y Spark; Python de proyecto separado |
-| Bronce / Plata / Oro | Simulación local funcional; Oro solo downstream; Lakehouse CGR pendiente |
-| Autoevaluación/reentrenamiento | Modelo candidato + revisión humana requerida |
+| Airflow | DAG principal + monitoreo; ramas sklearn y Spark |
+| Bronce / Plata / Oro | Simulación funcional; Lakehouse CGR pendiente |
+| Autoevaluación | Modelo candidato; promoción requiere revisión humana |
 | SSRS | Esquema T-SQL + RDL; servidor institucional pendiente |
-| Linaje/diccionario | Diccionario + diagrama + **linaje explícito** + run manifest |
-| DEV/QA/PROD, Git institucional, certificación | Dependencia institucional CGR |
-| Transferencia formal / marcha blanca | Dependencia contractual/institucional |
+| Linaje / diccionario | Diccionario + diagrama + linaje explícito + manifest |
+| DEV/QA/PROD y Git institucional | Dependencia CGR |
+| Certificación, marcha blanca y transferencia formal | Dependencia CGR |
 
 ## Estructura
 
@@ -198,46 +150,52 @@ validación de desempeño en el clúster institucional.
 src/                         Python principal
 src/spark/                   Spark MLlib, GraphFrames, Delta, SQL, streaming, HMS
 airflow_home/dags/           DAG principal + monitoreo
-lakehouse/bronce/            Simulación de ingesta cruda
+lakehouse/bronce/            Ingesta cruda simulada
 lakehouse/plata/             Datos limpios/features consumidos por modelos
 lakehouse/oro/               Solo salidas para reporting/integración
 ssrs/                        DDL T-SQL + RDL PoC
-reporte/                     Generadores y documentos formales
-outputs/                     Evidencias, rankings, tuning, manifests y linaje
+reporte/                     Generadores + Productos 1–7 + reporte técnico
+outputs/                     Evidencia, rankings, tuning, manifests y linaje
 tests/                       Pruebas de regresión
 .github/workflows/           CI end-to-end sklearn + Spark
 ```
 
-## Reproducir el entorno Python
+## Reproducir
+
+### Entorno del proyecto
 
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install --upgrade pip
 .venv/bin/pip install -r requirements.txt
+```
 
+Graphviz (`dot`) debe estar instalado en el sistema y Spark requiere una JVM
+compatible; CI usa Java 17.
+
+### Airflow aislado
+
+```bash
 python3 -m venv .venv_airflow
 .venv_airflow/bin/pip install "apache-airflow==3.3.0" \
-  --constraint "https://raw.githubusercontent.com/apache-airflow/airflow/constraints-3.3.0/constraints-3.12.txt"
+  --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-3.3.0/constraints-3.12.txt"
 
 export PROYECTO_DIR="$PWD"
 export CGR_PROJECT_PYTHON="$PWD/.venv/bin/python"
 export AIRFLOW_HOME="$PWD/airflow_home"
 ```
 
-Graphviz (`dot`) debe estar instalado en el sistema para regenerar el diagrama.
-Spark requiere una JVM compatible; CI usa Java 17.
-
-## Pruebas
+### Tests
 
 ```bash
 .venv/bin/pytest -q
 ```
 
-GitHub Actions ejecuta además un smoke end-to-end con generación sintética,
-Bronce/Plata, benchmark sklearn, Spark MLlib, GraphFrames, SQL Spark, Oro,
-diccionario, linaje, manifiesto y documentación.
+GitHub Actions ejecuta además generación sintética, Bronce/Plata, benchmark
+sklearn, Spark MLlib, GraphFrames, SQL Spark, Oro, diccionario, linaje,
+manifiesto y documentación.
 
-## Pipeline sintético orquestado
+### Pipeline Airflow
 
 ```bash
 .venv_airflow/bin/airflow dags test modulo_analisis_datos_1_8_2
@@ -245,8 +203,8 @@ diccionario, linaje, manifiesto y documentación.
 
 ```text
 fuentes -> Bronce -> preprocesamiento/features -> Plata
-                    |-> benchmark sklearn favoritismo -> tuning -> modelo
-                    |-> benchmark sklearn fraccionamiento -> tuning/holdout -> modelo
+                    |-> sklearn favoritismo -> tuning -> modelo
+                    |-> sklearn fraccionamiento -> tuning/holdout -> modelo
                     |-> Spark MLlib favoritismo
                     |-> Spark MLlib fraccionamiento
                     |-> NetworkX -> GraphFrames
@@ -264,22 +222,13 @@ fuentes -> Bronce -> preprocesamiento/features -> Plata
                                  documentación
 ```
 
-Los DOCX requieren Node.js y se generan/validan en GitHub Actions; el DAG de
-Airflow deja lista la evidencia machine-readable que consumen los generadores.
-
 ## Datos reales OCDS/OECE
 
 Los crudos y derivados identificables no se publican. Para reproducir la
 validación local, seguir `data_real/README.md` con `main.csv`, `contracts.csv`,
 `awards.csv`, `awards_suppliers.csv` y `parties.csv`.
 
-Los rankings reales se generan localmente, pero están ignorados por Git para
-evitar publicar asociaciones entre proveedores reales y señales estadísticas
-fuera de contexto.
-
 ## Documentación formal
-
-Para regenerar localmente después de producir la evidencia:
 
 ```bash
 python src/generar_evidencia_documental.py
@@ -288,14 +237,11 @@ npm ci
 npm run all
 ```
 
-GitHub Actions ejecuta el mismo flujo y valida que los DOCX no reintroduzcan
-variables, métricas o afirmaciones obsoletas. El conteo histórico 47,442 solo se
-permite si está explícitamente presentado como antecedente descartado; el valor
-vigente debe ser 47,254.
+GitHub Actions valida los DOCX y persiste en `main` las versiones verificadas.
 
 ## Licencia
 
-El código está bajo licencia MIT. Los datos públicos de OECE/OCP conservan su
-licencia de origen (CC BY 4.0 cuando corresponda). Si el prototipo evolucionara
-a un encargo contractual, los activos generados bajo dicho encargo deberán
-separarse y regirse por las cláusulas de propiedad/confidencialidad del TDR.
+El código está bajo MIT. Los datos públicos OECE/OCP mantienen su licencia de
+origen (CC BY 4.0 cuando corresponda). Un eventual encargo contractual debe
+separar los activos previos de aquellos sujetos a propiedad/confidencialidad del
+TDR.
