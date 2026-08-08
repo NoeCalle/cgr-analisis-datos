@@ -1,8 +1,12 @@
-"""TRAIN operacional Spark MLlib — Sprint 3.
+"""TRAIN operacional Spark MLlib — Sprint 3/Sprint 4.
 
 Esta ruta NO consume la Plata legacy congelada para reconstruir RC1. Parte de la
 fuente canónica configurable, aprende el preprocesamiento corregido una sola vez
 y aplica ese mismo estado a TRAIN antes de ajustar los modelos Spark candidate.
+
+Sprint 4 consume ``monto_capped`` en favoritismo para que el tratamiento P99 sea
+parte real del modelo operacional. Fraccionamiento conserva ``monto`` porque sus
+features comparan cuantías con umbrales normativos.
 
 El resultado queda exclusivamente bajo ``outputs/runtime/spark_model_candidates``.
 No escribe ni modifica el registry/champion: la promoción es un comando separado.
@@ -49,6 +53,7 @@ from spark.preprocesamiento_serving_spark import (
 DEFAULT_MANIFEST = Path("outputs/runtime/spark_model_candidates/candidate_manifest.json")
 DEFAULT_NUM_TREES = 100
 DEFAULT_MAX_DEPTH = 3
+FAVORITISMO_MONTO_OPERACIONAL = "monto_capped"
 
 
 def _fingerprint_dataframe(df: pd.DataFrame) -> str:
@@ -134,7 +139,9 @@ def entrenar(
         procesado = aplicar_preprocesamiento_congelado(raw_spark, estado)
 
         fav_features = construir_features_favoritismo(
-            procesado, label_col="label_favoritismo"
+            procesado,
+            label_col="label_favoritismo",
+            monto_col=FAVORITISMO_MONTO_OPERACIONAL,
         )
         num_trees, max_depth, parametros_fuente = _parametros_favoritismo()
         fav_model, fav_positives, fav_rows = _entrenar_rf_final(
@@ -148,7 +155,6 @@ def entrenar(
             )
         )
         frac_pred, frac_model, frac_scaler = entrenar_modelos_kmeans(frac_features)
-        # materializa antes de persistir para detectar fallos de ejecución del pipeline
         frac_rows = int(frac_pred.count())
         frac_positives = int(frac_pred.filter(F.col("label") == 1).count())
         frac_model.write().overwrite().save(str(frac_model_dir))
@@ -184,6 +190,7 @@ def entrenar(
         "training_data": data_fingerprint,
         "preprocessor": artifacts["preprocessor_json"]["sha256"],
         "fav_model": artifacts["favoritismo_model"]["sha256"],
+        "fav_amount_source": FAVORITISMO_MONTO_OPERACIONAL,
         "frac_model": artifacts["fraccionamiento_model"]["sha256"],
         "frac_scaler": artifacts["fraccionamiento_scaler"]["sha256"],
         "fav_params": {"numTrees": num_trees, "maxDepth": max_depth},
@@ -206,8 +213,10 @@ def entrenar(
             "contracts_rows": int(len(contracts)),
             "favoritismo_rows": fav_rows,
             "favoritismo_positives": fav_positives,
+            "favoritismo_amount_source": FAVORITISMO_MONTO_OPERACIONAL,
             "fraccionamiento_rows": frac_rows,
             "fraccionamiento_positives": frac_positives,
+            "fraccionamiento_amount_source": "monto",
             "ground_truth_required": True,
             "engine": "Apache Spark MLlib",
             "spark_mode": "local[*]",
@@ -224,6 +233,7 @@ def entrenar(
                 "framework": "Apache Spark MLlib",
                 "algorithm": "RandomForestClassificationModel",
                 "features": FAV_FEATURES,
+                "amount_source": FAVORITISMO_MONTO_OPERACIONAL,
                 "label": "label_favoritismo",
                 "params": {
                     "numTrees": num_trees,
@@ -235,6 +245,7 @@ def entrenar(
                 "framework": "Apache Spark MLlib",
                 "algorithm": "StandardScalerModel + KMeansModel + distancia al centroide",
                 "features": FRAC_FEATURES,
+                "amount_source": "monto",
                 "label": "label_fraccionamiento",
                 "params": {"k": int(frac_model.getK())},
             },
