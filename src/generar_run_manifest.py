@@ -3,8 +3,9 @@
 Parámetros, versiones, hashes y resultados quedan en evidencia machine-readable
 para que la documentación no dependa de números copiados manualmente.
 
-Sprint A eleva Spark MLlib/GraphFrames a parte de la ejecución canónica y añade
-el diccionario/linaje explícito a los artefactos trazados.
+Sprint 4 incorpora el análisis sintético de pagos/montos/modalidades y sus
+salidas Oro al manifiesto reproducible. Los pagos son demostrativos y no
+representan información SIAF institucional.
 """
 
 from __future__ import annotations
@@ -21,9 +22,14 @@ ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "outputs" / "run_manifest.json"
 
 ARCHIVOS_TRAZADOS = [
+    "data/pagos_siaf_sintetico.csv",
+    "lakehouse/bronce/pagos_siaf_sintetico.csv",
     "lakehouse/plata/contratos_procesados.csv",
     "lakehouse/plata/dataset_favoritismo.csv",
     "lakehouse/plata/dataset_fraccionamiento.csv",
+    "outputs/analisis_pagos_modalidades.json",
+    "outputs/resumen_pagos_contrato.csv",
+    "outputs/resumen_modalidades_regimen.csv",
     "outputs/comparacion_modelos_favoritismo.json",
     "outputs/tuning_favoritismo_resumen.json",
     "outputs/tuning_fraccionamiento_resumen.json",
@@ -37,6 +43,8 @@ ARCHIVOS_TRAZADOS = [
     "outputs/ranking_riesgo_fraccionamiento_spark.csv",
     "outputs/vinculos_graphframes_sospechosos.csv",
     "outputs/vinculos_graphframes_pagerank.csv",
+    "lakehouse/oro/resumen_pagos_contrato.csv",
+    "lakehouse/oro/resumen_modalidades_regimen.csv",
     "data/diccionario_datos.csv",
     "outputs/linaje_datos.csv",
 ]
@@ -91,7 +99,7 @@ def main():
         }
 
     manifest = {
-        "schema_version": 3,
+        "schema_version": 4,
         "generado_utc": datetime.now(timezone.utc).isoformat(),
         "git_commit": git_sha(),
         "entorno": versiones(),
@@ -100,8 +108,10 @@ def main():
             "salida_reporting": "lakehouse/oro",
             "benchmark_metodologico": "scikit-learn",
             "implementacion_objetivo_tdr": "Apache Spark MLlib / GraphFrames",
+            "analisis_pagos_modalidades": "contrato canónico contracts + payments; evidencia sintética",
             "nota": "simulación local; no equivale al Lakehouse ni clúster institucional CGR",
         },
+        "analisis_pagos_modalidades": cargar_json_relativo("outputs/analisis_pagos_modalidades.json"),
         "comparacion_modelos_favoritismo": cargar_json_relativo(
             "outputs/comparacion_modelos_favoritismo.json"
         ),
