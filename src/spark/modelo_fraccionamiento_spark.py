@@ -1,21 +1,26 @@
 """
-Modelo de posible Fraccionamiento con Apache Spark MLlib — PoC local.
+Modelo de posible Fraccionamiento con Apache Spark MLlib — implementación
+objetivo del PoC para el componente no supervisado del TDR.
 
-El TDR permite clustering o detección de anomalías. MLlib no incluye Isolation
-Forest nativo, por lo que este módulo usa KMeans + distancia al centroide como
-comparador estadístico y conserva la ventana temporal Spark SQL como evidencia
-de implementación distribuible.
+MLlib no incluye Isolation Forest nativo, por lo que este módulo usa KMeans +
+distancia al centroide como detector no supervisado distribuible y conserva la
+ventana temporal Spark SQL como señal interpretable complementaria.
 
-P1:
-- consume `lakehouse/plata/contratos_procesados.csv`;
-- usa `categoria_principal` junto con fecha/objeto en el motor normativo;
-- denomina la regla como señal de priorización, no "regla legal";
-- las métricas sobre casos sembrados son sanity checks del PoC.
+Sprint A:
+- consume únicamente la capa Plata;
+- usa categoría estructurada + motor normativo;
+- persiste ranking y resumen machine-readable vigentes;
+- guarda el modelo Spark en `outputs/runtime/` (no versionado);
+- no presenta el sanity check sintético como métrica productiva.
 """
 
+from __future__ import annotations
+
+import json
 import os
 import sys
 import time
+from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -31,6 +36,12 @@ FEATURES = [
     "n_contratos_grupo", "max_contratos_ventana_15d", "monto_total_ventana_15d",
     "pct_montos_bajo_umbral", "monto_total_grupo",
 ]
+OUTPUT_RANKING = Path("outputs/ranking_riesgo_fraccionamiento_spark.csv")
+OUTPUT_RESUMEN = Path("outputs/spark_fraccionamiento_resumen.json")
+MODEL_DIR = Path(os.environ.get(
+    "CGR_SPARK_FRACCIONAMIENTO_MODEL_DIR",
+    "outputs/runtime/modelo_fraccionamiento_spark_kmeans",
+))
 
 
 def crear_sesion():
@@ -44,7 +55,7 @@ def crear_sesion():
 
 
 def construir_features_ventana(spark):
-    """Construye features desde la capa Plata usando ventanas Spark SQL."""
+    """Construye features desde Plata usando ventanas Spark SQL."""
     df = spark.read.csv("lakehouse/plata/contratos_procesados.csv", header=True, inferSchema=True)
     requeridas = {
         "id_proveedor", "id_entidad", "objeto", "categoria_principal", "fecha_contrato",
@@ -121,15 +132,50 @@ def detectar_anomalias_kmeans(df, k=2):
 
 
 def validar_sanity(df_pred):
+    n_total = df_pred.count()
     n_pos = df_pred.filter(F.col("label") == 1).count()
+    top_aciertos = None
     if n_pos:
         top = df_pred.orderBy(F.desc("score_anomalia")).limit(n_pos).toPandas()
-        print(f"Sanity KMeans top-{n_pos}: {int(top['label'].sum())}/{n_pos} casos sembrados.")
+        top_aciertos = int(top["label"].sum())
+        print(f"Sanity KMeans top-{n_pos}: {top_aciertos}/{n_pos} casos sembrados.")
     marcados = df_pred.filter(F.col("senal_priorizacion_fraccionamiento"))
+    n_marcados = marcados.count()
+    n_marcados_pos = marcados.filter(F.col("label") == 1).count()
     print(
-        f"Sanity señal interpretable: {marcados.count()} grupos marcados; "
-        f"{marcados.filter(F.col('label') == 1).count()} sembrados."
+        f"Sanity señal interpretable: {n_marcados} grupos marcados; "
+        f"{n_marcados_pos} sembrados."
     )
+    return {
+        "n_grupos": int(n_total),
+        "positivos_sinteticos": int(n_pos),
+        "top_k_aciertos": top_aciertos,
+        "senal_interpretable_marcados": int(n_marcados),
+        "senal_interpretable_positivos": int(n_marcados_pos),
+    }
+
+
+def guardar_resumen(modelo, sanity, duracion_s):
+    resumen = {
+        "motor": "Apache Spark MLlib",
+        "modo": "local[*]",
+        "implementacion_objetivo_tdr": True,
+        "dataset": "lakehouse/plata/contratos_procesados.csv",
+        "algoritmo": "KMeans + distancia al centroide",
+        "k": int(modelo.getK()),
+        "features": FEATURES,
+        "sanity_sintetico": sanity,
+        "ranking": str(OUTPUT_RANKING),
+        "modelo_runtime": str(MODEL_DIR),
+        "duracion_s": round(float(duracion_s), 3),
+        "advertencia": (
+            "Sanity check sobre benchmark sintético; no estima desempeño productivo. "
+            "Ejecución Spark real local; clúster CGR pendiente."
+        ),
+    }
+    OUTPUT_RESUMEN.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT_RESUMEN.write_text(json.dumps(resumen, ensure_ascii=False, indent=2), encoding="utf-8")
+    return resumen
 
 
 def main():
@@ -139,19 +185,24 @@ def main():
     spark.sparkContext.addPyFile(
         os.path.join(os.path.dirname(__file__), "..", "umbrales_normativos.py")
     )
+    try:
+        features = aplicar_senal_interpretable(construir_features_ventana(spark))
+        pred, modelo = detectar_anomalias_kmeans(features)
+        sanity = validar_sanity(pred)
 
-    features = aplicar_senal_interpretable(construir_features_ventana(spark))
-    pred, modelo = detectar_anomalias_kmeans(features)
-    validar_sanity(pred)
-
-    ranking = pred.select(
-        "id_proveedor", "id_entidad", "objeto", "max_contratos_ventana_15d",
-        "pct_montos_bajo_umbral", "score_anomalia", "senal_priorizacion_fraccionamiento", "label",
-    ).orderBy(F.desc("score_anomalia"))
-    ranking.toPandas().to_csv("outputs/ranking_riesgo_fraccionamiento_spark.csv", index=False)
-    modelo.write().overwrite().save("outputs/models/modelo_fraccionamiento_spark_kmeans")
-    print(f"Spark MLlib verificado en entorno local en {time.time()-t0:.1f}s; clúster CGR pendiente.")
-    spark.stop()
+        ranking = pred.select(
+            "id_proveedor", "id_entidad", "objeto", "max_contratos_ventana_15d",
+            "pct_montos_bajo_umbral", "score_anomalia",
+            "senal_priorizacion_fraccionamiento", "label",
+        ).orderBy(F.desc("score_anomalia"))
+        OUTPUT_RANKING.parent.mkdir(parents=True, exist_ok=True)
+        ranking.toPandas().to_csv(OUTPUT_RANKING, index=False)
+        MODEL_DIR.parent.mkdir(parents=True, exist_ok=True)
+        modelo.write().overwrite().save(str(MODEL_DIR))
+        guardar_resumen(modelo, sanity, time.time() - t0)
+        print(f"Spark MLlib verificado en entorno local en {time.time()-t0:.1f}s; clúster CGR pendiente.")
+    finally:
+        spark.stop()
 
 
 if __name__ == "__main__":
