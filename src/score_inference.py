@@ -1,12 +1,8 @@
-"""INFERENCE puro del Sprint 2.
+"""INFERENCE sklearn de compatibilidad del Sprint 2.
 
-Contrato operacional:
-  fuente `mode: inference` -> mapping canónico -> preprocesador champion
-  -> features -> modelos champion -> rankings
-
-Este módulo no entrena, no tunea y no requiere labels. Los rankings detallados
-se escriben por defecto bajo `outputs/runtime/`, ruta ignorada por Git porque una
-fuente institucional puede contener identificadores sensibles.
+Desde Sprint 3 el serving objetivo es Spark MLlib. Este módulo se conserva para
+benchmark/regresión y carga explícitamente el perfil ``sklearn`` del registry
+unificado. Sigue sin entrenar, tunear ni requerir labels.
 """
 
 from __future__ import annotations
@@ -16,7 +12,6 @@ import json
 from pathlib import Path
 
 import joblib
-import pandas as pd
 
 from core.config import cargar_config
 from ingestar_canonico import integrar
@@ -25,7 +20,12 @@ from preprocesamiento import (
     features_fraccionamiento,
     preparar_para_features_inferencia,
 )
-from registro_modelos import cargar_registry_champion, guardar_json_determinista, sha256_archivo
+from registro_modelos import (
+    SKLEARN_PROFILE,
+    cargar_registry_champion,
+    guardar_json_determinista,
+    sha256_ruta,
+)
 
 DEFAULT_OUTPUT_DIR = Path("outputs/runtime/inference/latest")
 
@@ -64,7 +64,7 @@ def ejecutar_inference(
             f"{labels_present}"
         )
 
-    registry = cargar_registry_champion(registry_path)
+    registry = cargar_registry_champion(registry_path, profile=SKLEARN_PROFILE)
     preprocessor = _cargar_artefacto(registry, "preprocessor")
     fav_model = _cargar_artefacto(registry, "favoritismo_model")
     frac_model = _cargar_artefacto(registry, "fraccionamiento_model")
@@ -113,9 +113,8 @@ def ejecutar_inference(
     ranking_fav.to_csv(fav_path, index=False)
     ranking_frac.to_csv(frac_path, index=False)
 
-    # Segunda verificación después del scoring: inference no debe modificar champions.
     integrity_after = {
-        nombre: sha256_archivo(spec["path"]) == spec["sha256"]
+        nombre: sha256_ruta(spec["path"]) == spec["sha256"]
         for nombre, spec in registry["artifacts"].items()
     }
     if not all(integrity_after.values()):
@@ -124,6 +123,9 @@ def ejecutar_inference(
     summary = {
         "schema_version": 1,
         "mode": "inference",
+        "engine": "scikit-learn",
+        "serving_profile": registry["profile_name"],
+        "active_serving_profile": registry["active_serving_profile"],
         "source_type": integration_summary["source_type"],
         "champion_id": registry["champion_id"],
         "institutional_approval": registry["promotion"]["institutional_approval"],
@@ -140,7 +142,10 @@ def ejecutar_inference(
             "favoritismo": fav_path.as_posix(),
             "fraccionamiento": frac_path.as_posix(),
         },
-        "notice": "Scores de priorización del PoC; no constituyen hallazgos de control ni decisión jurídica.",
+        "notice": (
+            "Perfil sklearn conservado como benchmark/compatibilidad. Desde Sprint 3 el serving objetivo "
+            "del TDR es spark_mllib."
+        ),
     }
     if summary_path is None:
         summary_path = output_dir / "inference_summary.json"
@@ -150,7 +155,7 @@ def ejecutar_inference(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Puntúa contratos actuales usando el champion; no entrena.")
+    parser = argparse.ArgumentParser(description="Puntúa con champion sklearn de compatibilidad; no entrena.")
     parser.add_argument("--config", default="config/local.yaml")
     parser.add_argument("--registry", default="outputs/model_registry.json")
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))
