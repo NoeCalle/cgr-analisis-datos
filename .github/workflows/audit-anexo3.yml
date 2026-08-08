@@ -1,0 +1,78 @@
+name: audit-anexo3
+
+on:
+  workflow_run:
+    workflows: ["tests"]
+    types: [completed]
+
+permissions:
+  contents: write
+
+jobs:
+  ssrs-and-checklist:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install minimal audit dependency
+        run: pip install pandas==3.0.2
+
+      - name: Validate local SSRS publication contract
+        run: python src/publicar_ssrs.py
+
+      - name: Generate Annex 3 checklist
+        run: python src/generar_checklist_anexo3.py
+
+      - name: Validate zero red gaps
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          checklist = json.loads(Path('outputs/checklist_anexo3.json').read_text(encoding='utf-8'))
+          ssrs = json.loads(Path('outputs/ssrs_publicacion_manifest.json').read_text(encoding='utf-8'))
+
+          assert checklist['resumen'].get('🔴', 0) == 0
+          assert checklist['resumen'].get('✅', 0) == 6
+          assert checklist['resumen'].get('🟡', 0) == 4
+          assert checklist['resumen'].get('🔵', 0) == 1
+          assert len(checklist['criterios']) == 11
+          assert ssrs['validacion']['conteos_tablas']['PrediccionesFavoritismo'] > 0
+          assert ssrs['validacion']['conteos_tablas']['PrediccionesFraccionamiento'] > 0
+          assert ssrs['validacion']['conteos_tablas']['VinculosProveedorFuncionario'] > 0
+          print('Sprint C: SSRS local + checklist Anexo 3 sin brechas rojas')
+          PY
+
+      - name: Upload Sprint C evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidencia-sprint-c-anexo3
+          path: |
+            outputs/ssrs_publicacion_manifest.json
+            outputs/checklist_anexo3.json
+            docs/Checklist_Anexo_03.md
+          retention-days: 14
+
+      - name: Persist checklist and SSRS evidence in main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            outputs/ssrs_publicacion_manifest.json \
+            outputs/checklist_anexo3.json \
+            docs/Checklist_Anexo_03.md
+          if git diff --cached --quiet; then
+            echo "Checklist y evidencia SSRS sin cambios."
+          else
+            git commit -m "chore: actualizar checklist Anexo 3 y evidencia SSRS [skip ci]"
+            git push
+          fi
