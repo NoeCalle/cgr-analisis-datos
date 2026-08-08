@@ -1,12 +1,12 @@
-"""TRAIN explícito del Sprint 2/Sprint 3.
+"""TRAIN explícito del Sprint 2/Sprint 3/Sprint 4.
 
 Lee una fuente configurada en `mode: training`, ajusta el preprocesador una sola
 vez y entrena artefactos candidatos sklearn. No escribe el registry champion y
 no puede habilitar serving por sí mismo.
 
-Sprint 3 añade una copia JSON del estado de preprocesamiento. Es el contrato
-framework-neutral que puede consumir el serving Spark sin depender de joblib ni
-de scikit-learn para transformar el lote operacional.
+Sprint 3 añade una copia JSON del estado de preprocesamiento. Sprint 4 hace que
+el favoritismo operacional consuma ``monto_capped`` (P99 aprendido en TRAIN),
+mientras la ruta legacy permanece separada para reproducir RC1.
 """
 
 from __future__ import annotations
@@ -38,6 +38,7 @@ from preprocesamiento import (
 from registro_modelos import guardar_json_determinista, sha256_ruta
 
 DEFAULT_MANIFEST = Path("outputs/runtime/model_candidates/candidate_manifest.json")
+FAVORITISMO_MONTO_OPERACIONAL = "monto_capped"
 
 
 def _fingerprint_dataframe(df: pd.DataFrame) -> str:
@@ -73,6 +74,7 @@ def entrenar(config_path: str | Path, manifest_path: str | Path = DEFAULT_MANIFE
         procesado,
         label_col="label_favoritismo",
         output_label="label_favoritismo",
+        monto_col=FAVORITISMO_MONTO_OPERACIONAL,
     )
     frac = features_fraccionamiento(
         procesado,
@@ -127,6 +129,7 @@ def entrenar(config_path: str | Path, manifest_path: str | Path = DEFAULT_MANIFE
     identity_payload = {
         "data": data_fingerprint,
         "fav_features": FAV_FEATURES,
+        "fav_amount_source": FAVORITISMO_MONTO_OPERACIONAL,
         "frac_features": FRAC_FEATURES,
         "fav_params": params_fav,
         "frac_params": params_frac,
@@ -149,8 +152,10 @@ def entrenar(config_path: str | Path, manifest_path: str | Path = DEFAULT_MANIFE
             "contracts_rows": int(len(contracts)),
             "favoritismo_rows": int(len(fav)),
             "favoritismo_positives": int(fav["label_favoritismo"].astype(int).sum()),
+            "favoritismo_amount_source": FAVORITISMO_MONTO_OPERACIONAL,
             "fraccionamiento_rows": int(len(frac)),
             "fraccionamiento_positives": int(frac["label_fraccionamiento"].astype(int).sum()),
+            "fraccionamiento_amount_source": "monto",
             "ground_truth_required": True,
             "validation_evidence": [
                 "outputs/comparacion_modelos_favoritismo.json",
@@ -163,6 +168,7 @@ def entrenar(config_path: str | Path, manifest_path: str | Path = DEFAULT_MANIFE
                 "framework": "scikit-learn",
                 "algorithm": "RandomForestClassifier",
                 "features": FAV_FEATURES,
+                "amount_source": FAVORITISMO_MONTO_OPERACIONAL,
                 "label": "label_favoritismo",
                 "params": params_fav,
             },
@@ -170,6 +176,7 @@ def entrenar(config_path: str | Path, manifest_path: str | Path = DEFAULT_MANIFE
                 "framework": "scikit-learn",
                 "algorithm": "IsolationForest + StandardScaler",
                 "features": FRAC_FEATURES,
+                "amount_source": "monto",
                 "label": "label_fraccionamiento",
                 "params": params_frac,
             },
