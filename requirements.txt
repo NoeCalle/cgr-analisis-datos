@@ -13,6 +13,7 @@ joblib==1.5.3
 shap==0.52.0
 networkx==3.6.1
 graphviz==0.21
+PyYAML==6.0.2
 
 # --- Pruebas ---
 pytest==9.0.2
@@ -34,3 +35,7 @@ python-docx==1.2.0
 # Apache Airflow NO se instala aquí. Vive en `.venv_airflow` para aislar sus
 # constraints. Los DAGs ejecutan las tareas ML con `CGR_PROJECT_PYTHON` o
 # `.venv/bin/python`, no con el intérprete de Airflow.
+#
+# SQL Server institucional: `src/connectors/sqlserver.py` importa `pyodbc`
+# de forma diferida. El entorno CGR debe instalar pyodbc + el driver ODBC
+# aprobado institucionalmente; el PoC/CI no necesita ese driver para operar.
