@@ -28,6 +28,6 @@
   ],
   "ranking": "outputs/ranking_riesgo_favoritismo_spark.csv",
   "modelo_runtime": "outputs/runtime/modelo_favoritismo_spark_rf",
-  "duracion_s": 45.748,
+  "duracion_s": 49.728,
   "advertencia": "Benchmark sintético con solo 6 positivos: la métrica CV es de alta varianza y no se usa como estimación de desempeño productivo. Ejecución Spark real local; clúster CGR pendiente."
 }
