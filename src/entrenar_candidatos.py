@@ -1,8 +1,12 @@
-"""TRAIN explícito del Sprint 2.
+"""TRAIN explícito del Sprint 2/Sprint 3.
 
 Lee una fuente configurada en `mode: training`, ajusta el preprocesador una sola
-vez y entrena artefactos candidatos. No escribe el registry champion y no puede
-habilitar serving por sí mismo.
+vez y entrena artefactos candidatos sklearn. No escribe el registry champion y
+no puede habilitar serving por sí mismo.
+
+Sprint 3 añade una copia JSON del estado de preprocesamiento. Es el contrato
+framework-neutral que puede consumir el serving Spark sin depender de joblib ni
+de scikit-learn para transformar el lote operacional.
 """
 
 from __future__ import annotations
@@ -31,13 +35,12 @@ from preprocesamiento import (
     features_fraccionamiento,
     preparar_para_features_entrenamiento,
 )
-from registro_modelos import guardar_json_determinista, sha256_archivo
+from registro_modelos import guardar_json_determinista, sha256_ruta
 
 DEFAULT_MANIFEST = Path("outputs/runtime/model_candidates/candidate_manifest.json")
 
 
 def _fingerprint_dataframe(df: pd.DataFrame) -> str:
-    # Fingerprint reproducible del contenido canónico; no se guarda el dataset en el manifest.
     normalized = df.copy()
     for col in normalized.columns:
         if pd.api.types.is_datetime64_any_dtype(normalized[col]):
@@ -77,8 +80,16 @@ def entrenar(config_path: str | Path, manifest_path: str | Path = DEFAULT_MANIFE
         output_label="label_fraccionamiento",
     )
 
-    params_fav = _jsonable_params(parametros_favoritismo() if Path("outputs/tuning_favoritismo_resumen.json").exists() else FAV_DEFAULT_PARAMS)
-    params_frac = _jsonable_params(parametros_fraccionamiento() if Path("outputs/tuning_fraccionamiento_resumen.json").exists() else FRAC_DEFAULT_PARAMS)
+    params_fav = _jsonable_params(
+        parametros_favoritismo()
+        if Path("outputs/tuning_favoritismo_resumen.json").exists()
+        else FAV_DEFAULT_PARAMS
+    )
+    params_frac = _jsonable_params(
+        parametros_fraccionamiento()
+        if Path("outputs/tuning_fraccionamiento_resumen.json").exists()
+        else FRAC_DEFAULT_PARAMS
+    )
 
     fav_model = RandomForestClassifier(
         **params_fav,
@@ -101,11 +112,13 @@ def entrenar(config_path: str | Path, manifest_path: str | Path = DEFAULT_MANIFE
 
     artifact_paths = {
         "preprocessor": candidate_dir / "preprocesador_contratos.joblib",
+        "preprocessor_json": candidate_dir / "preprocesador_contratos.json",
         "favoritismo_model": candidate_dir / "modelo_favoritismo_rf.joblib",
         "fraccionamiento_model": candidate_dir / "modelo_fraccionamiento_isoforest.joblib",
         "fraccionamiento_scaler": candidate_dir / "scaler_fraccionamiento.joblib",
     }
     joblib.dump(estado, artifact_paths["preprocessor"])
+    guardar_json_determinista(artifact_paths["preprocessor_json"], estado)
     joblib.dump(fav_model, artifact_paths["favoritismo_model"])
     joblib.dump(frac_model, artifact_paths["fraccionamiento_model"])
     joblib.dump(frac_scaler, artifact_paths["fraccionamiento_scaler"])
@@ -162,7 +175,7 @@ def entrenar(config_path: str | Path, manifest_path: str | Path = DEFAULT_MANIFE
             },
         },
         "artifacts": {
-            name: {"path": path.as_posix(), "sha256": sha256_archivo(path)}
+            name: {"path": path.as_posix(), "sha256": sha256_ruta(path)}
             for name, path in artifact_paths.items()
         },
     }
