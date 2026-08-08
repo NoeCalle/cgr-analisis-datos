@@ -2,6 +2,9 @@
 
 Parámetros, versiones, hashes y resultados quedan en evidencia machine-readable
 para que la documentación no dependa de números copiados manualmente.
+
+Sprint A eleva Spark MLlib/GraphFrames a parte de la ejecución canónica y añade
+el diccionario/linaje explícito a los artefactos trazados.
 """
 
 from __future__ import annotations
@@ -27,9 +30,18 @@ ARCHIVOS_TRAZADOS = [
     "outputs/ranking_riesgo_favoritismo.csv",
     "outputs/ranking_riesgo_fraccionamiento.csv",
     "outputs/ranking_vinculos_proveedor_funcionario.csv",
+    "outputs/spark_favoritismo_resumen.json",
+    "outputs/spark_fraccionamiento_resumen.json",
+    "outputs/graphframes_resumen.json",
+    "outputs/ranking_riesgo_favoritismo_spark.csv",
+    "outputs/ranking_riesgo_fraccionamiento_spark.csv",
+    "outputs/vinculos_graphframes_sospechosos.csv",
+    "outputs/vinculos_graphframes_pagerank.csv",
+    "data/diccionario_datos.csv",
+    "outputs/linaje_datos.csv",
 ]
 PAQUETES = [
-    "pandas", "numpy", "scikit-learn", "shap", "pyspark", "delta-spark", "graphframes-py"
+    "pandas", "numpy", "scikit-learn", "shap", "pyspark", "delta-spark", "graphframes-py", "graphviz"
 ]
 
 
@@ -79,20 +91,25 @@ def main():
         }
 
     manifest = {
-        "schema_version": 2,
+        "schema_version": 3,
         "generado_utc": datetime.now(timezone.utc).isoformat(),
         "git_commit": git_sha(),
         "entorno": versiones(),
         "arquitectura_datos": {
             "entrada_modelos": "lakehouse/plata",
             "salida_reporting": "lakehouse/oro",
-            "nota": "simulación local; no equivale al Lakehouse institucional CGR",
+            "benchmark_metodologico": "scikit-learn",
+            "implementacion_objetivo_tdr": "Apache Spark MLlib / GraphFrames",
+            "nota": "simulación local; no equivale al Lakehouse ni clúster institucional CGR",
         },
         "comparacion_modelos_favoritismo": cargar_json_relativo(
             "outputs/comparacion_modelos_favoritismo.json"
         ),
         "tuning_favoritismo": cargar_json_relativo("outputs/tuning_favoritismo_resumen.json"),
         "tuning_fraccionamiento": cargar_json_relativo("outputs/tuning_fraccionamiento_resumen.json"),
+        "spark_favoritismo": cargar_json_relativo("outputs/spark_favoritismo_resumen.json"),
+        "spark_fraccionamiento": cargar_json_relativo("outputs/spark_fraccionamiento_resumen.json"),
+        "graphframes": cargar_json_relativo("outputs/graphframes_resumen.json"),
         "validacion_p0_datos_reales": cargar_json_relativo("outputs/validacion_p0_datos_reales.json"),
         "artefactos": artefactos,
     }
