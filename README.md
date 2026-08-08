@@ -19,9 +19,7 @@ hallazgos, imputaciones ni determinaciones automáticas de irregularidad.
 <!-- RELEASE-CANDIDATE-START -->
 ## Release candidate
 
-Último release candidate etiquetado del PoC independiente: **`v1.0.0-rc.1`**.
-
-La etiqueta `v1.0.0-rc.1` permanece congelada en su commit original. `main` puede contener trabajo posterior —por ejemplo, la capa *institution-ready* de integración y serving— sin mover ni reescribir ese tag.
+Versión declarada del PoC independiente: **`v1.0.0-rc.1`**.
 
 El release candidate se etiqueta únicamente después de superar la cadena CI + auditoría Anexo 3 + auditoría final de coherencia. No representa aprobación ni despliegue institucional de la CGR.
 
