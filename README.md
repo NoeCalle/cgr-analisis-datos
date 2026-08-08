@@ -116,15 +116,51 @@ En esta área, lo pendiente requiere infraestructura CGR: HDFS/YARN distribuido,
 Lakehouse/Datamart institucional, fuentes internas y validación de desempeño en
 el clúster institucional.
 
+### ✅ Sprint B — Documentación formal alineada al Anexo 1
+
+Los Productos 1–7 y el Informe Final fueron reestructurados siguiendo los
+lineamientos formales del Anexo 1 del TDR dentro de lo demostrable por este PoC:
+
+- Arial 11 y espacio simple para el cuerpo documental;
+- carátula con nombre de consultoría, producto, consultor y fecha;
+- páginas numeradas en la parte inferior derecha;
+- márgenes espejo preparados para impresión a doble cara;
+- índice real de capítulos con números de página, actualizado con LibreOffice;
+- índices de tablas/cuadros y gráficos cuando corresponden;
+- lista de abreviaturas/acrónimos, glosario y referencias bibliográficas;
+- estructura específica del Plan de Trabajo, Informes de Producto e Informe Final;
+- gráficos y tablas provenientes de la evidencia reproducible del pipeline;
+- P3 y P6 incorporan explícitamente la ejecución y configuración Spark MLlib;
+- P7 documenta validación, despliegue PoC, integración, monitoreo, repositorio y
+  las dependencias institucionales de certificación, marcha blanca y transferencia.
+
+Los ocho DOCX se regeneran, se postprocesan para materializar el índice, se
+convierten temporalmente a PDF y pasan una auditoría estructural en CI antes de
+ser persistidos en `main`. También existen pruebas de regresión para impedir que
+vuelvan nombres obsoletos o el recorte de gráficos.
+
+**Desviación deliberada del PoC público:** el Anexo 1 solicita el logo de la CGR
+en la tapa de una entrega institucional. Este repositorio independiente mantiene
+un espacio reservado en lugar de usar el logo oficial, para no sugerir aprobación
+o autoría institucional inexistente.
+
+Los documentos verificados están en:
+
+- `reporte/productos_formales/Producto_01_Plan_de_Trabajo.docx`
+- `reporte/productos_formales/Producto_02_Preprocesamiento_Favoritismo.docx`
+- `reporte/productos_formales/Producto_03_Modelo_Favoritismo.docx`
+- `reporte/productos_formales/Producto_04_Entrenamiento_Favoritismo.docx`
+- `reporte/productos_formales/Producto_05_Preprocesamiento_Fraccionamiento.docx`
+- `reporte/productos_formales/Producto_06_Modelo_Fraccionamiento.docx`
+- `reporte/productos_formales/Producto_07_Informe_Final.docx`
+- `reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx`
+
 ### ✅ Documentación reproducible
 
-Los Productos 1–7 y el reporte técnico se regeneran desde evidencia
-machine-readable. El flujo es:
+La documentación ya no mantiene cifras independientes escritas a mano. El flujo
+es:
 
-`run_manifest.json -> evidencia_documental.json -> generadores DOCX -> QA CI`
-
-Los DOCX verificados quedan versionados en `main`, no solo como artifacts de
-GitHub Actions.
+`run_manifest.json -> evidencia_documental.json -> generadores DOCX -> índice paginado -> QA DOCX/PDF -> main`
 
 ## Correspondencia resumida con el TDR
 
@@ -141,6 +177,7 @@ GitHub Actions.
 | Autoevaluación | Modelo candidato; promoción requiere revisión humana |
 | SSRS | Esquema T-SQL + RDL; servidor institucional pendiente |
 | Linaje / diccionario | Diccionario + diagrama + linaje explícito + manifest |
+| Formato documental Anexo 1 | **Implementado y validado; logo oficial reservado para contexto institucional** |
 | DEV/QA/PROD y Git institucional | Dependencia CGR |
 | Certificación, marcha blanca y transferencia formal | Dependencia CGR |
 
@@ -154,10 +191,10 @@ lakehouse/bronce/            Ingesta cruda simulada
 lakehouse/plata/             Datos limpios/features consumidos por modelos
 lakehouse/oro/               Solo salidas para reporting/integración
 ssrs/                        DDL T-SQL + RDL PoC
-reporte/                     Generadores + Productos 1–7 + reporte técnico
+reporte/                     Generadores + Productos 1–7 + Informe Final
 outputs/                     Evidencia, rankings, tuning, manifests y linaje
 tests/                       Pruebas de regresión
-.github/workflows/           CI end-to-end sklearn + Spark
+.github/workflows/           CI end-to-end sklearn + Spark + documentación
 ```
 
 ## Reproducir
@@ -193,7 +230,7 @@ export AIRFLOW_HOME="$PWD/airflow_home"
 
 GitHub Actions ejecuta además generación sintética, Bronce/Plata, benchmark
 sklearn, Spark MLlib, GraphFrames, SQL Spark, Oro, diccionario, linaje,
-manifiesto y documentación.
+manifiesto y documentación formal.
 
 ### Pipeline Airflow
 
@@ -219,7 +256,9 @@ fuentes -> Bronce -> preprocesamiento/features -> Plata
                                       ↓
                          evidencia_documental.json
                                       ↓
-                                 documentación
+                           DOCX + índice paginado
+                                      ↓
+                             QA DOCX / PDF
 ```
 
 ## Datos reales OCDS/OECE
@@ -230,6 +269,8 @@ validación local, seguir `data_real/README.md` con `main.csv`, `contracts.csv`,
 
 ## Documentación formal
 
+La generación base se ejecuta con:
+
 ```bash
 python src/generar_evidencia_documental.py
 cd reporte
@@ -237,7 +278,9 @@ npm ci
 npm run all
 ```
 
-GitHub Actions valida los DOCX y persiste en `main` las versiones verificadas.
+La materialización automática de índices paginados requiere LibreOffice/UNO;
+GitHub Actions ejecuta ese postprocesamiento, audita los DOCX, realiza un render
+PDF de control y persiste en `main` las versiones verificadas.
 
 ## Licencia
 
