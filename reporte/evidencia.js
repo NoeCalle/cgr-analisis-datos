@@ -26,6 +26,7 @@ function modelo(nombre) {
 module.exports = {
   e, pct, num, pen, modelo,
   syn: e.sintetico,
+  pagosModalidades: e.analisis_pagos_modalidades,
   fav: e.sintetico.favoritismo,
   frac: e.sintetico.fraccionamiento,
   selFav: e.seleccion_favoritismo,
