@@ -6,6 +6,14 @@ __pycache__/
 .venv/
 .venv_airflow/
 
+# Configuración institucional local: puede referenciar infraestructura real.
+# Solo se versionan config/local.yaml y config/cgr.example.yaml.
+config/cgr.yaml
+config/*.local.yaml
+
+# Preview de integración configurable (regenerable; puede contener datos fuente)
+outputs/integracion_canonica/
+
 # Metadatos/estado local de Airflow
 airflow_home/airflow.db
 airflow_home/logs/
