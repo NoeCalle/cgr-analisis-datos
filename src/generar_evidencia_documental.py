@@ -7,6 +7,7 @@ leer los generadores de DOCX.
 
 La evidencia distingue explícitamente:
 - benchmark sintético del PoC;
+- análisis sintético de pagos, montos y modalidades exigido por el TDR;
 - validación de integridad sobre datos públicos OCDS/OECE;
 - componentes ejecutados del prototipo;
 - dependencias institucionales que NO fueron demostradas.
@@ -94,19 +95,22 @@ def main():
     comparacion = leer_json("outputs/comparacion_modelos_favoritismo.json")
     tuning_fav = leer_json("outputs/tuning_favoritismo_resumen.json")
     tuning_frac = leer_json("outputs/tuning_fraccionamiento_resumen.json")
+    pagos_modalidades = leer_json("outputs/analisis_pagos_modalidades.json")
     p0 = leer_json("outputs/validacion_p0_datos_reales.json")
     manifest = leer_json("outputs/run_manifest.json", requerido=False)
 
     evidencia = {
-        "schema_version": 1,
+        "schema_version": 2,
         "generado_utc": datetime.now(timezone.utc).isoformat(),
         "git_commit": git_sha(),
         "naturaleza": (
             "Prototipo independiente. Las métricas sintéticas evalúan el PoC y no estiman "
-            "desempeño productivo. Las salidas sobre datos públicos son señales de priorización "
-            "para revisión y no constituyen hallazgos ni determinaciones de irregularidad."
+            "desempeño productivo. El análisis de pagos usa datos sintéticos y no representa SIAF real. "
+            "Las salidas sobre datos públicos son señales de priorización para revisión y no constituyen "
+            "hallazgos ni determinaciones de irregularidad."
         ),
         "sintetico": resumen_sintetico(),
+        "analisis_pagos_modalidades": pagos_modalidades,
         "seleccion_favoritismo": comparacion,
         "tuning_favoritismo": tuning_fav,
         "tuning_fraccionamiento": tuning_frac,
@@ -115,6 +119,7 @@ def main():
         "estado_componentes": {
             "implementado_y_probado": [
                 "EDA y feature engineering",
+                "análisis sintético de pagos, montos contractuales y modalidades",
                 "Random Forest para priorización de favoritismo",
                 "Isolation Forest + regla interpretable para posible fraccionamiento",
                 "SHAP para explicabilidad del modelo supervisado",
@@ -126,9 +131,10 @@ def main():
                 "esquema T-SQL y RDL de SSRS como artefactos de despliegue",
                 "CI de regresión y smoke del pipeline sintético",
                 "autoevaluación que genera candidato sin promoción automática",
+                "TRAIN/INFERENCE con favoritismo operacional basado en monto_capped congelado",
             ],
             "dependencia_institucional_no_demostrada": [
-                "acceso al Datamart y fuentes internas CGR",
+                "acceso al Datamart y fuentes internas CGR, incluidos pagos SIAF reales",
                 "despliegue real DEV/QA/PROD institucional",
                 "Git y CI/CD institucionales",
                 "SQL Server/SSRS/SSAS/Power BI institucionales ejecutados",
@@ -145,6 +151,8 @@ def main():
             "prohibir_pct_no_competitiva": True,
             "prohibir_umbral_fijo_400k_como_regla_general": True,
             "promocion_modelo_requiere_revision_humana": True,
+            "pagos_sinteticos_no_equivalen_siaf_real": True,
+            "modalidad_requiere_contexto_juridico": True,
         },
     }
 
