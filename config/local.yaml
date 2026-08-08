@@ -9,7 +9,6 @@ source:
     suppliers: data/proveedores.csv
     entities: data/entidades.csv
     officials: data/funcionarios.csv
-    payments: data/pagos_siaf_sintetico.csv
 
 mapping:
   contracts:
@@ -32,12 +31,3 @@ mapping:
   officials:
     id_funcionario: id_funcionario
     id_entidad: id_entidad
-  payments:
-    id_pago: id_pago
-    id_contrato: id_contrato
-    fecha_devengado: fecha_devengado
-    fecha_girado: fecha_girado
-    fecha_pagado: fecha_pagado
-    monto_devengado: monto_devengado
-    monto_pagado: monto_pagado
-    estado: estado
