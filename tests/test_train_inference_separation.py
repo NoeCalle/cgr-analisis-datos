@@ -1,5 +1,6 @@
-"""Regresiones arquitectónicas del Sprint 2: TRAIN nunca debe filtrarse a INFERENCE."""
+"""Regresiones arquitectónicas: TRAIN nunca debe filtrarse a INFERENCE."""
 
+import json
 import sys
 from pathlib import Path
 
@@ -21,7 +22,14 @@ from preprocesamiento import (
     preparar_para_features_entrenamiento,
     preparar_para_features_inferencia,
 )
-from registro_modelos import promover_candidato
+from registro_modelos import (
+    REGISTRY_SCHEMA_VERSION,
+    SKLEARN_PROFILE,
+    cargar_registry_unificado,
+    promover_candidato,
+    promover_candidato_spark,
+    sha256_ruta,
+)
 
 
 FAV_FEATURES = [
@@ -81,8 +89,6 @@ def test_train_nuevo_preserva_monto_valido_aunque_objeto_sea_nulo():
     monto_original = float(caso.iloc[0]["monto"])
     assert monto_original == pytest.approx(117888.71)
 
-    # El estado se aprende con todo TRAIN, pero el transform del caso nunca debe
-    # convertir un monto ya observado solo porque falte el objeto.
     estado = ajustar_estado_preprocesamiento(raw)
     transformado = preparar_para_features_inferencia(caso, estado)
     assert float(transformado.iloc[0]["monto"]) == pytest.approx(monto_original)
@@ -90,7 +96,7 @@ def test_train_nuevo_preserva_monto_valido_aunque_objeto_sea_nulo():
 
 def test_features_inference_no_requieren_ni_generan_labels():
     train = _contracts_base()
-    procesado, estado = preparar_para_features_entrenamiento(train)
+    _, estado = preparar_para_features_entrenamiento(train)
     inference = preparar_para_features_inferencia(train, estado)
 
     fav = features_favoritismo(inference, label_col=None)
@@ -113,7 +119,7 @@ def test_training_config_exige_ground_truth_y_local_inference_no_lo_mapea():
     assert "label_fraccionamiento" not in inference_cfg["mapping"]["contracts"]
 
 
-def test_score_inference_no_contiene_operaciones_fit_ni_clases_de_entrenamiento():
+def test_score_inference_sklearn_no_contiene_fit():
     source = (ROOT / "src" / "score_inference.py").read_text(encoding="utf-8")
     assert ".fit(" not in source
     assert "RandomForestClassifier" not in source
@@ -122,9 +128,34 @@ def test_score_inference_no_contiene_operaciones_fit_ni_clases_de_entrenamiento(
     assert "tuning_favoritismo" not in source
 
 
-def test_dag_inference_no_genera_datos_ni_entrena():
-    source = (ROOT / "airflow_home" / "dags" / "dag_inferencia_modelos.py").read_text(encoding="utf-8")
-    assert "src/score_inference.py" in source
+def test_score_inference_spark_es_transform_puro_y_sin_sklearn():
+    source = (ROOT / "src" / "spark" / "score_inference_spark.py").read_text(encoding="utf-8")
+    assert ".fit(" not in source
+    assert "RandomForestClassifier(" not in source
+    assert "KMeans(" not in source
+    assert "StandardScaler(" not in source
+    assert "sklearn" not in source.lower()
+    assert "joblib" not in source.lower()
+    assert "RandomForestClassificationModel.load" in source
+    assert "KMeansModel.load" in source
+    assert "StandardScalerModel.load" in source
+
+
+def test_preprocesamiento_serving_spark_no_aprende_parametros():
+    source = (ROOT / "src" / "spark" / "preprocesamiento_serving_spark.py").read_text(
+        encoding="utf-8"
+    )
+    assert ".fit(" not in source
+    assert "StandardScaler(" not in source
+    assert "OneHotEncoder(" not in source
+    assert "ajustar_estado_preprocesamiento" not in source
+
+
+def test_dag_inference_usa_spark_y_no_genera_datos_ni_entrena():
+    source = (ROOT / "airflow_home" / "dags" / "dag_inferencia_modelos.py").read_text(
+        encoding="utf-8"
+    )
+    assert "src/spark/score_inference_spark.py" in source
     for prohibited in [
         "src/generar_datos.py",
         "src/preprocesamiento.py",
@@ -132,15 +163,26 @@ def test_dag_inference_no_genera_datos_ni_entrena():
         "src/modelo_favoritismo.py",
         "src/modelo_fraccionamiento.py",
         "src/entrenar_candidatos.py",
+        "src/spark/entrenar_candidato_spark.py",
     ]:
         assert prohibited not in source
 
 
-def test_dag_train_genera_candidate_sin_comando_de_promocion():
-    source = (ROOT / "airflow_home" / "dags" / "dag_entrenamiento_modelos.py").read_text(encoding="utf-8")
-    assert "src/entrenar_candidatos.py" in source
+def test_dag_train_genera_candidate_spark_sin_promocion():
+    source = (ROOT / "airflow_home" / "dags" / "dag_entrenamiento_modelos.py").read_text(
+        encoding="utf-8"
+    )
+    assert "src/spark/entrenar_candidato_spark.py" in source
     assert "--acknowledge-poc-only" not in source
-    assert "promover_candidato(" not in source
+    assert "promover_candidato" not in source
+
+
+def test_train_spark_no_consume_plata_legacy_para_serving():
+    source = (ROOT / "src" / "spark" / "entrenar_candidato_spark.py").read_text(encoding="utf-8")
+    assert "integrar(config)" in source
+    assert "ajustar_estado_preprocesamiento(contracts)" in source
+    assert "lakehouse/plata/contratos_procesados.csv" not in source
+    assert "outputs/runtime/spark_model_candidates" in source
 
 
 def test_promocion_exige_reconocimiento_explicito_antes_de_leer_manifest(tmp_path):
@@ -152,6 +194,46 @@ def test_promocion_exige_reconocimiento_explicito_antes_de_leer_manifest(tmp_pat
             acknowledge_poc_only=False,
             registry_path=tmp_path / "registry.json",
         )
+
+
+def test_promocion_spark_exige_reconocimiento_explicito(tmp_path):
+    inexistente = tmp_path / "spark_candidate_manifest.json"
+    with pytest.raises(ValueError, match="solo para el PoC"):
+        promover_candidato_spark(
+            inexistente,
+            approved_by="tester",
+            acknowledge_poc_only=False,
+            registry_path=tmp_path / "registry.json",
+        )
+
+
+def test_registry_v1_migra_en_memoria_a_perfil_sklearn(tmp_path):
+    legacy = {
+        "schema_version": 1,
+        "status": "champion",
+        "champion_id": "legacy-1",
+        "promotion": {"institutional_approval": False},
+        "training": {"ground_truth_required": True},
+        "models": {},
+        "artifacts": {},
+    }
+    path = tmp_path / "registry.json"
+    path.write_text(json.dumps(legacy), encoding="utf-8")
+    migrated = cargar_registry_unificado(path)
+    assert migrated["schema_version"] == REGISTRY_SCHEMA_VERSION == 2
+    assert migrated["active_serving_profile"] == SKLEARN_PROFILE
+    assert migrated["serving_profiles"][SKLEARN_PROFILE]["champion_id"] == "legacy-1"
+
+
+def test_hash_directorio_spark_ignora_crc(tmp_path):
+    model_dir = tmp_path / "modelo"
+    (model_dir / "metadata").mkdir(parents=True)
+    (model_dir / "data").mkdir()
+    (model_dir / "metadata" / "part-00000").write_text("abc", encoding="utf-8")
+    (model_dir / "data" / "part-00000.parquet").write_bytes(b"payload")
+    antes = sha256_ruta(model_dir)
+    (model_dir / "metadata" / ".part-00000.crc").write_bytes(b"local-hadoop-crc")
+    assert sha256_ruta(model_dir) == antes
 
 
 def test_ruta_legacy_reproduce_dataset_favoritismo_rc1():
