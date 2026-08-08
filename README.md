@@ -71,17 +71,13 @@ El núcleo técnico está integrado y cubierto por CI:
   sin promoción automática.
 - Los modelos consumen Plata; reporting consume Oro.
 - Airflow usa el Python del proyecto, separado del entorno de Airflow.
-- GitHub Actions reconstruye los datos sintéticos, publica Plata, ejecuta
-  comparación/tuning y valida evidencia/documentación en cada push/PR.
 - `run_manifest.json` registra commit, versiones, hashes, parámetros y
   artefactos de una ejecución completa.
 
 #### Evidencia vigente — Favoritismo
 
-Las métricas siguientes se reproducen con las versiones declaradas por el
-proyecto (`pandas 3.0.2`, `numpy 2.4.4`, `scikit-learn 1.8.0`). Fijar estas
-versiones eliminó una variación detectada cuando CI instalaba automáticamente
-versiones más nuevas.
+Las métricas de comparación se reproducen con las versiones declaradas por el
+proyecto (`pandas 3.0.2`, `numpy 2.4.4`, `scikit-learn 1.8.0`).
 
 Comparación out-of-fold sobre **2,328 pares proveedor-entidad**, con 6 casos
 positivos sintéticos difíciles:
@@ -93,22 +89,17 @@ positivos sintéticos difíciles:
 | Gradient Boosting | 0.418 | 0.749 | 0.429 | 0.500 | **0.462** |
 
 Random Forest mantiene el mayor AUC-PR y sigue siendo el candidato preferido
-del PoC para ranking probabilístico e interpretabilidad con SHAP. El F1 no se
-usa como criterio primario de selección porque el objetivo es priorización bajo
-desbalance severo, no clasificación binaria a umbral 0.5.
+del benchmark metodológico para ranking probabilístico e interpretabilidad con
+SHAP. El F1 no se usa como criterio primario porque el objetivo es priorización
+bajo desbalance severo.
 
-La comparación reproducible está en
-`outputs/comparacion_modelos_favoritismo.json`.
-
-Tuning Random Forest:
+Tuning Random Forest sklearn:
 
 - configuración seleccionada: `n_estimators=100`, `max_depth=3`,
   `min_samples_leaf=1`;
 - AUC-PR medio en CV de tuning: **0.844**;
 - la configuración 300 árboles / profundidad 6 obtiene el mismo AUC-PR, por lo
-  que se conserva la alternativa más liviana;
-- el CSV de grilla excluye `mean_fit_time`, porque el tiempo de ejecución varía
-  entre máquinas y no debe generar diffs en un artefacto reproducible.
+  que se conserva la alternativa más liviana.
 
 #### Evidencia vigente — Fraccionamiento
 
@@ -127,9 +118,6 @@ ranking de positivos son débiles en este benchmark. La regla interpretable y la
 revisión humana siguen siendo complementos; ninguna señal se convierte
 automáticamente en un hallazgo jurídico.
 
-La evidencia está en `outputs/tuning_fraccionamiento_resumen.json` y
-`outputs/tuning_fraccionamiento_resultados.csv`.
-
 ### ✅ P1 documental — generación automática integrada
 
 Los Productos 1–7 y el reporte técnico ya no mantienen cifras independientes
@@ -141,12 +129,50 @@ escritas a mano. El flujo es:
 3. `reporte/generar_productos_formales.js` genera Productos 1–7.
 4. `reporte/generar_reporte.js` genera el reporte técnico consolidado.
 5. GitHub Actions abre los DOCX con `python-docx`, busca afirmaciones obsoletas
-   y publica la documentación regenerada como artifact de CI.
+   y persiste la documentación validada en `main`.
 
 La documentación distingue explícitamente lo demostrado por el PoC de las
-dependencias institucionales: Datamart CGR, DEV/QA/PROD, Git/CI institucional,
-SQL Server/SSRS/SSAS/Power BI institucionales, HDFS/YARN distribuido,
-certificación funcional, marcha blanca y transferencia formal.
+dependencias institucionales.
+
+### ✅ Sprint A — Spark canónico y trazabilidad: cerrado
+
+Spark dejó de ser una ruta paralela del repositorio. La ejecución reproducible
+actual diferencia dos responsabilidades:
+
+- **scikit-learn:** benchmark metodológico, comparación de candidatos,
+  validación independiente y explicabilidad;
+- **Apache Spark MLlib / GraphFrames:** implementación objetivo del TDR que se
+  ejecuta de forma real en `local[*]` dentro del pipeline reproducible.
+
+El cierre del Sprint A incluye:
+
+- Java 17 + `pyspark==4.1.1` instalados y ejecutados en GitHub Actions;
+- Random Forest de favoritismo implementado y ejecutado con Spark MLlib,
+  `CrossValidator`, AUC-PR y folds estratificados determinísticos;
+- KMeans MLlib + distancia al centroide + ventanas Spark SQL para el componente
+  no supervisado de fraccionamiento;
+- GraphFrames ejecutado sobre la misma capa Plata usada por el resto del PoC;
+- `src/spark/estandares_sql.py` ejecutado en CI para LEFT JOIN y evidencia de
+  partition pruning;
+- DAG principal de Airflow con las ramas Spark MLlib/GraphFrames incorporadas;
+- modelos binarios Spark tratados como artefactos de runtime; la evidencia
+  reproducible versionada son rankings y resúmenes JSON/CSV;
+- Oro contiene solo salidas downstream, incluidas las salidas Spark/GraphFrames,
+  y ya no conserva datasets intermedios de feature engineering;
+- diccionario y diagrama se regeneran en la misma ejecución CI;
+- `outputs/linaje_datos.csv` documenta explícitamente
+  fuente → transformación → Plata → feature → implementación → salida Oro;
+- `run_manifest.json` usa schema 3 y registra también las versiones y evidencias
+  de Spark/GraphFrames.
+
+La métrica Spark de favoritismo no se usa como estimación de desempeño: el
+benchmark solo contiene seis positivos. Por ello la comparación OOF de sklearn
+permanece como evidencia metodológica principal, mientras Spark demuestra la
+implementación y ejecución de la arquitectura exigida por el TDR.
+
+Lo que sigue pendiente en esta área requiere infraestructura institucional:
+HDFS/YARN distribuido, Lakehouse/Datamart real de CGR, fuentes internas y
+validación de desempeño en el clúster institucional.
 
 ## Correspondencia resumida con el TDR
 
@@ -154,15 +180,15 @@ certificación funcional, marcha blanca y transferencia formal.
 |---|---|
 | EDA y calidad de datos | Implementado |
 | Feature engineering | Implementado y endurecido |
-| Favoritismo supervisado | Comparación OOF + RF + tuning + SHAP |
-| Fraccionamiento no supervisado | Isolation Forest + holdout + señal interpretable |
-| Spark MLlib | Implementado en modo local; clúster institucional pendiente |
-| Grafos | networkx + GraphFrames en escenario sintético |
-| Airflow DAGs | Implementados; Python de proyecto separado |
-| Bronce / Plata / Oro | Simulación local funcional; Lakehouse CGR pendiente |
+| Favoritismo supervisado | Benchmark OOF/tuning/SHAP + implementación Spark MLlib ejecutada en CI |
+| Fraccionamiento no supervisado | Isolation Forest con holdout + Spark MLlib KMeans + señal interpretable |
+| Spark MLlib | **Ejecutado y validado en CI con Spark real `local[*]`; clúster CGR pendiente** |
+| Grafos | NetworkX de referencia + **GraphFrames ejecutado en CI** |
+| Airflow DAGs | Implementados; incluyen rutas sklearn y Spark; Python de proyecto separado |
+| Bronce / Plata / Oro | Simulación local funcional; Oro solo downstream; Lakehouse CGR pendiente |
 | Autoevaluación/reentrenamiento | Modelo candidato + revisión humana requerida |
 | SSRS | Esquema T-SQL + RDL; servidor institucional pendiente |
-| Linaje/diccionario | Diccionario, diagrama, run manifest y evidencia documental |
+| Linaje/diccionario | Diccionario + diagrama + **linaje explícito** + run manifest |
 | DEV/QA/PROD, Git institucional, certificación | Dependencia institucional CGR |
 | Transferencia formal / marcha blanca | Dependencia contractual/institucional |
 
@@ -172,14 +198,14 @@ certificación funcional, marcha blanca y transferencia formal.
 src/                         Python principal
 src/spark/                   Spark MLlib, GraphFrames, Delta, SQL, streaming, HMS
 airflow_home/dags/           DAG principal + monitoreo
-lakehouse/bronce/             Simulación de ingesta cruda
-lakehouse/plata/              Datos limpios/features consumidos por modelos
-lakehouse/oro/                Salidas para reporting/integración
-ssrs/                         DDL T-SQL + RDL PoC
-reporte/                      Generadores y documentos formales
-outputs/                      Evidencias, modelos, tuning, manifests
-tests/                        Pruebas de regresión
-.github/workflows/            CI
+lakehouse/bronce/            Simulación de ingesta cruda
+lakehouse/plata/             Datos limpios/features consumidos por modelos
+lakehouse/oro/               Solo salidas para reporting/integración
+ssrs/                        DDL T-SQL + RDL PoC
+reporte/                     Generadores y documentos formales
+outputs/                     Evidencias, rankings, tuning, manifests y linaje
+tests/                       Pruebas de regresión
+.github/workflows/           CI end-to-end sklearn + Spark
 ```
 
 ## Reproducir el entorno Python
@@ -191,12 +217,15 @@ python3 -m venv .venv
 
 python3 -m venv .venv_airflow
 .venv_airflow/bin/pip install "apache-airflow==3.3.0" \
-  --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-3.3.0/constraints-3.12.txt"
+  --constraint "https://raw.githubusercontent.com/apache-airflow/airflow/constraints-3.3.0/constraints-3.12.txt"
 
 export PROYECTO_DIR="$PWD"
 export CGR_PROJECT_PYTHON="$PWD/.venv/bin/python"
 export AIRFLOW_HOME="$PWD/airflow_home"
 ```
+
+Graphviz (`dot`) debe estar instalado en el sistema para regenerar el diagrama.
+Spark requiere una JVM compatible; CI usa Java 17.
 
 ## Pruebas
 
@@ -204,8 +233,9 @@ export AIRFLOW_HOME="$PWD/airflow_home"
 .venv/bin/pytest -q
 ```
 
-GitHub Actions añade un smoke end-to-end de generación sintética,
-preprocesamiento, Plata, selección de modelos y documentación.
+GitHub Actions ejecuta además un smoke end-to-end con generación sintética,
+Bronce/Plata, benchmark sklearn, Spark MLlib, GraphFrames, SQL Spark, Oro,
+diccionario, linaje, manifiesto y documentación.
 
 ## Pipeline sintético orquestado
 
@@ -215,11 +245,17 @@ preprocesamiento, Plata, selección de modelos y documentación.
 
 ```text
 fuentes -> Bronce -> preprocesamiento/features -> Plata
-                    |-> comparar modelos favoritismo -> tuning -> modelo
-                    |-> tuning fraccionamiento + holdout -> modelo
-                    |-> grafos
+                    |-> benchmark sklearn favoritismo -> tuning -> modelo
+                    |-> benchmark sklearn fraccionamiento -> tuning/holdout -> modelo
+                    |-> Spark MLlib favoritismo
+                    |-> Spark MLlib fraccionamiento
+                    |-> NetworkX -> GraphFrames
                                       ↓
                                      Oro
+                                      ↓
+                           diccionario + diagrama
+                                      ↓
+                               linaje_datos.csv
                                       ↓
                               run_manifest.json
                                       ↓
