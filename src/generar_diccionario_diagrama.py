@@ -45,7 +45,7 @@ DICCIONARIO = [
     ("dataset_fraccionamiento", "max_contratos_ventana_15d", "numérico", "Máximo número de contratos dentro de una ventana móvil de 15 días.", "Derivado"),
     ("dataset_fraccionamiento", "pct_montos_bajo_umbral", "numérico [0-1]", "Proporción de contratos bajo el 95% de la cuantía parametrizada para el año/régimen/categoría aplicable.", "Derivado + motor normativo"),
     ("dataset_fraccionamiento", "score_anomalia", "numérico", "Score del detector estadístico de anomalías; mayor valor = mayor prioridad relativa según la implementación.", "Modelo (salida)"),
-    ("dataset_fraccionamiento", "cumple_regla_fraccionamiento", "booleano", "Señal interpretable: ≥3 contratos en 15 días y ≥70% bajo el 95% de la cuantía parametrizada. Es una alerta para revisión, no una conclusión jurídica.", "Regla de priorización"),
+    ("dataset_fraccionamiento", "senal_priorizacion_fraccionamiento", "booleano", "Señal interpretable: ≥3 contratos en 15 días y ≥70% bajo el 95% de la cuantía parametrizada. Es una alerta para revisión, no una conclusión jurídica.", "Regla de priorización"),
 ]
 
 
@@ -87,7 +87,7 @@ def generar_diagrama():
     g.node("dataset_fraccionamiento", tabla_html(
         "dataset_fraccionamiento (derivada)",
         ["id_proveedor + id_entidad + objeto", "max_contratos_ventana_15d",
-         "pct_montos_bajo_umbral", "score_anomalia", "cumple_regla_fraccionamiento"],
+         "pct_montos_bajo_umbral", "score_anomalia", "senal_priorizacion_fraccionamiento"],
         color_header="#6b46c1",
     ))
 
