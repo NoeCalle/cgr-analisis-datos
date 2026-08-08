@@ -1,5 +1,5 @@
 {
-  "active_serving_profile": "sklearn",
+  "active_serving_profile": "spark_mllib",
   "champion_id": "poc-d6ae88ac265eb845",
   "champion_integrity_verified": true,
   "contracts_rows": 3709,

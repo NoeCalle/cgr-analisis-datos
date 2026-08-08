@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
-  "generado_utc": "2026-08-08T17:08:24.805424+00:00",
-  "git_commit": "06d38a220e63bdf809622538764be6d4a1ec11f1",
+  "generado_utc": "2026-08-08T17:17:48.667575+00:00",
+  "git_commit": "3cb067acf0a14080121d887c6888c47399d04c34",
   "entorno": {
     "python": "3.12.13",
     "pandas": "3.0.2",
@@ -170,7 +170,7 @@
     ],
     "ranking": "outputs/ranking_riesgo_favoritismo_spark.csv",
     "modelo_runtime": "outputs/runtime/modelo_favoritismo_spark_rf",
-    "duracion_s": 49.199,
+    "duracion_s": 33.04,
     "advertencia": "Benchmark sintético con solo 6 positivos: la métrica CV es de alta varianza y no se usa como estimación de desempeño productivo. Ejecución Spark real local; clúster CGR pendiente."
   },
   "spark_fraccionamiento": {
@@ -197,7 +197,7 @@
     "ranking": "outputs/ranking_riesgo_fraccionamiento_spark.csv",
     "modelo_runtime": "outputs/runtime/modelo_fraccionamiento_spark_kmeans",
     "scaler_runtime": "outputs/runtime/modelo_fraccionamiento_spark_scaler",
-    "duracion_s": 20.858,
+    "duracion_s": 15.006,
     "advertencia": "Sanity check sobre benchmark sintético; no estima desempeño productivo. Ejecución Spark real local; clúster CGR pendiente."
   },
   "graphframes": {
@@ -217,7 +217,7 @@
       "outputs/vinculos_graphframes_sospechosos.csv",
       "outputs/vinculos_graphframes_pagerank.csv"
     ],
-    "duracion_s": 22.316,
+    "duracion_s": 15.453,
     "advertencia": "Datos de contacto sintéticos; clúster y fuentes institucionales CGR pendientes."
   },
   "validacion_p0_datos_reales": {
@@ -312,13 +312,13 @@
     },
     "outputs/ranking_riesgo_favoritismo.csv": {
       "existe": true,
-      "sha256": "21b7e870b1bdee1d392dd32c9c9efe1d4a274a62173c6761e06d8f436dc6c4b1",
-      "bytes": 192440
+      "sha256": "1aab3a37897d7844c060ebd01e78700753bd4e0afe7842a8b9886c1affd88793",
+      "bytes": 192441
     },
     "outputs/ranking_riesgo_fraccionamiento.csv": {
       "existe": true,
-      "sha256": "d87318d9447ee9d63496562f7a743c76d4db34838c50b2060c6729b7b8dbad30",
-      "bytes": 20160
+      "sha256": "9f7bfdb24dc67fd3d4453badc2719fbb253de493b6cd3bfd9536a02e7ab5326f",
+      "bytes": 20164
     },
     "outputs/ranking_vinculos_proveedor_funcionario.csv": {
       "existe": true,
@@ -327,17 +327,17 @@
     },
     "outputs/spark_favoritismo_resumen.json": {
       "existe": true,
-      "sha256": "f3f00cdc99597ca1d3cd45f60bb0e6d7819fef006d7cc4597773d1bb3631c252",
-      "bytes": 1090
+      "sha256": "21dde8f3b8f85cb369320c7b1485ce4c13073a7ea9dd02aa1a6fa229227eba81",
+      "bytes": 1089
     },
     "outputs/spark_fraccionamiento_resumen.json": {
       "existe": true,
-      "sha256": "71a02c894b6d948c93ef34a37e242a6419fbab54dee0982deb6d6e3508fca327",
+      "sha256": "3e8fb80e7325601aab58c0aca935dfe60543092acaca6c03a81bb80f8e71fe31",
       "bytes": 964
     },
     "outputs/graphframes_resumen.json": {
       "existe": true,
-      "sha256": "4bce5a6ce6f266a896c852d9334724d21da2a52921f864b522cfccfa9d1f2a32",
+      "sha256": "4cfb139562f5d2d0d118ccfcf233dfda25ecd07c31144382d274feccfa2133f6",
       "bytes": 603
     },
     "outputs/ranking_riesgo_favoritismo_spark.csv": {
@@ -347,7 +347,7 @@
     },
     "outputs/ranking_riesgo_fraccionamiento_spark.csv": {
       "existe": true,
-      "sha256": "50222997fb35e6b826af62d52192fac604535dc5c4b4917fd0546ea149262ab8",
+      "sha256": "06909e9d11173401ef49effa26c30312d08291d15764316040bee4c5d8c2292a",
       "bytes": 14042
     },
     "outputs/vinculos_graphframes_sospechosos.csv": {
