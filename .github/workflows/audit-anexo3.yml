@@ -17,6 +17,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -29,10 +30,16 @@ jobs:
       - name: Validate local SSRS publication contract
         run: python src/publicar_ssrs.py
 
+      - name: Generate canonical CGR dependency matrix
+        run: python src/generar_dependencias_cgr.py
+
       - name: Generate Annex 3 checklist
         run: python src/generar_checklist_anexo3.py
 
-      - name: Validate zero red gaps and required metrics
+      - name: Run final release coherence audit
+        run: python src/auditar_release.py
+
+      - name: Validate release gates
         run: |
           python - <<'PY'
           import json
@@ -40,48 +47,66 @@ jobs:
 
           checklist = json.loads(Path('outputs/checklist_anexo3.json').read_text(encoding='utf-8'))
           ssrs = json.loads(Path('outputs/ssrs_publicacion_manifest.json').read_text(encoding='utf-8'))
-          fav = json.loads(Path('outputs/comparacion_modelos_favoritismo.json').read_text(encoding='utf-8'))
-          frac = json.loads(Path('outputs/tuning_fraccionamiento_resumen.json').read_text(encoding='utf-8'))
+          deps = json.loads(Path('outputs/dependencias_cgr.json').read_text(encoding='utf-8'))
+          release = json.loads(Path('outputs/auditoria_release.json').read_text(encoding='utf-8'))
 
+          assert checklist['schema_version'] == 2
           assert checklist['resumen'].get('🔴', 0) == 0
           assert checklist['resumen'].get('✅', 0) == 6
           assert checklist['resumen'].get('🟡', 0) == 4
           assert checklist['resumen'].get('🔵', 0) == 1
           assert len(checklist['criterios']) == 11
+          assert all(
+              c.get('dependencias_cgr')
+              for c in checklist['criterios']
+              if c['estado'] in {'🟡', '🔵'}
+          )
 
-          # El Anexo 3 menciona Accuracy, F1 y AUC-ROC. Accuracy se reporta,
-          # aunque AUC-PR sigue siendo primaria por el desbalance.
-          assert all('accuracy' in r and 'f1' in r and 'auc_roc' in r for r in fav['resultados'])
-          for metrica in ['accuracy', 'f1', 'auc_roc', 'auc_pr', 'precision', 'recall', 'recall_at_k']:
-              assert metrica in frac['metricas_holdout_final']
+          assert deps['total'] == 8
+          assert [d['id'] for d in deps['dependencias']] == [f'CGR-DEP-{i:02d}' for i in range(1, 9)]
 
           assert ssrs['validacion']['conteos_tablas']['PrediccionesFavoritismo'] > 0
           assert ssrs['validacion']['conteos_tablas']['PrediccionesFraccionamiento'] > 0
           assert ssrs['validacion']['conteos_tablas']['VinculosProveedorFuncionario'] > 0
-          print('Sprint C: SSRS local + Accuracy/F1/AUC-ROC + checklist Anexo 3 sin brechas rojas')
+
+          assert release['release_ready'] is True
+          assert release['checks_fallidos'] == 0
+          assert release['checks_ok'] == release['total_checks']
+          print(
+              f"Release gate: {release['checks_ok']}/{release['total_checks']} checks OK; "
+              "Anexo 3 = 6 ✅ / 4 🟡 / 1 🔵 / 0 🔴"
+          )
           PY
 
-      - name: Upload Sprint C evidence
+      - name: Upload release audit evidence
         uses: actions/upload-artifact@v4
         with:
-          name: evidencia-sprint-c-anexo3
+          name: evidencia-release-candidate
           path: |
             outputs/ssrs_publicacion_manifest.json
             outputs/checklist_anexo3.json
+            outputs/dependencias_cgr.json
+            outputs/auditoria_release.json
             docs/Checklist_Anexo_03.md
-          retention-days: 14
+            docs/Dependencias_Institucionales_CGR.md
+            docs/Auditoria_Final_Release.md
+          retention-days: 30
 
-      - name: Persist checklist and SSRS evidence in main
+      - name: Persist final audit evidence in main
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
             outputs/ssrs_publicacion_manifest.json \
             outputs/checklist_anexo3.json \
-            docs/Checklist_Anexo_03.md
+            outputs/dependencias_cgr.json \
+            outputs/auditoria_release.json \
+            docs/Checklist_Anexo_03.md \
+            docs/Dependencias_Institucionales_CGR.md \
+            docs/Auditoria_Final_Release.md
           if git diff --cached --quiet; then
-            echo "Checklist y evidencia SSRS sin cambios."
+            echo "Auditoría final sin cambios."
           else
-            git commit -m "chore: actualizar checklist Anexo 3 y evidencia SSRS [skip ci]"
+            git commit -m "chore: persistir auditoría final release candidate [skip ci]"
             git push
           fi
