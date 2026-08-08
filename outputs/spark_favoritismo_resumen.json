@@ -5,7 +5,7 @@
   "dataset": "lakehouse/plata/contratos_procesados.csv",
   "algoritmo": "RandomForestClassifier",
   "metrica_seleccion": "AUC-PR CV",
-  "cv": "3-fold estratificado determinístico mediante foldCol",
+  "cv": "3-fold estratificado con orden xxhash64 determinístico",
   "n_registros": 2328,
   "positivos": 6,
   "mejor_configuracion": {
@@ -28,6 +28,6 @@
   ],
   "ranking": "outputs/ranking_riesgo_favoritismo_spark.csv",
   "modelo_runtime": "outputs/runtime/modelo_favoritismo_spark_rf",
-  "duracion_s": 49.317,
-  "advertencia": "Ejecución Spark real local; no equivale a clúster ni producción CGR."
+  "duracion_s": 48.224,
+  "advertencia": "Benchmark sintético con solo 6 positivos: la métrica CV es de alta varianza y no se usa como estimación de desempeño productivo. Ejecución Spark real local; clúster CGR pendiente."
 }
