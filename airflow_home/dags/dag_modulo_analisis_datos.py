@@ -1,12 +1,13 @@
 """
 DAG principal — orquestación ETL/ML del PoC según numeral 6 del TDR.
 
-Flujo P1:
+Flujo Sprint A:
   fuentes -> Bronce -> preprocesar/features -> Plata
-      -> comparar algoritmos favoritismo -> tuning RF -> entrenar favoritismo
-      -> tuning fraccionamiento con holdout -> entrenar fraccionamiento
-      -> análisis de vínculos
-  -> Oro -> run manifest -> evidencia documental -> diccionario/diagrama
+      |-> benchmark sklearn: comparación/tuning/modelos
+      |-> implementación objetivo TDR: Spark MLlib favoritismo/fraccionamiento
+      |-> vínculos NetworkX -> GraphFrames
+  -> Oro (salidas sklearn + Spark)
+  -> diccionario/diagrama -> linaje -> run manifest -> evidencia documental
 
 Los DOCX formales se generan y validan adicionalmente en GitHub Actions porque
 requieren Node.js/docx. Airflow conserva la evidencia machine-readable que los
@@ -65,6 +66,7 @@ with DAG(
         task_id="publicar_capa_plata", bash_command=comando("src/lakehouse_capas.py", "plata")
     )
 
+    # Benchmark/referencia metodológica sklearn.
     comparar_favoritismo = BashOperator(
         task_id="comparar_algoritmos_favoritismo",
         bash_command=comando("src/comparar_modelos_favoritismo.py"),
@@ -73,23 +75,45 @@ with DAG(
         task_id="tuning_favoritismo", bash_command=comando("src/tuning_favoritismo.py")
     )
     entrenar_favoritismo = BashOperator(
-        task_id="entrenar_modelo_favoritismo", bash_command=comando("src/modelo_favoritismo.py")
+        task_id="entrenar_modelo_favoritismo_sklearn", bash_command=comando("src/modelo_favoritismo.py")
     )
-
     tuning_fraccionamiento = BashOperator(
         task_id="tuning_fraccionamiento_con_holdout",
         bash_command=comando("src/tuning_fraccionamiento.py"),
     )
     entrenar_fraccionamiento = BashOperator(
-        task_id="entrenar_modelo_fraccionamiento",
+        task_id="entrenar_modelo_fraccionamiento_sklearn",
         bash_command=comando("src/modelo_fraccionamiento.py"),
     )
+
+    # Implementación objetivo del TDR con Spark MLlib.
+    spark_favoritismo = BashOperator(
+        task_id="spark_mllib_favoritismo",
+        bash_command=comando("src/spark/modelo_favoritismo_spark.py"),
+    )
+    spark_fraccionamiento = BashOperator(
+        task_id="spark_mllib_fraccionamiento",
+        bash_command=comando("src/spark/modelo_fraccionamiento_spark.py"),
+    )
+
     analizar_vinculos = BashOperator(
-        task_id="analizar_vinculos_proveedor_funcionario",
+        task_id="analizar_vinculos_networkx",
         bash_command=comando("src/modelo_grafos.py"),
     )
+    graphframes = BashOperator(
+        task_id="analizar_vinculos_graphframes",
+        bash_command=comando("src/spark/vinculos_graphframes.py"),
+    )
+
     mover_oro = BashOperator(
         task_id="publicar_capa_oro", bash_command=comando("src/lakehouse_capas.py", "oro")
+    )
+    documentar = BashOperator(
+        task_id="generar_diccionario_y_diagrama",
+        bash_command=comando("src/generar_diccionario_diagrama.py"),
+    )
+    generar_linaje = BashOperator(
+        task_id="generar_linaje_datos", bash_command=comando("src/generar_linaje.py")
     )
     generar_manifest = BashOperator(
         task_id="generar_run_manifest", bash_command=comando("src/generar_run_manifest.py")
@@ -98,14 +122,23 @@ with DAG(
         task_id="generar_evidencia_documental",
         bash_command=comando("src/generar_evidencia_documental.py"),
     )
-    documentar = BashOperator(
-        task_id="generar_diccionario_y_diagrama",
-        bash_command=comando("src/generar_diccionario_diagrama.py"),
-    )
 
     generar_datos >> cargar_bronce >> preprocesar >> mover_plata
+
     mover_plata >> comparar_favoritismo >> tuning_favoritismo >> entrenar_favoritismo
     mover_plata >> tuning_fraccionamiento >> entrenar_fraccionamiento
-    mover_plata >> analizar_vinculos
-    [entrenar_favoritismo, entrenar_fraccionamiento, analizar_vinculos] >> mover_oro
-    mover_oro >> generar_manifest >> generar_evidencia >> documentar
+
+    mover_plata >> spark_favoritismo
+    mover_plata >> spark_fraccionamiento
+
+    mover_plata >> analizar_vinculos >> graphframes
+
+    [
+        entrenar_favoritismo,
+        entrenar_fraccionamiento,
+        spark_favoritismo,
+        spark_fraccionamiento,
+        graphframes,
+    ] >> mover_oro
+
+    mover_oro >> documentar >> generar_linaje >> generar_manifest >> generar_evidencia
