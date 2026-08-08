@@ -1,0 +1,109 @@
+name: release-candidate
+
+on:
+  workflow_run:
+    workflows: ["audit-anexo3"]
+    types: [completed]
+
+permissions:
+  contents: write
+
+jobs:
+  tag-release-candidate:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Verify audit corresponds to current main
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          EVENT_SHA='${{ github.event.workflow_run.head_sha }}'
+          HEAD_SHA=$(git rev-parse HEAD)
+          PARENT_SHA=$(git rev-parse HEAD^)
+          AUDITED_SHA=$(python - <<'PY'
+          import json
+          from pathlib import Path
+          print(json.loads(Path('outputs/auditoria_release.json').read_text(encoding='utf-8'))['git_commit_auditado'])
+          PY
+          )
+          READY=$(python - <<'PY'
+          import json
+          from pathlib import Path
+          print(str(json.loads(Path('outputs/auditoria_release.json').read_text(encoding='utf-8'))['release_ready']).lower())
+          PY
+          )
+
+          echo "event_sha=$EVENT_SHA"
+          echo "head_sha=$HEAD_SHA"
+          echo "parent_sha=$PARENT_SHA"
+          echo "audited_sha=$AUDITED_SHA"
+
+          if [[ "$READY" != "true" ]]; then
+            echo "Auditoría release_ready=false"
+            exit 1
+          fi
+
+          # El workflow audit-anexo3 persiste su evidencia en un commit [skip ci].
+          # Por ello, para un main sin cambios posteriores, HEAD^ debe ser exactamente
+          # el SHA que audit-anexo3 evaluó y registró.
+          if [[ "$PARENT_SHA" != "$EVENT_SHA" || "$AUDITED_SHA" != "$EVENT_SHA" ]]; then
+            echo "Main avanzó o la evidencia no corresponde a esta auditoría. Se omite el tag; una auditoría posterior lo reintentará."
+            echo "tag_ok=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "tag_ok=true" >> "$GITHUB_OUTPUT"
+
+      - name: Read release version
+        if: steps.gate.outputs.tag_ok == 'true'
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(tr -d '[:space:]' < VERSION)
+          TAG="v$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Create annotated tag
+        if: steps.gate.outputs.tag_ok == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG='${{ steps.version.outputs.tag }}'
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "$TAG ya existe; no se modifica."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG" -m "Release candidate independiente $TAG"
+            git push origin "$TAG"
+          fi
+
+      - name: Publish GitHub prerelease
+        if: steps.gate.outputs.tag_ok == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG='${{ steps.version.outputs.tag }}'
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "GitHub Release $TAG ya existe."
+          else
+            gh release create "$TAG" \
+              --title "$TAG — CGR Simulador / PoC independiente" \
+              --notes-file RELEASE_NOTES.md \
+              --prerelease
+          fi
+
+      - name: Remove temporary development branches
+        if: steps.gate.outputs.tag_ok == 'true'
+        shell: bash
+        run: |
+          git push origin --delete noop-temp-do-not-use release-candidate-work main2 2>/dev/null || true
