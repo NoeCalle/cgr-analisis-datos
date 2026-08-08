@@ -19,7 +19,9 @@ hallazgos, imputaciones ni determinaciones automáticas de irregularidad.
 <!-- RELEASE-CANDIDATE-START -->
 ## Release candidate
 
-Versión declarada del PoC independiente: **`v1.0.0-rc.1`**.
+Último release candidate etiquetado del PoC independiente: **`v1.0.0-rc.1`**.
+
+La etiqueta `v1.0.0-rc.1` permanece congelada en su commit original. `main` puede contener trabajo posterior —por ejemplo, la capa *institution-ready* de integración y serving— sin mover ni reescribir ese tag.
 
 El release candidate se etiqueta únicamente después de superar la cadena CI + auditoría Anexo 3 + auditoría final de coherencia. No representa aprobación ni despliegue institucional de la CGR.
 
@@ -223,6 +225,56 @@ mínimos de Accuracy, F1-Score y AUC-ROC, pero no consigna sus valores numérico
 El PoC reporta esas métricas donde corresponden, pero no inventa umbrales ni
 declara conformidad cuantitativa institucional.
 
+### ✅ Fase institution-ready — Sprint 1: integración de datos desacoplada
+
+La entrada de datos dejó de depender de nombres físicos del PoC. El contrato es:
+
+`fuente física -> connector -> mapping YAML -> esquema canónico -> preprocesamiento/modelos`
+
+La capa incorpora:
+
+- esquema canónico para `contracts`, `suppliers`, `entities`, `officials` y `payments`;
+- conectores `local_csv`, `sqlserver` y `spark_sql`;
+- mappings `campo_canónico: columna_física`, configurables sin editar el ML;
+- modos separados `inference` y `training`;
+- labels canónicos `label_favoritismo` y `label_fraccionamiento`, obligatorios solo en TRAIN;
+- validación de configuración sin conectarse a la infraestructura;
+- rechazo de secrets inline y uso de referencias a variables de entorno;
+- preservación de IDs textuales, incluidos ceros a la izquierda.
+
+La plantilla `config/cgr.example.yaml` contiene únicamente placeholders y **no pretende representar tablas o columnas reales de la CGR**. La guía está en `docs/Integracion_Datos.md`.
+
+### ✅ Fase institution-ready — Sprint 2: TRAIN / INFERENCE separados
+
+El flujo operacional ya no reentrena al puntuar contratos. Se separaron tres responsabilidades:
+
+```text
+TRAIN -> candidate -> promoción explícita -> champion
+                                      |
+                                      +-> INFERENCE sin labels, fit ni tuning
+```
+
+El Sprint 2 incorpora:
+
+- FIT del preprocesamiento únicamente durante TRAIN;
+- estado de imputación/P99 persistido junto al modelo y reutilizado en INFERENCE;
+- feature engineering capaz de operar sin labels;
+- `config/local-training.yaml` como fuente TRAIN reproducible;
+- `src/entrenar_candidatos.py`, que solo genera candidate;
+- `src/registro_modelos.py` con hashes SHA-256 y estado candidate/champion;
+- `src/promover_candidato.py`, cuya promoción requiere confirmación explícita de alcance PoC;
+- `src/score_inference.py`, sin `.fit()`, tuning ni constructores de entrenamiento;
+- `outputs/model_registry.json` como registry técnico reproducible del PoC;
+- binarios champion separados en `outputs/champions/`;
+- rankings detallados de inference bajo `outputs/runtime/`, no versionados;
+- smoke agregado en `outputs/inference_smoke_summary.json`.
+
+La promoción registrada mantiene `institutional_approval=false`: seleccionar un champion para el smoke técnico **no equivale a una aprobación CGR**.
+
+Durante este sprint se detectó además un comportamiento legacy de imputación: filas con `objeto` nulo podían perder un `monto` válido debido al `groupby().transform()` histórico. La ruta de reproducibilidad conserva esa semántica únicamente para reconstruir las métricas congeladas del RC1; TRAIN/INFERENCE nuevos preservan el monto observado. El detalle y la justificación están en `docs/Train_Inference.md`.
+
+La ejecución CI de cierre verificó 3,709 contratos de entrada, 2,328 scores de favoritismo y 180 scores de fraccionamiento, con `labels_consumed=false`, `training_invoked=false`, `tuning_invoked=false` y verificación íntegra de los hashes champion.
+
 ### ✅ Documentación reproducible
 
 La documentación ya no mantiene cifras independientes escritas a mano. El flujo
@@ -235,14 +287,15 @@ es:
 | Área TDR | Estado PoC |
 |---|---|
 | EDA y calidad de datos | Implementado |
-| Feature engineering | Implementado y endurecido |
+| Integración de fuentes | **Contrato canónico + YAML + CSV/SQL Server/Spark SQL; conexión institucional pendiente** |
+| Feature engineering | Implementado, endurecido y reutilizable sin labels en serving |
 | Favoritismo supervisado | Benchmark OOF/tuning/SHAP + Spark MLlib en CI |
 | Fraccionamiento no supervisado | Isolation Forest con holdout + Spark MLlib KMeans |
 | Spark MLlib | **Ejecutado en CI con Spark real `local[*]`; clúster CGR pendiente** |
 | Grafos | NetworkX de referencia + **GraphFrames ejecutado en CI** |
-| Airflow | DAG principal + monitoreo; ramas sklearn y Spark |
+| Airflow | **DAG de reproducibilidad + DAG TRAIN candidate + DAG INFERENCE champion separados** |
 | Bronce / Plata / Oro | Simulación funcional; Datamart/Lakehouse CGR pendiente |
-| Autoevaluación | Modelo candidato; promoción requiere revisión humana |
+| MLOps / promoción | **Candidate/champion + hashes + promoción explícita PoC; autoridad/registry institucional CGR pendiente** |
 | SSRS | **Contrato T-SQL + 2 RDL + publicación local validada; servidor CGR pendiente** |
 | Linaje / diccionario | Diccionario + diagrama + linaje explícito + manifest |
 | Formato documental Anexo 1 | **Implementado y validado; logo oficial reservado para contexto institucional** |
@@ -253,17 +306,21 @@ es:
 ## Estructura
 
 ```text
-src/                         Python principal
+config/                      Configuración de integración TRAIN/INFERENCE
+src/                         Python principal + integración + registry/serving
+src/connectors/              CSV, SQL Server y Spark SQL
+src/core/                    Esquemas y validación canónica
 src/spark/                   Spark MLlib, GraphFrames, Delta, SQL, streaming, HMS
-airflow_home/dags/           DAG principal + monitoreo
+airflow_home/dags/           Reproducibilidad + TRAIN + INFERENCE + monitoreo
 lakehouse/bronce/            Ingesta cruda simulada
 lakehouse/plata/             Datos limpios/features consumidos por modelos
 lakehouse/oro/               Solo salidas para reporting/integración
 ssrs/                        DDL T-SQL + RDL + contrato de publicación PoC
 reporte/                     Generadores + Productos 1–7 + Informe Final
-docs/                        Checklist, dependencias CGR y auditoría final
+docs/                        Integración, serving, checklist, dependencias y auditoría
+outputs/champions/           Artefactos champion del smoke técnico PoC
 outputs/                     Evidencia, rankings, tuning, manifests y linaje
-tests/                       Pruebas de regresión y contrato SSRS
+tests/                       Regresiones, contratos de datos, serving y SSRS
 .github/workflows/           CI end-to-end + auditorías + prerelease
 ```
 
@@ -299,38 +356,89 @@ export AIRFLOW_HOME="$PWD/airflow_home"
 ```
 
 GitHub Actions ejecuta además generación sintética, Bronce/Plata, benchmark
-sklearn, Spark MLlib, GraphFrames, SQL Spark, Oro, diccionario, linaje,
+sklearn, **TRAIN candidate aislado, promoción PoC explícita, INFERENCE sin labels**, Spark MLlib, GraphFrames, SQL Spark, Oro, diccionario, linaje,
 manifiesto, documentación formal, contrato SSRS y auditoría del Anexo 3.
 
-### Pipeline Airflow
+### Integración canónica
+
+Validar una configuración sin conectarse:
 
 ```bash
-.venv_airflow/bin/airflow dags test modulo_analisis_datos_1_8_2
+python src/ingestar_canonico.py --config config/cgr.example.yaml --validate-only
+```
+
+Preview local:
+
+```bash
+python src/ingestar_canonico.py --config config/local.yaml
+```
+
+### TRAIN, promoción e INFERENCE
+
+TRAIN genera candidate y no modifica champion:
+
+```bash
+python src/entrenar_candidatos.py --config config/local-training.yaml
+```
+
+Promoción explícita del candidate al champion **solo para el PoC**:
+
+```bash
+python src/promover_candidato.py \
+  --manifest outputs/runtime/model_candidates/candidate_manifest.json \
+  --approved-by "operador técnico del PoC" \
+  --acknowledge-poc-only
+```
+
+Scoring sin labels ni reentrenamiento:
+
+```bash
+python src/score_inference.py \
+  --config config/local.yaml \
+  --registry outputs/model_registry.json
+```
+
+### Airflow: tres carriles
+
+Reproducibilidad integral del PoC:
+
+```bash
+.venv_airflow/bin/airflow dags test reproducibilidad_poc_1_8_2
+```
+
+TRAIN candidate:
+
+```bash
+.venv_airflow/bin/airflow dags test entrenamiento_candidato_1_8_2
+```
+
+INFERENCE champion:
+
+```bash
+.venv_airflow/bin/airflow dags test inferencia_modelos_1_8_2
 ```
 
 ```text
-fuentes -> Bronce -> preprocesamiento/features -> Plata
-                    |-> sklearn favoritismo -> tuning -> modelo
-                    |-> sklearn fraccionamiento -> tuning/holdout -> modelo
-                    |-> Spark MLlib favoritismo
-                    |-> Spark MLlib fraccionamiento
+REPRODUCIBILIDAD:
+sintético -> Bronce -> preprocesamiento/features -> Plata
+                    |-> sklearn benchmark/tuning
+                    |-> Spark MLlib
                     |-> NetworkX -> GraphFrames
                                       ↓
                                      Oro
                                       ↓
-                           diccionario + diagrama
-                                      ↓
-                               linaje_datos.csv
-                                      ↓
-                              run_manifest.json
-                                      ↓
-                         evidencia_documental.json
-                                      ↓
-                           DOCX + índice paginado
-                                      ↓
-                             QA DOCX / PDF
-                                      ↓
-                         SSRS contract + Anexo 3
+                          trazabilidad + documentos
+
+TRAIN:
+histórico + ground truth -> integración canónica -> FIT preprocesador
+    -> features -> entrenamiento -> candidate
+
+PROMOCIÓN:
+candidate -> validación hashes -> comando explícito -> champion
+
+INFERENCE:
+contratos actuales sin labels -> integración canónica -> champion
+    -> TRANSFORM congelado -> features -> scores -> outputs/runtime
 ```
 
 ## Datos reales OCDS/OECE
