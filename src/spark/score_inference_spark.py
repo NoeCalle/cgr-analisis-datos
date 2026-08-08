@@ -5,7 +5,8 @@ Contrato:
   -> feature engineering Spark -> modelos champion MLlib -> rankings runtime
 
 No contiene fit, tuning ni requiere labels. Los artefactos champion se verifican
-por SHA-256 antes y después del scoring.
+por SHA-256 antes y después del scoring. Sprint 4 usa ``monto_capped`` en
+favoritismo, idéntico al TRAIN operacional promovido.
 """
 
 from __future__ import annotations
@@ -48,6 +49,7 @@ from spark.preprocesamiento_serving_spark import (
 )
 
 DEFAULT_OUTPUT_DIR = Path("outputs/runtime/inference_spark/latest")
+FAVORITISMO_MONTO_OPERACIONAL = "monto_capped"
 
 
 def ejecutar_inference_spark(
@@ -84,7 +86,11 @@ def ejecutar_inference_spark(
         raw_spark = pandas_a_spark(spark, contracts)
         procesado = aplicar_preprocesamiento_congelado(raw_spark, estado)
 
-        fav_features = construir_features_favoritismo(procesado, label_col=None)
+        fav_features = construir_features_favoritismo(
+            procesado,
+            label_col=None,
+            monto_col=FAVORITISMO_MONTO_OPERACIONAL,
+        )
         expected_fav = registry["models"]["favoritismo"]["features"]
         faltan_fav = sorted(set(expected_fav) - set(fav_features.columns))
         if faltan_fav:
@@ -151,6 +157,8 @@ def ejecutar_inference_spark(
             "contracts_rows": int(len(contracts)),
             "favoritismo_scored_rows": int(len(ranking_fav)),
             "fraccionamiento_scored_rows": int(len(ranking_frac)),
+            "favoritismo_amount_source": FAVORITISMO_MONTO_OPERACIONAL,
+            "fraccionamiento_amount_source": "monto",
             "labels_consumed": False,
             "training_invoked": False,
             "tuning_invoked": False,
