@@ -244,7 +244,7 @@ La plantilla `config/cgr.example.yaml` contiene únicamente placeholders y **no 
 
 ### ✅ Fase institution-ready — Sprint 2: TRAIN / INFERENCE separados
 
-El flujo operacional ya no reentrena al puntuar contratos. Se separaron tres responsabilidades:
+El flujo operacional dejó de reentrenar al puntuar contratos. Sprint 2 introdujo el contrato explícito:
 
 ```text
 TRAIN -> candidate -> promoción explícita -> champion
@@ -252,26 +252,35 @@ TRAIN -> candidate -> promoción explícita -> champion
                                       +-> INFERENCE sin labels, fit ni tuning
 ```
 
-El Sprint 2 incorpora:
+Incorpora FIT de preprocesamiento solo en TRAIN, estado congelado, feature engineering sin labels, promoción separada y verificación SHA-256. La primera implementación de serving se realizó con sklearn y se conserva ahora como **perfil de benchmark/compatibilidad**, no como ruta operacional objetivo.
 
-- FIT del preprocesamiento únicamente durante TRAIN;
-- estado de imputación/P99 persistido junto al modelo y reutilizado en INFERENCE;
-- feature engineering capaz de operar sin labels;
-- `config/local-training.yaml` como fuente TRAIN reproducible;
-- `src/entrenar_candidatos.py`, que solo genera candidate;
-- `src/registro_modelos.py` con hashes SHA-256 y estado candidate/champion;
-- `src/promover_candidato.py`, cuya promoción requiere confirmación explícita de alcance PoC;
-- `src/score_inference.py`, sin `.fit()`, tuning ni constructores de entrenamiento;
-- `outputs/model_registry.json` como registry técnico reproducible del PoC;
-- binarios champion separados en `outputs/champions/`;
-- rankings detallados de inference bajo `outputs/runtime/`, no versionados;
-- smoke agregado en `outputs/inference_smoke_summary.json`.
+Durante este sprint se detectó además un comportamiento legacy de imputación: filas con `objeto` nulo podían perder un `monto` válido debido al `groupby().transform()` histórico. La ruta de reproducibilidad conserva esa semántica únicamente para reconstruir las métricas congeladas del RC1; TRAIN/INFERENCE nuevos preservan el monto observado. El detalle está en `docs/Train_Inference.md`.
 
-La promoción registrada mantiene `institutional_approval=false`: seleccionar un champion para el smoke técnico **no equivale a una aprobación CGR**.
+### ✅ Fase institution-ready — Sprint 3: serving Spark MLlib + registry unificado
 
-Durante este sprint se detectó además un comportamiento legacy de imputación: filas con `objeto` nulo podían perder un `monto` válido debido al `groupby().transform()` histórico. La ruta de reproducibilidad conserva esa semántica únicamente para reconstruir las métricas congeladas del RC1; TRAIN/INFERENCE nuevos preservan el monto observado. El detalle y la justificación están en `docs/Train_Inference.md`.
+La ruta operacional del PoC ya no depende de sklearn para scoring. El registry técnico evolucionó a `schema_version: 2` y mantiene dos perfiles explícitos:
 
-La ejecución CI de cierre verificó 3,709 contratos de entrada, 2,328 scores de favoritismo y 180 scores de fraccionamiento, con `labels_consumed=false`, `training_invoked=false`, `tuning_invoked=false` y verificación íntegra de los hashes champion.
+```text
+serving_profiles
+├── sklearn       -> benchmark / compatibilidad
+└── spark_mllib   -> active_serving_profile
+```
+
+El Sprint 3 incorpora:
+
+- TRAIN Spark operacional separado de la reconstrucción legacy, evitando *train-serving skew*;
+- estado de preprocesamiento corregido persistido como JSON framework-neutral;
+- `src/spark/preprocesamiento_serving_spark.py` como TRANSFORM puro, sin `.fit()`;
+- `src/spark/entrenar_candidato_spark.py`, que genera candidate MLlib y no toca el champion;
+- `src/promover_candidato_spark.py`, con promoción explícita y reconocimiento obligatorio de alcance PoC;
+- champion de favoritismo como `RandomForestClassificationModel` de MLlib;
+- champion de fraccionamiento como `StandardScalerModel + KMeansModel` de MLlib;
+- hashes SHA-256 determinísticos para archivos y directorios de modelos Spark;
+- `src/spark/score_inference_spark.py`, que carga únicamente modelos MLlib ya promovidos;
+- DAG TRAIN operacional y DAG INFERENCE operacional apuntando a Spark MLlib;
+- perfil sklearn preservado para comparación/regresión sin recuperar automáticamente el rol activo.
+
+El smoke end-to-end vigente procesa **3,709 contratos**, produce **2,328 scores de favoritismo** y **180 de fraccionamiento**, con `labels_consumed=false`, `training_invoked=false`, `tuning_invoked=false`, `sklearn_serving_dependency=false` y verificación íntegra del champion. La ejecución sigue siendo Spark real en `local[*]`; el clúster, HDFS/YARN, seguridad y operación institucional continúan siendo dependencias CGR.
 
 ### ✅ Documentación reproducible
 
@@ -287,13 +296,13 @@ es:
 | EDA y calidad de datos | Implementado |
 | Integración de fuentes | **Contrato canónico + YAML + CSV/SQL Server/Spark SQL; conexión institucional pendiente** |
 | Feature engineering | Implementado, endurecido y reutilizable sin labels en serving |
-| Favoritismo supervisado | Benchmark OOF/tuning/SHAP + Spark MLlib en CI |
-| Fraccionamiento no supervisado | Isolation Forest con holdout + Spark MLlib KMeans |
-| Spark MLlib | **Ejecutado en CI con Spark real `local[*]`; clúster CGR pendiente** |
+| Favoritismo supervisado | Benchmark OOF/tuning/SHAP + **champion Spark MLlib para serving PoC** |
+| Fraccionamiento no supervisado | Holdout sklearn de referencia + **StandardScaler/KMeans MLlib para serving PoC** |
+| Spark MLlib | **Reproducibilidad + TRAIN candidate + champion/inference ejecutados con Spark real `local[*]`; clúster CGR pendiente** |
 | Grafos | NetworkX de referencia + **GraphFrames ejecutado en CI** |
-| Airflow | **DAG de reproducibilidad + DAG TRAIN candidate + DAG INFERENCE champion separados** |
+| Airflow | **DAG de reproducibilidad + DAG TRAIN Spark candidate + DAG INFERENCE Spark champion separados** |
 | Bronce / Plata / Oro | Simulación funcional; Datamart/Lakehouse CGR pendiente |
-| MLOps / promoción | **Candidate/champion + hashes + promoción explícita PoC; autoridad/registry institucional CGR pendiente** |
+| MLOps / promoción | **Registry schema 2, perfiles sklearn/Spark, hashes y promoción explícita PoC; autoridad/registry institucional CGR pendiente** |
 | SSRS | **Contrato T-SQL + 2 RDL + publicación local validada; servidor CGR pendiente** |
 | Linaje / diccionario | Diccionario + diagrama + linaje explícito + manifest |
 | Formato documental Anexo 1 | **Implementado y validado; logo oficial reservado para contexto institucional** |
@@ -308,16 +317,18 @@ config/                      Configuración de integración TRAIN/INFERENCE
 src/                         Python principal + integración + registry/serving
 src/connectors/              CSV, SQL Server y Spark SQL
 src/core/                    Esquemas y validación canónica
-src/spark/                   Spark MLlib, GraphFrames, Delta, SQL, streaming, HMS
+src/spark/                   Spark MLlib, serving, GraphFrames, Delta, SQL, streaming, HMS
 airflow_home/dags/           Reproducibilidad + TRAIN + INFERENCE + monitoreo
 lakehouse/bronce/            Ingesta cruda simulada
-lakehouse/plata/             Datos limpios/features consumidos por modelos
-lakehouse/oro/               Solo salidas para reporting/integración
+lakehouse/plata/             Datos limpios/features de reproducibilidad
+lakehouse/oro/               Salidas para reporting/integración
 ssrs/                        DDL T-SQL + RDL + contrato de publicación PoC
 reporte/                     Generadores + Productos 1–7 + Informe Final
 docs/                        Integración, serving, checklist, dependencias y auditoría
-outputs/champions/           Artefactos champion del smoke técnico PoC
-outputs/                     Evidencia, rankings, tuning, manifests y linaje
+outputs/champions/           Champion sklearn de compatibilidad
+outputs/champions_spark/     Champion Spark MLlib activo del PoC
+outputs/runtime/             Candidates y rankings operacionales no versionados
+outputs/                     Evidencia, tuning, manifests, registry y linaje
 tests/                       Regresiones, contratos de datos, serving y SSRS
 .github/workflows/           CI end-to-end + auditorías + prerelease
 ```
@@ -353,9 +364,7 @@ export AIRFLOW_HOME="$PWD/airflow_home"
 .venv/bin/pytest -q
 ```
 
-GitHub Actions ejecuta además generación sintética, Bronce/Plata, benchmark
-sklearn, **TRAIN candidate aislado, promoción PoC explícita, INFERENCE sin labels**, Spark MLlib, GraphFrames, SQL Spark, Oro, diccionario, linaje,
-manifiesto, documentación formal, contrato SSRS y auditoría del Anexo 3.
+GitHub Actions ejecuta generación sintética y reproducibilidad legacy, benchmark sklearn, regresión del perfil sklearn de compatibilidad, Spark MLlib/GraphFrames, **TRAIN Spark candidate aislado, promoción PoC explícita e INFERENCE Spark sin labels/reentrenamiento**, Oro, diccionario, linaje, manifiesto, documentación formal, contrato SSRS y auditoría del Anexo 3.
 
 ### Integración canónica
 
@@ -371,30 +380,33 @@ Preview local:
 python src/ingestar_canonico.py --config config/local.yaml
 ```
 
-### TRAIN, promoción e INFERENCE
+### TRAIN, promoción e INFERENCE — ruta operacional Spark
 
-TRAIN genera candidate y no modifica champion:
+TRAIN genera un candidate Spark y **no modifica el champion**:
 
 ```bash
-python src/entrenar_candidatos.py --config config/local-training.yaml
+python src/spark/entrenar_candidato_spark.py \
+  --config config/local-training.yaml
 ```
 
-Promoción explícita del candidate al champion **solo para el PoC**:
+Promoción explícita del candidate Spark al champion técnico **solo para el PoC**:
 
 ```bash
-python src/promover_candidato.py \
-  --manifest outputs/runtime/model_candidates/candidate_manifest.json \
+python src/promover_candidato_spark.py \
+  --manifest outputs/runtime/spark_model_candidates/candidate_manifest.json \
   --approved-by "operador técnico del PoC" \
   --acknowledge-poc-only
 ```
 
-Scoring sin labels ni reentrenamiento:
+Scoring MLlib sin labels, fit, tuning ni reentrenamiento:
 
 ```bash
-python src/score_inference.py \
+python src/spark/score_inference_spark.py \
   --config config/local.yaml \
   --registry outputs/model_registry.json
 ```
+
+La ruta sklearn (`src/entrenar_candidatos.py`, `src/promover_candidato.py`, `src/score_inference.py`) permanece disponible para benchmark, compatibilidad y regresión del Sprint 2; no es el perfil activo de serving.
 
 ### Airflow: tres carriles
 
@@ -404,39 +416,41 @@ Reproducibilidad integral del PoC:
 .venv_airflow/bin/airflow dags test reproducibilidad_poc_1_8_2
 ```
 
-TRAIN candidate:
+TRAIN Spark candidate:
 
 ```bash
 .venv_airflow/bin/airflow dags test entrenamiento_candidato_1_8_2
 ```
 
-INFERENCE champion:
+INFERENCE Spark champion:
 
 ```bash
 .venv_airflow/bin/airflow dags test inferencia_modelos_1_8_2
 ```
 
 ```text
-REPRODUCIBILIDAD:
-sintético -> Bronce -> preprocesamiento/features -> Plata
+REPRODUCIBILIDAD LEGACY:
+sintético -> Bronce -> preprocesamiento histórico -> Plata
                     |-> sklearn benchmark/tuning
-                    |-> Spark MLlib
+                    |-> Spark MLlib de evidencia
                     |-> NetworkX -> GraphFrames
                                       ↓
                                      Oro
                                       ↓
                           trazabilidad + documentos
 
-TRAIN:
-histórico + ground truth -> integración canónica -> FIT preprocesador
-    -> features -> entrenamiento -> candidate
+TRAIN OPERACIONAL:
+histórico + ground truth -> integración canónica
+    -> FIT preprocesador corregido -> JSON congelado
+    -> features Spark -> entrenamiento MLlib -> candidate Spark
 
 PROMOCIÓN:
-candidate -> validación hashes -> comando explícito -> champion
+candidate Spark -> validación hashes -> comando explícito -> champion spark_mllib
 
-INFERENCE:
-contratos actuales sin labels -> integración canónica -> champion
-    -> TRANSFORM congelado -> features -> scores -> outputs/runtime
+INFERENCE OPERACIONAL:
+contratos actuales sin labels -> integración canónica
+    -> champion spark_mllib -> TRANSFORM congelado
+    -> features Spark -> Model.load -> scores -> outputs/runtime
 ```
 
 ## Datos reales OCDS/OECE
