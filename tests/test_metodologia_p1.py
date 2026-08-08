@@ -1,4 +1,4 @@
-"""Pruebas de regresión para correcciones metodológicas P1/Sprint A."""
+"""Pruebas de regresión para correcciones metodológicas P1/Sprint A/Sprint C."""
 
 import sys
 from pathlib import Path
@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from autoevaluacion import UMBRAL_RECALL_MINIMO, dividir_lote_para_reentrenamiento
 from generar_diccionario_diagrama import DICCIONARIO
+from modelo_fraccionamiento import SENAL_PRIORIZACION, regla_interpretable
 from preprocesamiento import codificar_y_normalizar, features_favoritismo
 
 
@@ -71,3 +72,16 @@ def test_diccionario_no_reintroduce_nombres_obsoletos():
     assert "pct_contratacion_directa" in texto
     assert "pct_comparacion_precios" in texto
     assert "senal_priorizacion_fraccionamiento" in texto
+
+
+def test_regla_fraccionamiento_publica_solo_nombre_canonico():
+    df = pd.DataFrame([
+        {"max_contratos_ventana_15d": 3, "pct_montos_bajo_umbral": 0.8},
+        {"max_contratos_ventana_15d": 1, "pct_montos_bajo_umbral": 0.2},
+    ])
+    out = regla_interpretable(df)
+
+    assert SENAL_PRIORIZACION == "senal_priorizacion_fraccionamiento"
+    assert SENAL_PRIORIZACION in out.columns
+    assert "cumple_regla_fraccionamiento" not in out.columns
+    assert out[SENAL_PRIORIZACION].tolist() == [True, False]
