@@ -12,11 +12,9 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
 
-import pandas as pd
 from pyspark.ml.classification import RandomForestClassificationModel
 from pyspark.ml.clustering import KMeansModel
 from pyspark.ml.feature import StandardScalerModel
@@ -44,70 +42,12 @@ from spark.modelo_fraccionamiento_spark import (
     construir_features_ventana_desde_df,
     puntuar_con_modelos,
 )
+from spark.preprocesamiento_serving_spark import (
+    aplicar_preprocesamiento_congelado,
+    pandas_a_spark,
+)
 
 DEFAULT_OUTPUT_DIR = Path("outputs/runtime/inference_spark/latest")
-
-
-def _pandas_a_spark(spark, df: pd.DataFrame):
-    serializable = df.copy()
-    for col in serializable.columns:
-        if pd.api.types.is_datetime64_any_dtype(serializable[col]):
-            serializable[col] = serializable[col].dt.strftime("%Y-%m-%d %H:%M:%S")
-    serializable = serializable.astype(object).where(pd.notna(serializable), None)
-    return spark.createDataFrame(serializable.to_dict("records"))
-
-
-def aplicar_preprocesamiento_congelado(df, estado: dict):
-    if estado.get("schema_version") != 1:
-        raise ValueError(
-            f"Preprocesador JSON incompatible: schema_version={estado.get('schema_version')!r}"
-        )
-
-    medianas = estado.get("monto_mediana_por_objeto", {})
-    if medianas:
-        entries = []
-        for key, value in sorted(medianas.items()):
-            entries.extend([F.lit(str(key)), F.lit(float(value))])
-        mapa_mediana = F.create_map(*entries)
-        mediana_objeto = mapa_mediana[F.col("objeto").cast("string")]
-    else:
-        mediana_objeto = F.lit(None).cast("double")
-
-    monto_observado = F.col("monto").cast("double")
-    out = df.withColumn(
-        "monto",
-        F.coalesce(
-            monto_observado,
-            mediana_objeto,
-            F.lit(float(estado["monto_mediana_global"])),
-        ),
-    )
-    out = out.withColumn(
-        "modalidad",
-        F.coalesce(F.col("modalidad").cast("string"), F.lit(str(estado["modalidad_moda"]))),
-    )
-    out = out.withColumn(
-        "objeto",
-        F.coalesce(F.col("objeto").cast("string"), F.lit(str(estado["objeto_moda"]))),
-    )
-    out = out.withColumn(
-        "monto_capped",
-        F.least(F.col("monto"), F.lit(float(estado["monto_p99"]))),
-    )
-    if "id_funcionario" not in out.columns:
-        out = out.withColumn("id_funcionario", F.lit("__NO_DISPONIBLE__"))
-    else:
-        out = out.withColumn(
-            "id_funcionario",
-            F.coalesce(F.col("id_funcionario").cast("string"), F.lit("__NO_DISPONIBLE__")),
-        )
-    out = out.withColumn(
-        "es_contratacion_directa", F.col("modalidad") == F.lit("Contratación Directa")
-    )
-    out = out.withColumn(
-        "es_comparacion_precios", F.col("modalidad") == F.lit("Comparación de Precios")
-    )
-    return out
 
 
 def ejecutar_inference_spark(
@@ -141,13 +81,11 @@ def ejecutar_inference_spark(
     spark.sparkContext.setLogLevel("ERROR")
     spark.sparkContext.addPyFile(str(SRC_DIR / "umbrales_normativos.py"))
     try:
-        raw_spark = _pandas_a_spark(spark, contracts)
+        raw_spark = pandas_a_spark(spark, contracts)
         procesado = aplicar_preprocesamiento_congelado(raw_spark, estado)
 
         fav_features = construir_features_favoritismo(procesado, label_col=None)
         expected_fav = registry["models"]["favoritismo"]["features"]
-        if expected_fav != list(expected_fav):
-            raise ValueError("Feature schema Spark favoritismo inválido en registry.")
         faltan_fav = sorted(set(expected_fav) - set(fav_features.columns))
         if faltan_fav:
             raise ValueError(f"Faltan features Spark de favoritismo: {faltan_fav}")
