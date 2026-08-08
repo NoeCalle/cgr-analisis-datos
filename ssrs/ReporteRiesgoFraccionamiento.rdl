@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  RDL SSRS para señales de priorización de posible fraccionamiento.
+  PoC independiente: requiere SQL Server/SSRS institucional para despliegue real.
+-->
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition"
+        xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <DataSources>
+    <DataSource Name="CGR_SQLServer">
+      <ConnectionProperties>
+        <DataProvider>SQL</DataProvider>
+        <ConnectString>Data Source=SRV-CGR-SQL;Initial Catalog=ModuloAnalisisDatos_1_8_2</ConnectString>
+      </ConnectionProperties>
+      <rd:SecurityType>Integrated</rd:SecurityType>
+    </DataSource>
+  </DataSources>
+
+  <DataSets>
+    <DataSet Name="DatasetFraccionamiento">
+      <Query>
+        <DataSourceName>CGR_SQLServer</DataSourceName>
+        <CommandText>
+          SELECT id_proveedor, id_entidad, objeto, max_contratos_ventana,
+                 pct_bajo_umbral, score_anomalia, senal_priorizacion
+          FROM dbo.vw_SSRS_Fraccionamiento
+          WHERE score_anomalia &gt;= @ScoreMinimo
+          ORDER BY score_anomalia DESC
+        </CommandText>
+        <QueryParameters>
+          <QueryParameter Name="@ScoreMinimo">
+            <Value>=Parameters!ScoreMinimo.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+      </Query>
+      <Fields>
+        <Field Name="id_proveedor"><DataField>id_proveedor</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="id_entidad"><DataField>id_entidad</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="objeto"><DataField>objeto</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="max_contratos_ventana"><DataField>max_contratos_ventana</DataField><rd:TypeName>System.Int32</rd:TypeName></Field>
+        <Field Name="pct_bajo_umbral"><DataField>pct_bajo_umbral</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        <Field Name="score_anomalia"><DataField>score_anomalia</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        <Field Name="senal_priorizacion"><DataField>senal_priorizacion</DataField><rd:TypeName>System.Boolean</rd:TypeName></Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+
+  <ReportParameters>
+    <ReportParameter Name="ScoreMinimo">
+      <DataType>Float</DataType>
+      <DefaultValue><Values><Value>0</Value></Values></DefaultValue>
+      <Prompt>Score mínimo de anomalía</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+
+  <Body>
+    <ReportItems>
+      <Textbox Name="Titulo">
+        <CanGrow>true</CanGrow>
+        <Value>Señales de Priorización — Posible Fraccionamiento — Proyecto Interno 1.8.2</Value>
+        <Style><FontSize>14pt</FontSize><FontWeight>Bold</FontWeight></Style>
+        <Top>0in</Top><Left>0in</Left><Height>0.35in</Height><Width>10in</Width>
+      </Textbox>
+
+      <Textbox Name="Nota">
+        <CanGrow>true</CanGrow>
+        <Value>Las filas son señales para revisión humana; no constituyen hallazgos ni determinaciones automáticas de fraccionamiento.</Value>
+        <Style><FontSize>9pt</FontSize><FontStyle>Italic</FontStyle></Style>
+        <Top>0.38in</Top><Left>0in</Left><Height>0.35in</Height><Width>10in</Width>
+      </Textbox>
+
+      <Tablix Name="TablixFraccionamiento">
+        <Top>0.8in</Top><Left>0in</Left><Height>2.5in</Height><Width>10in</Width>
+        <TablixCorner />
+        <TablixBody>
+          <TablixColumns>
+            <TablixColumn><Width>1.15in</Width></TablixColumn>
+            <TablixColumn><Width>1.15in</Width></TablixColumn>
+            <TablixColumn><Width>3.1in</Width></TablixColumn>
+            <TablixColumn><Width>1.35in</Width></TablixColumn>
+            <TablixColumn><Width>1.25in</Width></TablixColumn>
+            <TablixColumn><Width>1.05in</Width></TablixColumn>
+            <TablixColumn><Width>0.95in</Width></TablixColumn>
+          </TablixColumns>
+          <TablixRows>
+            <TablixRow>
+              <Height>0.35in</Height>
+              <TablixCells>
+                <TablixCell><CellContents><Textbox Name="HdrProveedor"><Value>Proveedor</Value><Style><FontWeight>Bold</FontWeight><BackgroundColor>#1F4E79</BackgroundColor><Color>White</Color></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="HdrEntidad"><Value>Entidad</Value><Style><FontWeight>Bold</FontWeight><BackgroundColor>#1F4E79</BackgroundColor><Color>White</Color></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="HdrObjeto"><Value>Objeto</Value><Style><FontWeight>Bold</FontWeight><BackgroundColor>#1F4E79</BackgroundColor><Color>White</Color></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="HdrVentana"><Value>Máx. contratos / 15d</Value><Style><FontWeight>Bold</FontWeight><BackgroundColor>#1F4E79</BackgroundColor><Color>White</Color></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="HdrPct"><Value>% bajo umbral</Value><Style><FontWeight>Bold</FontWeight><BackgroundColor>#1F4E79</BackgroundColor><Color>White</Color></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="HdrScore"><Value>Score anomalía</Value><Style><FontWeight>Bold</FontWeight><BackgroundColor>#1F4E79</BackgroundColor><Color>White</Color></Style></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="HdrSenal"><Value>Señal</Value><Style><FontWeight>Bold</FontWeight><BackgroundColor>#1F4E79</BackgroundColor><Color>White</Color></Style></Textbox></CellContents></TablixCell>
+              </TablixCells>
+            </TablixRow>
+            <TablixRow>
+              <Height>0.25in</Height>
+              <TablixCells>
+                <TablixCell><CellContents><Textbox Name="TxtProveedor"><Value>=Fields!id_proveedor.Value</Value></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TxtEntidad"><Value>=Fields!id_entidad.Value</Value></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TxtObjeto"><Value>=Fields!objeto.Value</Value></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TxtVentana"><Value>=Fields!max_contratos_ventana.Value</Value></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TxtPct"><Value>=FormatPercent(Fields!pct_bajo_umbral.Value)</Value></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TxtScore"><Value>=FormatNumber(Fields!score_anomalia.Value, 4)</Value></Textbox></CellContents></TablixCell>
+                <TablixCell><CellContents><Textbox Name="TxtSenal"><Value>=IIF(Fields!senal_priorizacion.Value, "Sí", "No")</Value><Style><BackgroundColor>=IIF(Fields!senal_priorizacion.Value, "#FFF2CC", "White")</BackgroundColor></Style></Textbox></CellContents></TablixCell>
+              </TablixCells>
+            </TablixRow>
+          </TablixRows>
+        </TablixBody>
+        <TablixRowHierarchy>
+          <TablixMembers>
+            <TablixMember />
+            <TablixMember>
+              <Group Name="DetalleFraccionamiento">
+                <GroupExpressions>
+                  <GroupExpression>=Fields!id_proveedor.Value &amp; Fields!id_entidad.Value &amp; Fields!objeto.Value</GroupExpression>
+                </GroupExpressions>
+              </Group>
+              <SortExpressions>
+                <SortExpression><Value>=Fields!score_anomalia.Value</Value><Direction>Descending</Direction></SortExpression>
+              </SortExpressions>
+            </TablixMember>
+          </TablixMembers>
+        </TablixRowHierarchy>
+        <TablixColumnHierarchy>
+          <TablixMembers>
+            <TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember /><TablixMember />
+          </TablixMembers>
+        </TablixColumnHierarchy>
+        <DataSetName>DatasetFraccionamiento</DataSetName>
+      </Tablix>
+    </ReportItems>
+    <Height>3.5in</Height>
+  </Body>
+
+  <Width>10in</Width>
+  <Page>
+    <PageHeight>8.5in</PageHeight><PageWidth>11in</PageWidth>
+    <LeftMargin>0.5in</LeftMargin><RightMargin>0.5in</RightMargin>
+    <TopMargin>0.5in</TopMargin><BottomMargin>0.5in</BottomMargin>
+  </Page>
+</Report>
