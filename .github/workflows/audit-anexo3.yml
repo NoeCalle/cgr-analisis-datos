@@ -36,6 +36,9 @@ jobs:
       - name: Generate Annex 3 checklist
         run: python src/generar_checklist_anexo3.py
 
+      - name: Audit complete public TDR
+        run: python src/auditar_tdr_completo.py
+
       - name: Synchronize README release status
         run: |
           python - <<'PY'
@@ -63,7 +66,6 @@ jobs:
 
           **Regla de congelamiento:** 0 criterios 🔴 y 0 checks fallidos en la auditoría de release.
           {end}'''
-          # El heredoc está indentado por YAML; normalizamos la sangría del bloque.
           block = '\n'.join(line.strip() if line.startswith('          ') else line for line in block.splitlines())
 
           if start in text and end in text:
@@ -78,7 +80,7 @@ jobs:
 
           text = text.replace(
               'docs/                        Checklist auditable del Anexo 3',
-              'docs/                        Checklist, dependencias CGR y auditoría final',
+              'docs/                        Checklist, dependencias CGR y auditorías',
           )
           text = text.replace(
               '.github/workflows/           CI end-to-end + auditoría Anexo 3',
@@ -90,13 +92,14 @@ jobs:
       - name: Run final release coherence audit
         run: python src/auditar_release.py
 
-      - name: Validate release gates
+      - name: Validate release and full TDR gates
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
 
           checklist = json.loads(Path('outputs/checklist_anexo3.json').read_text(encoding='utf-8'))
+          full_tdr = json.loads(Path('outputs/auditoria_tdr_completo.json').read_text(encoding='utf-8'))
           ssrs = json.loads(Path('outputs/ssrs_publicacion_manifest.json').read_text(encoding='utf-8'))
           deps = json.loads(Path('outputs/dependencias_cgr.json').read_text(encoding='utf-8'))
           release = json.loads(Path('outputs/auditoria_release.json').read_text(encoding='utf-8'))
@@ -113,6 +116,16 @@ jobs:
               if c['estado'] in {'🟡', '🔵'}
           )
 
+          assert full_tdr['schema_version'] == 1
+          assert full_tdr['total_criterios'] == 25
+          assert full_tdr['repo_closable_gaps'] == 0
+          assert full_tdr['resumen'].get('🔴', 0) == 0
+          assert all(
+              c.get('dependencias_cgr')
+              for c in full_tdr['criterios']
+              if c['estado'] in {'🟡', '🔵'}
+          )
+
           assert deps['total'] == 8
           assert [d['id'] for d in deps['dependencias']] == [f'CGR-DEP-{i:02d}' for i in range(1, 9)]
 
@@ -124,12 +137,12 @@ jobs:
           assert release['checks_fallidos'] == 0
           assert release['checks_ok'] == release['total_checks']
           print(
-              f"Release gate: {release['checks_ok']}/{release['total_checks']} checks OK; "
-              "Anexo 3 = 6 ✅ / 4 🟡 / 1 🔵 / 0 🔴"
+              f"Gates OK: release={release['checks_ok']}/{release['total_checks']}; "
+              f"Anexo3=6/4/1/0; TDR completo={full_tdr['resumen']}"
           )
           PY
 
-      - name: Upload release audit evidence
+      - name: Upload release and full TDR audit evidence
         uses: actions/upload-artifact@v4
         with:
           name: evidencia-release-candidate
@@ -137,9 +150,11 @@ jobs:
             outputs/ssrs_publicacion_manifest.json
             outputs/checklist_anexo3.json
             outputs/dependencias_cgr.json
+            outputs/auditoria_tdr_completo.json
             outputs/auditoria_release.json
             docs/Checklist_Anexo_03.md
             docs/Dependencias_Institucionales_CGR.md
+            docs/Auditoria_TDR_Completo.md
             docs/Auditoria_Final_Release.md
             README.md
           retention-days: 30
@@ -153,13 +168,15 @@ jobs:
             outputs/ssrs_publicacion_manifest.json \
             outputs/checklist_anexo3.json \
             outputs/dependencias_cgr.json \
+            outputs/auditoria_tdr_completo.json \
             outputs/auditoria_release.json \
             docs/Checklist_Anexo_03.md \
             docs/Dependencias_Institucionales_CGR.md \
+            docs/Auditoria_TDR_Completo.md \
             docs/Auditoria_Final_Release.md
           if git diff --cached --quiet; then
-            echo "Auditoría final sin cambios."
+            echo "Auditorías finales sin cambios."
           else
-            git commit -m "chore: persistir auditoría final release candidate [skip ci]"
+            git commit -m "chore: persistir auditorías Anexo 3 y TDR completo [skip ci]"
             git push
           fi
