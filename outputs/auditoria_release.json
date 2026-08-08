@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "version": "1.0.0-rc.1",
-  "git_commit_auditado": "4891baecd53fb78f097c4dc7ff4a803ff21ba7c8",
+  "git_commit_auditado": "8150b682a10b3e6d59c51c7fb816863f44576e51",
   "naturaleza": "release candidate del PoC público independiente; no aprobación CGR",
   "total_checks": 19,
   "checks_ok": 19,
@@ -76,7 +76,7 @@
     {
       "check": "Oro sin datasets intermedios",
       "ok": true,
-      "detalle": "artefactos Oro=7"
+      "detalle": "artefactos Oro=9"
     },
     {
       "check": "sin derivados reales identificables versionados",
@@ -91,7 +91,7 @@
     {
       "check": "manifiesto reproducible Spark/GraphFrames",
       "ok": true,
-      "detalle": "commit evidencia=3cb067acf0a14080121d887c6888c47399d04c34"
+      "detalle": "commit evidencia=9d6b68d304c74f8bdc715fc195996b257793cda6"
     },
     {
       "check": "sin residuos de nomenclatura obsoleta en artefactos canónicos",
