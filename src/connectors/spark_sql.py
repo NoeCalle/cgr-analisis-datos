@@ -1,10 +1,6 @@
 """Conector Spark SQL para tablas/vistas del Lakehouse institucional."""
 
-import re
-
 from connectors.base import DataConnector
-
-_IDENTIFIER = re.compile(r"^[A-Za-z0-9_\.]+$")
 
 
 class SparkSqlConnector(DataConnector):
@@ -27,11 +23,14 @@ class SparkSqlConnector(DataConnector):
         if domain not in self.tables:
             raise KeyError(f"No hay tabla Spark SQL configurada para {domain!r}.")
         table = self.tables[domain]
-        _validate_identifier(table, "tabla")
+        if not isinstance(table, str) or not table.strip():
+            raise ValueError(f"Tabla Spark inválida para {domain!r}: {table!r}")
+        # `table()` y `select()` usan la API de DataFrame, no interpolación SQL.
+        # Esto permite nombres institucionales más variados sin construir SQL libre.
         sdf = self._session().table(table)
         if columns:
-            for column in columns:
-                _validate_identifier(column, "columna")
+            if any(not isinstance(c, str) or not c.strip() for c in columns):
+                raise ValueError("Las columnas Spark configuradas deben ser nombres no vacíos.")
             sdf = sdf.select(*columns)
         return sdf.toPandas()
 
@@ -39,8 +38,3 @@ class SparkSqlConnector(DataConnector):
         if self._owns_session and self._spark is not None:
             self._spark.stop()
             self._spark = None
-
-
-def _validate_identifier(value, kind):
-    if not isinstance(value, str) or not _IDENTIFIER.fullmatch(value):
-        raise ValueError(f"Identificador Spark de {kind} no permitido: {value!r}")
