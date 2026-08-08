@@ -4,6 +4,11 @@ El contenido se deriva exclusivamente de ``outputs/analisis_pagos_modalidades.js
 No modifica la evidencia histórica del RC1 ni usa datos SIAF reales. El anexo se
 inserta antes de ``Referencias Bibliográficas`` para conservar las referencias al
 final del documento, conforme a la estructura documental existente.
+
+Los DOCX base son generados por la librería JS ``docx``. Para evitar depender de
+que python-docx pueda resolver nombres de estilos como ``Heading 1`` o
+``Table Grid``, este postprocesador aplica el estilo de encabezado y los bordes de
+tabla directamente en OOXML.
 """
 
 from __future__ import annotations
@@ -12,7 +17,9 @@ import json
 from pathlib import Path
 
 from docx import Document
-from docx.enum.text import WD_LINE_SPACING
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 from docx.shared import Inches, Pt
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,16 +46,57 @@ def _formatear_parrafo(parrafo, negrita=False):
         run.bold = negrita or run.bold
 
 
+def _asignar_estilo_heading_ooxml(parrafo, nivel: int) -> None:
+    """Marca el párrafo como Heading1/Heading2 sin consultar styles.xml."""
+    p_pr = parrafo._p.get_or_add_pPr()
+    p_style = p_pr.find(qn("w:pStyle"))
+    if p_style is None:
+        p_style = OxmlElement("w:pStyle")
+        p_pr.insert(0, p_style)
+    p_style.set(qn("w:val"), f"Heading{nivel}")
+
+
 def _agregar_heading(doc, texto: str, nivel: int = 1):
-    p = doc.add_heading(texto, level=nivel)
+    p = doc.add_paragraph()
+    _asignar_estilo_heading_ooxml(p, nivel)
+    run = p.add_run(texto)
+    run.bold = True
     _formatear_parrafo(p, negrita=True)
     return p
 
 
 def _agregar_texto(doc, texto: str):
     p = doc.add_paragraph(texto)
+    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     _formatear_parrafo(p)
     return p
+
+
+def _aplicar_bordes_tabla(table) -> None:
+    tbl_pr = table._tbl.tblPr
+    borders = tbl_pr.find(qn("w:tblBorders"))
+    if borders is None:
+        borders = OxmlElement("w:tblBorders")
+        tbl_pr.append(borders)
+    for edge in ("top", "left", "bottom", "right", "insideH", "insideV"):
+        tag = qn(f"w:{edge}")
+        el = borders.find(tag)
+        if el is None:
+            el = OxmlElement(f"w:{edge}")
+            borders.append(el)
+        el.set(qn("w:val"), "single")
+        el.set(qn("w:sz"), "4")
+        el.set(qn("w:space"), "0")
+        el.set(qn("w:color"), "B7B7B7")
+
+
+def _sombrear_celda(cell, fill="E7E6E6") -> None:
+    tc_pr = cell._tc.get_or_add_tcPr()
+    shd = tc_pr.find(qn("w:shd"))
+    if shd is None:
+        shd = OxmlElement("w:shd")
+        tc_pr.append(shd)
+    shd.set(qn("w:fill"), fill)
 
 
 def _agregar_tabla(doc, pagos: dict, modalidades: dict):
@@ -62,19 +110,29 @@ def _agregar_tabla(doc, pagos: dict, modalidades: dict):
         ("Contratos pendientes sin pago", estados.get("pendiente_sin_pago", 0)),
         ("Señales de sobrepago a revisar", estados.get("sobrepago_senal_revisar", 0)),
         ("Demora P90 devengado→pagado (días)", pagos.get("dias_devengado_a_pagado_p90")),
-        ("Modalidades especiales no inferibles solo por cuantía", clasif.get("especial_no_inferible_por_cuantia", 0)),
-        ("Modalidades que requieren revisión de contexto", clasif.get("requiere_revision_contexto", 0)),
+        (
+            "Modalidades especiales no inferibles solo por cuantía",
+            clasif.get("especial_no_inferible_por_cuantia", 0),
+        ),
+        (
+            "Modalidades que requieren revisión de contexto",
+            clasif.get("requiere_revision_contexto", 0),
+        ),
     ]
     table = doc.add_table(rows=1, cols=2)
-    table.style = "Table Grid"
+    _aplicar_bordes_tabla(table)
     table.rows[0].cells[0].text = "Indicador"
     table.rows[0].cells[1].text = "Resultado"
+    for cell in table.rows[0].cells:
+        _sombrear_celda(cell)
+        for p in cell.paragraphs:
+            _formatear_parrafo(p, negrita=True)
+
     for etiqueta, valor in filas:
         cells = table.add_row().cells
         cells[0].text = str(etiqueta)
         cells[1].text = "N/D" if valor is None else str(valor)
-    for row in table.rows:
-        for cell in row.cells:
+        for cell in cells:
             for p in cell.paragraphs:
                 _formatear_parrafo(p)
     return table
@@ -83,13 +141,16 @@ def _agregar_tabla(doc, pagos: dict, modalidades: dict):
 def _mover_bloque_antes_de_referencias(doc, marcador_parrafo) -> None:
     referencia = next((p for p in doc.paragraphs if p.text.strip() == REFERENCIAS), None)
     if referencia is None:
-        return
+        raise ValueError(f"No se encontró el encabezado final {REFERENCIAS!r} en el DOCX.")
 
     nuevos = []
     elem = marcador_parrafo._p
     while elem is not None and not elem.tag.endswith("}sectPr"):
         nuevos.append(elem)
         elem = elem.getnext()
+
+    if not nuevos:
+        raise ValueError("No se detectó el bloque Sprint 4 recién creado.")
 
     for nuevo in nuevos:
         referencia._p.addprevious(nuevo)
@@ -121,13 +182,13 @@ def enriquecer(ruta: Path, evidencia: dict):
     if CHART_RATIO.exists():
         _agregar_heading(doc, "Distribución de pagos", 2)
         p = doc.add_paragraph()
-        p.alignment = 1
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p.add_run().add_picture(str(CHART_RATIO), width=Inches(6.1))
         _formatear_parrafo(p)
     if CHART_MODALIDADES.exists():
         _agregar_heading(doc, "Modalidades por régimen", 2)
         p = doc.add_paragraph()
-        p.alignment = 1
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p.add_run().add_picture(str(CHART_MODALIDADES), width=Inches(6.1))
         _formatear_parrafo(p)
 
