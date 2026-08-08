@@ -11,7 +11,6 @@ Sprint 1 distingue explícitamente dos usos:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable
 
 import pandas as pd
 
@@ -37,8 +36,9 @@ SCHEMAS: dict[str, tuple[FieldSpec, ...]] = {
         FieldSpec("objeto", "string", True, True, False),
         FieldSpec("categoria_principal", "string"),
         FieldSpec("fecha_actualizacion", "datetime"),
-        FieldSpec("es_favoritismo_real", "boolean", False, True, True),
-        FieldSpec("es_fraccionamiento_real", "boolean", False, True, True),
+        # Ground truth canónico. Los nombres físicos/sintéticos se adaptan vía mapping.
+        FieldSpec("label_favoritismo", "boolean", False, True, False),
+        FieldSpec("label_fraccionamiento", "boolean", False, True, False),
     ),
     "suppliers": (
         FieldSpec("id_proveedor", "string", True, True, False),
