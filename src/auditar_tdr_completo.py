@@ -94,7 +94,7 @@ def construir_criterios() -> list[dict]:
             ["data/dataset_favoritismo.csv", "data/dataset_fraccionamiento.csv", "outputs/linaje_datos.csv"],
             "Features de favoritismo/fraccionamiento y linaje fuente→feature están materializados.",
         ),
-        criterio_tecnico(
+        criterio_parcial(
             5, "6", "Análisis Profundo de Pagos y Modalidades de Contratación",
             [
                 "data/pagos_siaf_sintetico.csv",
@@ -104,7 +104,8 @@ def construir_criterios() -> list[dict]:
                 "outputs/charts/11_ratio_pago_contrato.png",
                 "outputs/charts/12_modalidades_regimen.png",
             ],
-            "Se analizan patrones sintéticos de pagos, montos y modalidades; la sustitución por pagos SIAF reales depende de CGR.",
+            ["CGR-DEP-01"],
+            "El motor analítico y la evidencia sintética están implementados; el cierre literal requiere pagos SIAF y mapeos institucionales reales.",
         ),
         criterio_tecnico(
             6, "4.2.2 / Productos 3-4", "Identificación de proveedores favoritos",
@@ -114,12 +115,13 @@ def construir_criterios() -> list[dict]:
         criterio_tecnico(
             7, "4.2.3 / Productos 6-7", "Detección de fraccionamiento y compras repetitivas/anómalas",
             ["outputs/tuning_fraccionamiento_resumen.json", "outputs/ranking_riesgo_fraccionamiento_spark.csv"],
-            "Isolation Forest de referencia + KMeans MLlib + señal interpretable por ventana/cuxtía.",
+            "Isolation Forest de referencia + KMeans MLlib + señal interpretable por ventana/cuantía.",
         ),
-        criterio_tecnico(
+        criterio_parcial(
             8, "4.2.4", "Evaluación de vínculos proveedor-funcionario mediante grafos/redes",
             ["outputs/graphframes_resumen.json", "outputs/vinculos_graphframes_sospechosos.csv"],
-            "GraphFrames se ejecuta sobre escenario sintético; datos personales reales no se publican.",
+            ["CGR-DEP-01"],
+            "GraphFrames se ejecuta sobre escenario sintético; los vínculos y datos personales institucionales requieren fuentes y permisos CGR.",
         ),
         criterio_tecnico(
             9, "4.2.5", "Entrenamiento, validación cruzada y optimización de hiperparámetros",
@@ -154,15 +156,21 @@ def construir_criterios() -> list[dict]:
             "El reentrenamiento produce candidate; no existe autopromoción silenciosa.",
         ),
         criterio_tecnico(
-            15, "3.2.f / Productos 7-8", "Separación TRAIN/INFERENCE, persistencia y serving sin reentrenamiento",
+            15, "3.2.f / Producto 7", "Separación TRAIN/INFERENCE, persistencia y serving sin reentrenamiento",
             ["outputs/model_registry.json", "outputs/inference_spark_smoke_summary.json", "airflow_home/dags/dag_inferencia_modelos.py"],
             "El perfil activo es Spark MLlib; inference no consume labels, training ni tuning.",
         ),
         criterio_parcial(
             16, "3.2.f / 4.2.6 / 6", "Despliegue, seguridad, mantenimiento y monitorización operacional",
-            ["docs/Train_Inference.md", "src/monitoreo_modelos.py", "outputs/model_registry.json"],
+            [
+                "docs/Train_Inference.md",
+                "src/monitoreo_modelos.py",
+                "src/autoevaluacion.py",
+                "airflow_home/dags/dag_monitoreo_reentrenamiento.py",
+                "outputs/model_registry.json",
+            ],
             ["CGR-DEP-04", "CGR-DEP-06"],
-            "Controles de software existen; identidad, secretos, segregación y operación productiva son institucionales.",
+            "Controles de software, autoevaluación y monitoreo de solo lectura existen; identidad, secretos, segregación y operación productiva son institucionales.",
         ),
         criterio_institucional(
             17, "6 / Producto 7", "Pruebas de integración en ambientes DEV/QA/PROD y puesta a producción",
@@ -187,7 +195,7 @@ def construir_criterios() -> list[dict]:
             "Requiere usuarios, casos, ambientes e incidencias reales de la CGR.",
         ),
         criterio_institucional(
-            21, "6 / Producto 8", "Transferencia de conocimiento a usuarios técnicos y funcionales",
+            21, "6 / Transferencia de Conocimiento", "Transferencia de conocimiento a usuarios técnicos y funcionales",
             ["CGR-DEP-08"],
             "Las sesiones y actas de transferencia son una actividad contractual institucional.",
         ),
@@ -236,7 +244,10 @@ def main():
         if pagos.get("payments", {}).get("orphan_payments") != 0:
             criterios[4]["estado"] = "🔴"
             criterios[4]["detalle"] = "Existen pagos sin contrato resoluble."
-        if not all(str(anio) in {str(k) for k in pagos.get("normative_provenance_2023_2026", {})} for anio in range(2023, 2027)):
+        if not all(
+            str(anio) in {str(k) for k in pagos.get("normative_provenance_2023_2026", {})}
+            for anio in range(2023, 2027)
+        ):
             criterios[24]["estado"] = "🔴"
             criterios[24]["detalle"] = "Falta procedencia normativa 2023-2026."
 
