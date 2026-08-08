@@ -2,7 +2,7 @@
 
 > Release candidate del PoC independiente. `release_ready=true` significa coherencia técnica del repositorio, **no conformidad ni aprobación institucional de la CGR**.
 
-- Commit auditado: `056d5dfa710c617241fbc79c33c7e3d54efef5b5`
+- Commit auditado: `8a8e5ac59e4cd40f2a7a5f13ee937374019daa65`
 - Checks: **19/19 OK**
 - Resultado: **READY**
 
@@ -24,7 +24,7 @@
 | ✅ | Oro sin datasets intermedios | artefactos Oro=7 |
 | ✅ | sin derivados reales identificables versionados | raw/derivados reales identificables permanecen fuera del repositorio |
 | ✅ | documentación formal completa | 8 DOCX (7 productos + informe final) |
-| ✅ | manifiesto reproducible Spark/GraphFrames | commit evidencia=2e097db2b6a8bbdc110f658fc982ff68583f4b34 |
+| ✅ | manifiesto reproducible Spark/GraphFrames | commit evidencia=4725db83ad34f45f8a4bffd57aa57fa4e5d8ce32 |
 | ✅ | sin residuos de nomenclatura obsoleta en artefactos canónicos | nomenclatura y conteos vigentes |
 | ✅ | licencia presente | MIT para el código del PoC |
 
