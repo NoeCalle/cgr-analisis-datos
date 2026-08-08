@@ -16,6 +16,24 @@ auditores durante la ejecución de los servicios de control”, orientada a:
 Las salidas son **señales para priorización de revisión**. No constituyen
 hallazgos, imputaciones ni determinaciones automáticas de irregularidad.
 
+<!-- RELEASE-CANDIDATE-START -->
+## Release candidate
+
+Versión declarada del PoC independiente: **`v1.0.0-rc.1`**.
+
+El release candidate se etiqueta únicamente después de superar la cadena CI + auditoría Anexo 3 + auditoría final de coherencia. No representa aprobación ni despliegue institucional de la CGR.
+
+Evidencia de cierre:
+
+- `RELEASE_NOTES.md` — alcance congelado y límites de la versión;
+- `docs/Checklist_Anexo_03.md` — 11 criterios del Anexo 3;
+- `docs/Dependencias_Institucionales_CGR.md` — fuente única `CGR-DEP-01..08` de pendientes que requieren CGR;
+- `docs/Auditoria_Final_Release.md` — gate de coherencia previo al tag;
+- `outputs/auditoria_release.json` — resultado machine-readable del gate.
+
+**Regla de congelamiento:** 0 criterios 🔴 y 0 checks fallidos en la auditoría de release.
+<!-- RELEASE-CANDIDATE-END -->
+
 ## Estado del cierre de brechas
 
 ### ✅ P0 — Integridad OCDS y normativa
@@ -243,10 +261,10 @@ lakehouse/plata/             Datos limpios/features consumidos por modelos
 lakehouse/oro/               Solo salidas para reporting/integración
 ssrs/                        DDL T-SQL + RDL + contrato de publicación PoC
 reporte/                     Generadores + Productos 1–7 + Informe Final
-docs/                        Checklist auditable del Anexo 3
+docs/                        Checklist, dependencias CGR y auditoría final
 outputs/                     Evidencia, rankings, tuning, manifests y linaje
 tests/                       Pruebas de regresión y contrato SSRS
-.github/workflows/           CI end-to-end + auditoría Anexo 3
+.github/workflows/           CI end-to-end + auditorías + prerelease
 ```
 
 ## Reproducir

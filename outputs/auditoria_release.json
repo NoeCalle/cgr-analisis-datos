@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "version": "1.0.0-rc.1",
+  "git_commit_auditado": "49754d019e8671a719725638f6c3b6e6ea2a6501",
+  "naturaleza": "release candidate del PoC público independiente; no aprobación CGR",
+  "total_checks": 19,
+  "checks_ok": 19,
+  "checks_fallidos": 0,
+  "release_ready": true,
+  "checks": [
+    {
+      "check": "versión semántica release candidate",
+      "ok": true,
+      "detalle": "1.0.0-rc.1"
+    },
+    {
+      "check": "disclaimer público explícito",
+      "ok": true,
+      "detalle": "README distingue el PoC de una implementación oficial"
+    },
+    {
+      "check": "release no se presenta como oficial",
+      "ok": true,
+      "detalle": "RELEASE_NOTES mantiene el alcance independiente"
+    },
+    {
+      "check": "Anexo 3 sin brechas rojas",
+      "ok": true,
+      "detalle": "✅=6, 🟡=4, 🔵=1, 🔴=0"
+    },
+    {
+      "check": "distribución esperada del checklist",
+      "ok": true,
+      "detalle": "6 ✅ / 4 🟡 / 1 🔵"
+    },
+    {
+      "check": "checklist enlazado al catálogo CGR",
+      "ok": true,
+      "detalle": "referencias=['CGR-DEP-01', 'CGR-DEP-02', 'CGR-DEP-03', 'CGR-DEP-04', 'CGR-DEP-05', 'CGR-DEP-06']"
+    },
+    {
+      "check": "catálogo institucional único",
+      "ok": true,
+      "detalle": "8 dependencias canónicas CGR-DEP-01..08"
+    },
+    {
+      "check": "contrato SSRS local verificado",
+      "ok": true,
+      "detalle": "{'PrediccionesFavoritismo': 2328, 'PrediccionesFraccionamiento': 180, 'VinculosProveedorFuncionario': 2995}"
+    },
+    {
+      "check": "dos RDL de riesgo presentes",
+      "ok": true,
+      "detalle": "favoritismo + fraccionamiento + DDL T-SQL"
+    },
+    {
+      "check": "Accuracy/F1/AUC-ROC reportados en favoritismo",
+      "ok": true,
+      "detalle": "Accuracy se reporta sin desplazar AUC-PR como criterio primario"
+    },
+    {
+      "check": "Accuracy/F1/AUC-ROC reportados en fraccionamiento",
+      "ok": true,
+      "detalle": "holdout final independiente"
+    },
+    {
+      "check": "nomenclatura canónica de fraccionamiento",
+      "ok": true,
+      "detalle": "senal_priorizacion_fraccionamiento"
+    },
+    {
+      "check": "modalidades de favoritismo separadas",
+      "ok": true,
+      "detalle": "Contratación Directa != Comparación de Precios"
+    },
+    {
+      "check": "Oro sin datasets intermedios",
+      "ok": true,
+      "detalle": "artefactos Oro=7"
+    },
+    {
+      "check": "sin derivados reales identificables versionados",
+      "ok": true,
+      "detalle": "raw/derivados reales identificables permanecen fuera del repositorio"
+    },
+    {
+      "check": "documentación formal completa",
+      "ok": true,
+      "detalle": "8 DOCX (7 productos + informe final)"
+    },
+    {
+      "check": "manifiesto reproducible Spark/GraphFrames",
+      "ok": true,
+      "detalle": "commit evidencia=dd35803f31d3cda14c9832be580f713d0c60e980"
+    },
+    {
+      "check": "sin residuos de nomenclatura obsoleta en artefactos canónicos",
+      "ok": true,
+      "detalle": "nomenclatura y conteos vigentes"
+    },
+    {
+      "check": "licencia presente",
+      "ok": true,
+      "detalle": "MIT para el código del PoC"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "fuente": "Anexo N.º 03 del TDR público del Proyecto Interno 1.8.2, mayo de 2026",
+  "catalogo_dependencias": "outputs/dependencias_cgr.json",
   "leyenda": {
     "✅": "cubierto por evidencia verificable del PoC",
     "🟡": "PoC parcial / cierre literal requiere información o validación institucional",
@@ -23,7 +24,8 @@
         "outputs/charts/01_distribucion_montos.png",
         "outputs/charts/04_serie_temporal.png"
       ],
-      "residual": "Sin residual técnico relevante para el PoC; la EDA deberá repetirse sobre datos internos cuando CGR los habilite."
+      "dependencias_cgr": [],
+      "residual": "Sin residual técnico relevante para el PoC; la EDA se repetirá sobre datos internos al desplegar institucionalmente."
     },
     {
       "numero": 2,
@@ -36,7 +38,11 @@
         "src/preprocesamiento.py",
         "reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx"
       ],
-      "residual": "El PoC usa Plata/Oro locales y documenta nulos/outliers; el requisito literal de Datamart institucional solo puede validarse dentro de CGR."
+      "dependencias_cgr": [
+        "CGR-DEP-01",
+        "CGR-DEP-06"
+      ],
+      "residual": "El PoC usa Plata/Oro locales y documenta nulos/outliers; el requisito literal del Datamart institucional requiere CGR-DEP-01 y CGR-DEP-06."
     },
     {
       "numero": 3,
@@ -47,7 +53,12 @@
         "src/spark/estandares_sql.py",
         "outputs/extraccion_estandar_sql.csv"
       ],
-      "residual": "Las técnicas están demostradas localmente; la conformidad literal con reglas, esquemas y planes de ejecución institucionales requiere revisión/ejecución en CGR."
+      "dependencias_cgr": [
+        "CGR-DEP-01",
+        "CGR-DEP-02",
+        "CGR-DEP-06"
+      ],
+      "residual": "Las técnicas están demostradas localmente; la conformidad literal requiere CGR-DEP-01, CGR-DEP-02 y CGR-DEP-06."
     },
     {
       "numero": 4,
@@ -59,7 +70,11 @@
         "outputs/tuning_favoritismo_resumen.json",
         "outputs/tuning_fraccionamiento_resumen.json"
       ],
-      "residual": "El TDR público provisto exige umbrales mínimos pero no consigna sus valores numéricos; no se inventan. Además, la validación productiva requiere ground truth y ambientes CGR."
+      "dependencias_cgr": [
+        "CGR-DEP-03",
+        "CGR-DEP-06"
+      ],
+      "residual": "El TDR público exige umbrales mínimos pero no consigna sus valores; la conformidad productiva requiere CGR-DEP-03 y CGR-DEP-06."
     },
     {
       "numero": 5,
@@ -71,7 +86,8 @@
         "outputs/charts/07_shap_summary_favoritismo.png",
         "outputs/charts/08_shap_waterfall_caso.png"
       ],
-      "residual": "Los artefactos están disponibles en el PoC; su interpretación final debe contextualizarse con casos y datos institucionales."
+      "dependencias_cgr": [],
+      "residual": "Los artefactos están disponibles en el PoC; su interpretación final deberá contextualizarse con casos institucionales."
     },
     {
       "numero": 6,
@@ -83,7 +99,11 @@
         "airflow_home/dags/modulo_analisis_datos_1_8_2.py",
         "outputs/run_manifest.json"
       ],
-      "residual": "Git institucional, autenticación, despliegue y operación en ambientes CGR no son accesibles desde el repositorio público independiente."
+      "dependencias_cgr": [
+        "CGR-DEP-04",
+        "CGR-DEP-06"
+      ],
+      "residual": "El PoC demuestra CI/MLOps local; el cierre literal requiere CGR-DEP-04 y CGR-DEP-06."
     },
     {
       "numero": 7,
@@ -96,7 +116,11 @@
         "ssrs/ReporteRiesgoFraccionamiento.rdl",
         "outputs/ssrs_publicacion_manifest.json"
       ],
-      "residual": "Contrato SQL/RDL y publicación stand-in están verificados; falta ejecutar DDL, autenticación, despliegue y pruebas en SQL Server/SSRS CGR."
+      "dependencias_cgr": [
+        "CGR-DEP-05",
+        "CGR-DEP-06"
+      ],
+      "residual": "Contrato SQL/RDL y publicación stand-in verificados; el despliegue literal requiere CGR-DEP-05 y CGR-DEP-06."
     },
     {
       "numero": 8,
@@ -108,7 +132,8 @@
         "data/diccionario_datos.csv",
         "outputs/run_manifest.json"
       ],
-      "residual": "Linaje técnico del PoC cubierto; las fuentes/tablas institucionales deberán sustituir los nodos locales al desplegar en CGR."
+      "dependencias_cgr": [],
+      "residual": "Linaje técnico del PoC cubierto; al desplegar, los nodos locales se sustituyen por fuentes institucionales."
     },
     {
       "numero": 9,
@@ -121,7 +146,8 @@
         "outputs/spark_favoritismo_resumen.json",
         "outputs/spark_fraccionamiento_resumen.json"
       ],
-      "residual": "Documentados y versionados para el PoC; deben recalibrarse con datos institucionales antes de producción."
+      "dependencias_cgr": [],
+      "residual": "Documentados y versionados para el PoC; deberán recalibrarse con datos institucionales antes de producción."
     },
     {
       "numero": 10,
@@ -133,6 +159,7 @@
         "outputs/tuning_fraccionamiento_resumen.json",
         "reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx"
       ],
+      "dependencias_cgr": [],
       "residual": "Métricas del benchmark reproducible cubiertas; no se presentan como desempeño productivo."
     },
     {
@@ -144,7 +171,8 @@
         "reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx",
         "README.md"
       ],
-      "residual": "Las recomendaciones están documentadas; priorización institucional dependerá de usuarios, ground truth y capacidad operativa CGR."
+      "dependencias_cgr": [],
+      "residual": "Las recomendaciones están documentadas; su priorización institucional corresponde a la etapa de despliegue/operación."
     }
   ],
   "nota_performance": "El TDR público provisto no incluye valores numéricos de los umbrales mínimos del criterio 4; el repositorio no inventa dichos valores.",

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "fecha_ejecucion": "2026-08-08T02:22:16.580334+00:00",
-  "git_commit_evidencia": "c440d76cfb54b29248829d5d9e44a4f35c31bc36",
+  "fecha_ejecucion": "2026-08-08T03:15:32.710920+00:00",
+  "git_commit_evidencia": "dd35803f31d3cda14c9832be580f713d0c60e980",
   "naturaleza": "stand-in SQLite para validar contrato SSRS; SQL Server/SSRS CGR no ejecutado",
   "fuentes_oro": {
     "favoritismo": {
