@@ -24,11 +24,19 @@ La inclusión 2018-2021 es necesaria porque la publicación OCDS usada como
 prueba real, aunque segmentada principalmente en 2022, contiene contratos
 firmados desde 2018. No se aproxima silenciosamente un año desconocido.
 
+Sprint 4 incorpora procedencia versionada para 2023-2026, que es el rango del
+dataset sintético principal. La clasificación de modalidades es REFERENCIAL:
+una cuantía no permite por sí sola decidir la procedencia jurídica de
+Contratación Directa, Comparación de Precios, Subasta Inversa, acuerdos marco u
+otros supuestos especiales.
+
 En producción institucional esta tabla debe versionarse como dato maestro
 normativo y validarse cuando se publique cada Ley de Presupuesto anual.
 """
 
 from __future__ import annotations
+
+import unicodedata
 
 import pandas as pd
 
@@ -49,6 +57,30 @@ UMBRALES_PROCEDIMIENTO_SIMPLIFICADO_ABREVIADO = {
 # Alias conservado por compatibilidad con scripts/documentación previa.
 UMBRALES_ADJUDICACION_SIMPLIFICADA = UMBRALES_PROCEDIMIENTO_SIMPLIFICADO_ABREVIADO
 
+FUENTES_NORMATIVAS = {
+    2023: {
+        "ley_presupuesto": "Ley N.° 31638 - Presupuesto del Sector Público para el Año Fiscal 2023",
+        "url_presupuesto": "https://www.gob.pe/institucion/mef/normas-legales/3715319-31638",
+    },
+    2024: {
+        "ley_presupuesto": "Ley N.° 31953 - Presupuesto del Sector Público para el Año Fiscal 2024",
+        "url_presupuesto": "https://www.gob.pe/institucion/mef/normas-legales/6964231-31953",
+    },
+    2025: {
+        "ley_presupuesto": "Ley N.° 32185 - Presupuesto del Sector Público para el Año Fiscal 2025",
+        "url_presupuesto": "https://www.gob.pe/institucion/mef/normas-legales/6278077-32185",
+        "url_topes": "https://www.gob.pe/77926-montos-para-la-determinacion-de-los-procedimientos-de-seleccion-segun-ley-de-presupuesto-del-sector-publico-para-el-ano-fiscal-2025-ley-32185",
+        "ley_regimen": "Ley N.° 32069 - Ley General de Contrataciones Públicas",
+        "url_vigencia_regimen": "https://www.gob.pe/institucion/oece/noticias/1153925-oece-inicia-funciones-con-la-entrada-en-vigencia-de-la-nueva-ley-general-de-contrataciones-publicas",
+    },
+    2026: {
+        "ley_presupuesto": "Ley N.° 32513 - Presupuesto del Sector Público para el Año Fiscal 2026",
+        "url_presupuesto": "https://www.gob.pe/institucion/mef/normas-legales/7475743-32513",
+        "ley_regimen": "Ley N.° 32069 - Ley General de Contrataciones Públicas",
+        "url_regimen": "https://www.gob.pe/institucion/oece/colecciones/45029-ley-n-32069-ley-general-de-contrataciones-publicas",
+    },
+}
+
 # Fallback SOLO para datasets sintéticos o fuentes sin clasificación
 # estructurada. En datos OCDS reales debe priorizarse mainProcurementCategory.
 PALABRAS_CLAVE_OBRA = (
@@ -61,6 +93,17 @@ PALABRAS_CLAVE_OBRA = (
     "pavimentacion",
     "rehabilitación vial",
     "rehabilitacion vial",
+)
+
+MODALIDADES_ESPECIALES_NO_INFERIBLES_POR_CUANTIA = (
+    "contratacion directa",
+    "comparacion de precios",
+    "subasta inversa",
+    "catalogo electronico",
+    "acuerdo marco",
+    "compra corporativa",
+    "dialogo competitivo",
+    "compra publica de innovacion",
 )
 
 
@@ -104,6 +147,19 @@ def obtener_categoria_umbral(objeto=None, categoria_principal=None) -> str:
     return "obras" if es_categoria_obra(objeto, categoria_principal) else "bienes_servicios"
 
 
+def _tipo_estructurado(categoria_principal) -> str | None:
+    if categoria_principal is None or pd.isna(categoria_principal):
+        return None
+    valor = str(categoria_principal).strip().lower()
+    if valor in {"works", "obra", "obras"}:
+        return "works"
+    if valor in {"goods", "bien", "bienes"}:
+        return "goods"
+    if valor in {"services", "servicio", "servicios", "consultingservices", "consulting services"}:
+        return "services"
+    return None
+
+
 def obtener_nombre_procedimiento(fecha, objeto=None, categoria_principal=None) -> str:
     """Nombre referencial del procedimiento por debajo de la cuantía superior."""
     categoria = obtener_categoria_umbral(objeto, categoria_principal)
@@ -111,10 +167,10 @@ def obtener_nombre_procedimiento(fecha, objeto=None, categoria_principal=None) -
         return "Adjudicación Simplificada"
     if categoria == "obras":
         return "Licitación Pública Abreviada"
-    valor = "" if categoria_principal is None or pd.isna(categoria_principal) else str(categoria_principal).strip().lower()
-    if valor == "services":
+    tipo = _tipo_estructurado(categoria_principal)
+    if tipo == "services":
         return "Concurso Público Abreviado"
-    if valor == "goods":
+    if tipo == "goods":
         return "Licitación Pública Abreviada"
     return "Licitación/Concurso Público Abreviado"
 
@@ -134,6 +190,93 @@ def obtener_umbral(fecha, objeto=None, categoria_principal=None) -> float:
     return UMBRALES_PROCEDIMIENTO_SIMPLIFICADO_ABREVIADO[anio][categoria]
 
 
+def obtener_procedimiento_referencial_por_cuantia(
+    fecha, monto, objeto=None, categoria_principal=None
+) -> str | None:
+    """Procedimiento general/abreviado esperable SOLO como referencia por cuantía.
+
+    No sustituye el análisis del supuesto jurídico de contratación. Para
+    modalidades especiales la clasificación posterior las marca como no
+    inferibles exclusivamente por monto.
+    """
+    if monto is None or pd.isna(monto):
+        return None
+    umbral = obtener_umbral(fecha, objeto=objeto, categoria_principal=categoria_principal)
+    if float(monto) < umbral:
+        return obtener_nombre_procedimiento(
+            fecha, objeto=objeto, categoria_principal=categoria_principal
+        )
+
+    tipo = _tipo_estructurado(categoria_principal)
+    if tipo == "services":
+        return "Concurso Público"
+    if tipo in {"goods", "works"}:
+        return "Licitación Pública"
+    if es_categoria_obra(objeto, categoria_principal):
+        return "Licitación Pública"
+    return "Licitación/Concurso Público"
+
+
+def _normalizar_texto(valor) -> str:
+    if valor is None or pd.isna(valor):
+        return ""
+    texto = unicodedata.normalize("NFKD", str(valor).strip().lower())
+    return "".join(ch for ch in texto if not unicodedata.combining(ch))
+
+
+def clasificar_modalidad_frente_regimen(
+    fecha, monto, modalidad, objeto=None, categoria_principal=None
+) -> dict:
+    """Compara modalidad observada con una referencia por cuantía, sin juicio legal."""
+    if modalidad is None or pd.isna(modalidad) or not str(modalidad).strip():
+        return {
+            "clasificacion": "sin_informacion",
+            "procedimiento_referencial": obtener_procedimiento_referencial_por_cuantia(
+                fecha, monto, objeto=objeto, categoria_principal=categoria_principal
+            ),
+        }
+
+    modalidad_norm = _normalizar_texto(modalidad)
+    procedimiento = obtener_procedimiento_referencial_por_cuantia(
+        fecha, monto, objeto=objeto, categoria_principal=categoria_principal
+    )
+
+    if any(token in modalidad_norm for token in MODALIDADES_ESPECIALES_NO_INFERIBLES_POR_CUANTIA):
+        clasificacion = "especial_no_inferible_por_cuantia"
+    elif procedimiento is None:
+        clasificacion = "sin_cuantia_para_comparar"
+    else:
+        proc_norm = _normalizar_texto(procedimiento)
+        compatibles = {proc_norm}
+        if "/" in procedimiento:
+            if "abreviado" in proc_norm:
+                compatibles |= {
+                    _normalizar_texto("Licitación Pública Abreviada"),
+                    _normalizar_texto("Concurso Público Abreviado"),
+                }
+            else:
+                compatibles |= {
+                    _normalizar_texto("Licitación Pública"),
+                    _normalizar_texto("Concurso Público"),
+                }
+        clasificacion = (
+            "compatible_referencial_por_cuantia"
+            if modalidad_norm in compatibles
+            else "requiere_revision_contexto"
+        )
+
+    return {
+        "clasificacion": clasificacion,
+        "procedimiento_referencial": procedimiento,
+    }
+
+
+def obtener_fuentes_normativas(fecha) -> dict:
+    """Devuelve procedencia versionada cuando el año está documentado en el PoC."""
+    anio = pd.Timestamp(fecha).year
+    return dict(FUENTES_NORMATIVAS.get(anio, {}))
+
+
 def obtener_contexto_normativo(fecha, objeto=None, categoria_principal=None) -> dict:
     """Devuelve metadatos auditables junto con la cuantía aplicada."""
     fecha_ts = pd.Timestamp(fecha)
@@ -146,6 +289,7 @@ def obtener_contexto_normativo(fecha, objeto=None, categoria_principal=None) -> 
             fecha_ts, objeto=objeto, categoria_principal=categoria_principal
         ),
         "umbral": obtener_umbral(fecha_ts, objeto=objeto, categoria_principal=categoria_principal),
+        "fuentes_normativas": obtener_fuentes_normativas(fecha_ts),
     }
 
 
