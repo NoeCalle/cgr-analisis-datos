@@ -60,11 +60,16 @@ se publican.
 
 Sobre 2,328 pares proveedor-entidad y 6 positivos sintéticos:
 
-| Modelo | AUC-PR | AUC-ROC | Precision | Recall | F1 |
-|---|---:|---:|---:|---:|---:|
-| **Random Forest** | **0.671** | 0.999 | **0.667** | 0.333 | 0.444 |
-| Regresión Logística | 0.621 | 0.995 | 0.333 | **0.667** | 0.444 |
-| Gradient Boosting | 0.418 | 0.749 | 0.429 | 0.500 | **0.462** |
+| Modelo | Accuracy | AUC-PR | AUC-ROC | Precision | Recall | F1 |
+|---|---:|---:|---:|---:|---:|---:|
+| **Random Forest** | 0.998 | **0.671** | 0.999 | **0.667** | 0.333 | 0.444 |
+| Regresión Logística | 0.996 | 0.621 | 0.995 | 0.333 | **0.667** | 0.444 |
+| Gradient Boosting | 0.997 | 0.418 | 0.749 | 0.429 | 0.500 | **0.462** |
+
+Accuracy se reporta porque el Anexo 3 la solicita expresamente, pero **no se usa
+como criterio primario**: con solo 6 positivos y un desbalance severo puede dar
+una impresión engañosamente optimista. La referencia metodológica principal es
+AUC-PR.
 
 Tuning RF sklearn: `n_estimators=100`, `max_depth=3`,
 `min_samples_leaf=1`; AUC-PR medio CV **0.844**.
@@ -75,11 +80,13 @@ Tuning RF sklearn: `n_estimators=100`, `max_depth=3`,
 - desarrollo: 112 / 5 positivos;
 - holdout final: 68 / 3 positivos;
 - AUC-PR de validación medio: **0.402**;
-- holdout: AUC-ROC **0.856**, AUC-PR **0.171**, precision **0.176**,
-  recall **1.000**, F1 **0.300**, recall@K **0.000**.
+- holdout: Accuracy **0.794**, AUC-ROC **0.856**, AUC-PR **0.171**,
+  precision **0.176**, recall **1.000**, F1 **0.300**, recall@K **0.000**.
 
 La debilidad del ranking de Isolation Forest queda expuesta deliberadamente; la
-regla interpretable y la revisión humana son complementarias.
+regla interpretable y la revisión humana son complementarias. Accuracy se
+mantiene como métrica informativa exigida por el Anexo 3, no como criterio de
+selección.
 
 ### ✅ Sprint A — Spark canónico y trazabilidad
 
@@ -155,6 +162,49 @@ Los documentos verificados están en:
 - `reporte/productos_formales/Producto_07_Informe_Final.docx`
 - `reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx`
 
+### ✅ Sprint C — SSRS y auditoría final del Anexo 3
+
+La integración de reporting dejó de ser un único RDL de demostración. El PoC
+ahora mantiene un contrato verificable de publicación para SSRS:
+
+- `ssrs/schema_sql_server.sql` define tablas, restricciones, índices y vistas de
+  consumo estables;
+- `ssrs/ReporteRiesgoFavoritismo.rdl` consume `vw_SSRS_Favoritismo`;
+- `ssrs/ReporteRiesgoFraccionamiento.rdl` consume
+  `vw_SSRS_Fraccionamiento`;
+- `src/publicar_ssrs.py` valida localmente claves, columnas, rangos y conteos
+  mediante un stand-in SQLite;
+- `outputs/ssrs_publicacion_manifest.json` registra hashes de las fuentes Oro,
+  conteos publicados y las dependencias institucionales pendientes;
+- la señal de fraccionamiento tiene un único nombre canónico:
+  `senal_priorizacion_fraccionamiento`;
+- Accuracy se incorporó a la evidencia de favoritismo y al holdout de
+  fraccionamiento porque el Anexo 3 la menciona explícitamente.
+
+La auditoría literal del Anexo 3 se genera automáticamente en:
+
+- `docs/Checklist_Anexo_03.md`;
+- `outputs/checklist_anexo3.json`.
+
+Resultado vigente del checklist:
+
+| Estado | Criterios | Interpretación |
+|---|---:|---|
+| ✅ | 6 | Cubiertos por evidencia verificable del PoC |
+| 🟡 | 4 | PoC demostrable; el cierre literal requiere información, infraestructura o validación CGR |
+| 🔵 | 1 | Dependencia institucional CGR |
+| 🔴 | **0** | **No quedan brechas técnicas conocidas que sean cerrables exclusivamente desde este repositorio** |
+
+Los cuatro criterios 🟡 corresponden a Datamart Plata/Oro institucional,
+estándares/planes SQL institucionales, umbrales y validación productiva de
+performance, e integración ejecutada en SQL Server/SSRS CGR. El criterio 🔵 es
+Git/autenticación/despliegue/MLOps institucional.
+
+**Importante sobre performance:** el TDR público provisto exige superar umbrales
+mínimos de Accuracy, F1-Score y AUC-ROC, pero no consigna sus valores numéricos.
+El PoC reporta esas métricas donde corresponden, pero no inventa umbrales ni
+declara conformidad cuantitativa institucional.
+
 ### ✅ Documentación reproducible
 
 La documentación ya no mantiene cifras independientes escritas a mano. El flujo
@@ -173,11 +223,12 @@ es:
 | Spark MLlib | **Ejecutado en CI con Spark real `local[*]`; clúster CGR pendiente** |
 | Grafos | NetworkX de referencia + **GraphFrames ejecutado en CI** |
 | Airflow | DAG principal + monitoreo; ramas sklearn y Spark |
-| Bronce / Plata / Oro | Simulación funcional; Lakehouse CGR pendiente |
+| Bronce / Plata / Oro | Simulación funcional; Datamart/Lakehouse CGR pendiente |
 | Autoevaluación | Modelo candidato; promoción requiere revisión humana |
-| SSRS | Esquema T-SQL + RDL; servidor institucional pendiente |
+| SSRS | **Contrato T-SQL + 2 RDL + publicación local validada; servidor CGR pendiente** |
 | Linaje / diccionario | Diccionario + diagrama + linaje explícito + manifest |
 | Formato documental Anexo 1 | **Implementado y validado; logo oficial reservado para contexto institucional** |
+| Checklist Anexo 3 | **6 ✅ / 4 🟡 / 1 🔵 / 0 🔴** |
 | DEV/QA/PROD y Git institucional | Dependencia CGR |
 | Certificación, marcha blanca y transferencia formal | Dependencia CGR |
 
@@ -190,11 +241,12 @@ airflow_home/dags/           DAG principal + monitoreo
 lakehouse/bronce/            Ingesta cruda simulada
 lakehouse/plata/             Datos limpios/features consumidos por modelos
 lakehouse/oro/               Solo salidas para reporting/integración
-ssrs/                        DDL T-SQL + RDL PoC
+ssrs/                        DDL T-SQL + RDL + contrato de publicación PoC
 reporte/                     Generadores + Productos 1–7 + Informe Final
+docs/                        Checklist auditable del Anexo 3
 outputs/                     Evidencia, rankings, tuning, manifests y linaje
-tests/                       Pruebas de regresión
-.github/workflows/           CI end-to-end sklearn + Spark + documentación
+tests/                       Pruebas de regresión y contrato SSRS
+.github/workflows/           CI end-to-end + auditoría Anexo 3
 ```
 
 ## Reproducir
@@ -230,7 +282,7 @@ export AIRFLOW_HOME="$PWD/airflow_home"
 
 GitHub Actions ejecuta además generación sintética, Bronce/Plata, benchmark
 sklearn, Spark MLlib, GraphFrames, SQL Spark, Oro, diccionario, linaje,
-manifiesto y documentación formal.
+manifiesto, documentación formal, contrato SSRS y auditoría del Anexo 3.
 
 ### Pipeline Airflow
 
@@ -259,6 +311,8 @@ fuentes -> Bronce -> preprocesamiento/features -> Plata
                            DOCX + índice paginado
                                       ↓
                              QA DOCX / PDF
+                                      ↓
+                         SSRS contract + Anexo 3
 ```
 
 ## Datos reales OCDS/OECE
@@ -266,6 +320,18 @@ fuentes -> Bronce -> preprocesamiento/features -> Plata
 Los crudos y derivados identificables no se publican. Para reproducir la
 validación local, seguir `data_real/README.md` con `main.csv`, `contracts.csv`,
 `awards.csv`, `awards_suppliers.csv` y `parties.csv`.
+
+## Publicación SSRS local
+
+Después de generar Oro:
+
+```bash
+python src/publicar_ssrs.py
+```
+
+La base `ssrs/reportes.db` es un stand-in local no versionado. La evidencia
+persistente queda en `outputs/ssrs_publicacion_manifest.json`. El despliegue real
+en SQL Server/SSRS requiere infraestructura y autenticación CGR.
 
 ## Documentación formal
 
