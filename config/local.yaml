@@ -1,0 +1,33 @@
+# Configuración reproducible del PoC actual usando archivos locales.
+# Conserva el comportamiento existente y sirve como referencia ejecutable.
+mode: inference
+
+source:
+  type: local_csv
+  datasets:
+    contracts: data/contratos_siaf_seace.csv
+    suppliers: data/proveedores.csv
+    entities: data/entidades.csv
+    officials: data/funcionarios.csv
+
+mapping:
+  contracts:
+    id_contrato: id_contrato
+    id_proveedor: id_proveedor
+    id_entidad: id_entidad
+    id_funcionario: id_funcionario
+    monto: monto
+    fecha_contrato: fecha_contrato
+    modalidad: modalidad
+    objeto: objeto
+    categoria_principal: categoria_principal
+  suppliers:
+    id_proveedor: id_proveedor
+    nombre_proveedor: razon_social
+    ruc: ruc
+  entities:
+    id_entidad: id_entidad
+    nombre_entidad: nombre_entidad
+  officials:
+    id_funcionario: id_funcionario
+    id_entidad: id_entidad
