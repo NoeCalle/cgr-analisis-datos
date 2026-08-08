@@ -1,13 +1,15 @@
 """
 DAG de reproducibilidad integral del PoC.
 
-Este DAG reconstruye datos sintéticos, benchmarks, implementaciones Spark,
-grafos y evidencia documental. Desde Sprint 2 NO se considera el flujo
-operacional de scoring porque deliberadamente mezcla reconstrucción, tuning y
-entrenamiento para demostrar reproducibilidad técnica.
+Este DAG reconstruye datos sintéticos, pagos sintéticos, análisis de montos y
+modalidades, benchmarks, implementaciones Spark, grafos y evidencia documental.
+Desde Sprint 2 NO se considera el flujo operacional de scoring porque
+ deliberadamente mezcla reconstrucción, tuning y entrenamiento para demostrar
+reproducibilidad técnica.
 
 Flujo de evidencia:
-  sintético -> Bronce -> preprocesar/features -> Plata
+  sintético + pagos sintéticos -> Bronce -> preprocesar/features -> Plata
+      |-> análisis pagos/montos/modalidades
       |-> benchmark sklearn: comparación/tuning/modelos
       |-> implementación objetivo TDR: Spark MLlib favoritismo/fraccionamiento
       |-> vínculos NetworkX -> GraphFrames
@@ -56,6 +58,10 @@ with DAG(
     generar_datos = BashOperator(
         task_id="generar_datos", bash_command=comando("src/generar_datos.py")
     )
+    generar_pagos = BashOperator(
+        task_id="generar_pagos_sinteticos",
+        bash_command=comando("src/generar_pagos_sinteticos.py"),
+    )
     cargar_bronce = BashOperator(
         task_id="cargar_capa_bronce", bash_command=comando("src/lakehouse_capas.py", "bronce")
     )
@@ -64,6 +70,10 @@ with DAG(
     )
     mover_plata = BashOperator(
         task_id="publicar_capa_plata", bash_command=comando("src/lakehouse_capas.py", "plata")
+    )
+    analizar_pagos_modalidades = BashOperator(
+        task_id="analizar_pagos_montos_modalidades",
+        bash_command=comando("src/analisis_pagos_modalidades.py", "--config config/local.yaml"),
     )
 
     # Benchmark/referencia metodológica sklearn.
@@ -123,7 +133,8 @@ with DAG(
         bash_command=comando("src/generar_evidencia_documental.py"),
     )
 
-    generar_datos >> cargar_bronce >> preprocesar >> mover_plata
+    generar_datos >> generar_pagos >> cargar_bronce >> preprocesar >> mover_plata
+    generar_pagos >> analizar_pagos_modalidades
 
     mover_plata >> comparar_favoritismo >> tuning_favoritismo >> entrenar_favoritismo
     mover_plata >> tuning_fraccionamiento >> entrenar_fraccionamiento
@@ -132,6 +143,7 @@ with DAG(
     mover_plata >> analizar_vinculos >> graphframes
 
     [
+        analizar_pagos_modalidades,
         entrenar_favoritismo,
         entrenar_fraccionamiento,
         spark_favoritismo,
