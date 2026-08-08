@@ -1,0 +1,23 @@
+# TRAIN reproducible del PoC. Esta configuración sí incluye ground truth sintético.
+# En una adaptación institucional, los labels deben provenir únicamente de una
+# fuente histórica aprobada; nunca se derivan del mismo modelo que se entrena.
+mode: training
+
+source:
+  type: local_csv
+  datasets:
+    contracts: data/contratos_siaf_seace.csv
+
+mapping:
+  contracts:
+    id_contrato: id_contrato
+    id_proveedor: id_proveedor
+    id_entidad: id_entidad
+    id_funcionario: id_funcionario
+    monto: monto
+    fecha_contrato: fecha_contrato
+    modalidad: modalidad
+    objeto: objeto
+    categoria_principal: categoria_principal
+    label_favoritismo: es_favoritismo_real
+    label_fraccionamiento: es_fraccionamiento_real
