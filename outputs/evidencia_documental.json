@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "generado_utc": "2026-08-08T00:49:09.126727+00:00",
-  "git_commit": "3ff9cabdb0210b537aabe0281ec695278d818760",
+  "generado_utc": "2026-08-08T00:56:02.376187+00:00",
+  "git_commit": "c13e5929e4e4344699e5edc8f658adf2cc23e74d",
   "naturaleza": "Prototipo independiente. Las métricas sintéticas evalúan el PoC y no estiman desempeño productivo. Las salidas sobre datos públicos son señales de priorización para revisión y no constituyen hallazgos ni determinaciones de irregularidad.",
   "sintetico": {
     "contratos": 3709,
@@ -214,8 +214,8 @@
   },
   "run_manifest": {
     "schema_version": 3,
-    "generado_utc": "2026-08-08T00:49:08.748130+00:00",
-    "git_commit": "3ff9cabdb0210b537aabe0281ec695278d818760",
+    "generado_utc": "2026-08-08T00:56:01.996846+00:00",
+    "git_commit": "c13e5929e4e4344699e5edc8f658adf2cc23e74d",
     "entorno": {
       "python": "3.12.13",
       "pandas": "3.0.2",
@@ -363,7 +363,7 @@
       ],
       "ranking": "outputs/ranking_riesgo_favoritismo_spark.csv",
       "modelo_runtime": "outputs/runtime/modelo_favoritismo_spark_rf",
-      "duracion_s": 48.224,
+      "duracion_s": 47.07,
       "advertencia": "Benchmark sintético con solo 6 positivos: la métrica CV es de alta varianza y no se usa como estimación de desempeño productivo. Ejecución Spark real local; clúster CGR pendiente."
     },
     "spark_fraccionamiento": {
@@ -389,7 +389,7 @@
       },
       "ranking": "outputs/ranking_riesgo_fraccionamiento_spark.csv",
       "modelo_runtime": "outputs/runtime/modelo_fraccionamiento_spark_kmeans",
-      "duracion_s": 19.974,
+      "duracion_s": 20.09,
       "advertencia": "Sanity check sobre benchmark sintético; no estima desempeño productivo. Ejecución Spark real local; clúster CGR pendiente."
     },
     "graphframes": {
@@ -409,7 +409,7 @@
         "outputs/vinculos_graphframes_sospechosos.csv",
         "outputs/vinculos_graphframes_pagerank.csv"
       ],
-      "duracion_s": 20.837,
+      "duracion_s": 21.353,
       "advertencia": "Datos de contacto sintéticos; clúster y fuentes institucionales CGR pendientes."
     },
     "validacion_p0_datos_reales": {
@@ -504,8 +504,8 @@
       },
       "outputs/ranking_riesgo_favoritismo.csv": {
         "existe": true,
-        "sha256": "5b06159eba0df7db27b2d28b6a58fb142d1aa0653145edaddf4196bde4156c82",
-        "bytes": 192442
+        "sha256": "ba91b6188767e4c9035d4e179506720f05a39310808607de2f15a033322fb009",
+        "bytes": 192441
       },
       "outputs/ranking_riesgo_fraccionamiento.csv": {
         "existe": true,
@@ -519,17 +519,17 @@
       },
       "outputs/spark_favoritismo_resumen.json": {
         "existe": true,
-        "sha256": "0001f6d17c531ba11452ecf62d34fbd989b214ac462192a82ff9dac364b02260",
-        "bytes": 1090
+        "sha256": "930b82b8eaa29e2adaa354f099729156e835626a6cfbd9da0f4e25c39af0d1a9",
+        "bytes": 1089
       },
       "outputs/spark_fraccionamiento_resumen.json": {
         "existe": true,
-        "sha256": "fcffd46080a599bb53a4c838966a950de5e16894e373db7e7461615c55d557cc",
-        "bytes": 872
+        "sha256": "d6076077ca43bac8c0c66704a22ed25dfcc18e8cda6b4744fd2c06178c27f525",
+        "bytes": 871
       },
       "outputs/graphframes_resumen.json": {
         "existe": true,
-        "sha256": "62809e699a595ef49e9f87277ed88d15e79988bc9986a78f23c8d99a9821587b",
+        "sha256": "7b419febfb0f8686f05e9830325b2acb8266355fa1cb26f7cd64354ab17cf810",
         "bytes": 603
       },
       "outputs/ranking_riesgo_favoritismo_spark.csv": {
