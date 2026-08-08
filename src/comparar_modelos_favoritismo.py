@@ -8,6 +8,9 @@ evidencia reproducible de la selección, no afirmar que un algoritmo fue
 
 El benchmark sigue siendo sintético y pequeño en clase positiva; estas métricas
 sirven para comparar candidatos dentro del PoC, no para estimar producción.
+AUC-PR sigue siendo la métrica primaria por desbalance; Accuracy se reporta
+porque el Anexo 3 la solicita expresamente, pero no se usa para seleccionar el
+modelo por ser potencialmente engañosa en clases severamente desbalanceadas.
 """
 
 import json
@@ -17,6 +20,7 @@ import pandas as pd
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
+    accuracy_score,
     average_precision_score,
     f1_score,
     precision_score,
@@ -66,6 +70,7 @@ def predicciones_oof(modelo, X, y, cv, usar_sample_weight=False):
 def metricas(y, proba, umbral=0.5):
     pred = (proba >= umbral).astype(int)
     return {
+        "accuracy": float(accuracy_score(y, pred)),
         "auc_pr": float(average_precision_score(y, proba)),
         "auc_roc": float(roc_auc_score(y, proba)),
         "precision": float(precision_score(y, pred, zero_division=0)),
@@ -99,9 +104,10 @@ def main():
         "n_registros": len(df),
         "positivos": int(y.sum()),
         "criterio_primario": "AUC-PR por desbalance severo",
+        "metricas_reportadas": ["accuracy", "auc_pr", "auc_roc", "precision", "recall", "f1"],
         "resultados": tabla.to_dict(orient="records"),
         "mejor_candidato": tabla.iloc[0]["modelo"],
-        "advertencia": "comparación sobre benchmark sintético; no estima desempeño productivo",
+        "advertencia": "comparación sobre benchmark sintético; Accuracy se reporta por el Anexo 3 pero no se usa como criterio primario",
     }
     with open("outputs/comparacion_modelos_favoritismo.json", "w", encoding="utf-8") as f:
         json.dump(resumen, f, ensure_ascii=False, indent=2)
