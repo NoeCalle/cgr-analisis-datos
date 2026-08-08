@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -133,6 +134,37 @@ def test_config_local_integracion_end_to_end_con_datos_sinteticos():
     assert len(results["contracts"]) > 0
     assert {"contracts", "suppliers", "entities", "officials"}.issubset(results)
     assert "label_favoritismo" not in results["contracts"].columns
+
+
+def test_fuente_con_columnas_arbitrarias_funciona_cambiando_solo_yaml(tmp_path):
+    csv_path = tmp_path / "tb_contratacion.csv"
+    config_path = tmp_path / "institucion.yaml"
+    _source_df().to_csv(csv_path, index=False)
+
+    config_path.write_text(
+        yaml.safe_dump(
+            {
+                "mode": "inference",
+                "source": {
+                    "type": "local_csv",
+                    "datasets": {"contracts": str(csv_path)},
+                },
+                "mapping": {"contracts": _mapping()},
+            },
+            allow_unicode=True,
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+    config = cargar_config(config_path)
+    results, summary = integrar(config)
+    contracts = results["contracts"]
+
+    assert summary["source_type"] == "local_csv"
+    assert contracts["id_proveedor"].tolist() == ["SUP-9", "SUP-8"]
+    assert contracts["monto"].tolist() == [125000.50, 98000.00]
+    assert list(contracts.columns) == list(_mapping())
 
 
 def test_local_csv_lee_solo_columnas_mapeadas_y_preserva_ceros(tmp_path):
