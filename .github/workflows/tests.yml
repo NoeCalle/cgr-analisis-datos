@@ -58,6 +58,7 @@ jobs:
           python src/modelo_fraccionamiento.py
           python src/modelo_grafos.py
           python src/lakehouse_capas.py oro
+          python src/generar_run_manifest.py
 
       - name: Build documentary evidence
         run: python src/generar_evidencia_documental.py
@@ -90,6 +91,8 @@ jobs:
               fav_tuning = json.load(f)
           with open('outputs/tuning_fraccionamiento_resumen.json', encoding='utf-8') as f:
               frac_tuning = json.load(f)
+          with open('outputs/run_manifest.json', encoding='utf-8') as f:
+              manifest = json.load(f)
           with open('outputs/evidencia_documental.json', encoding='utf-8') as f:
               evidencia = json.load(f)
 
@@ -102,9 +105,13 @@ jobs:
           for campo in ['recall_at_k', 'auc_roc', 'auc_pr', 'precision', 'recall', 'f1']:
               assert campo in metricas
 
+          assert manifest['schema_version'] == 2
+          assert manifest['git_commit']
+          assert all(v['existe'] for v in manifest['artefactos'].values())
+          assert evidencia['run_manifest']['git_commit'] == manifest['git_commit']
           assert evidencia['validacion_datos_publicos']['integridad_ocds']['contratos_analiticos_validos'] == 47254
           assert evidencia['criterios_documentales']['permitir_conteo_obsoleto_solo_como_antecedente_explicito'] is True
-          print('Smoke P1/P2 + datos + rankings + evidencia documental OK')
+          print('Smoke P1/P2 + datos + rankings + manifiesto + evidencia documental OK')
           PY
 
       - name: Setup Node
@@ -171,6 +178,7 @@ jobs:
             outputs/tuning_favoritismo_resultados.csv
             outputs/tuning_fraccionamiento_resumen.json
             outputs/tuning_fraccionamiento_resultados.csv
+            outputs/run_manifest.json
             outputs/evidencia_documental.json
           retention-days: 14
 
@@ -221,6 +229,7 @@ jobs:
             outputs/tuning_favoritismo_resultados.csv \
             outputs/tuning_fraccionamiento_resumen.json \
             outputs/tuning_fraccionamiento_resultados.csv \
+            outputs/run_manifest.json \
             outputs/evidencia_documental.json \
             reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx \
             reporte/productos_formales/Producto_*.docx
