@@ -90,6 +90,7 @@ function parrafo(text, opciones = {}) {
     alignment: opciones.alignment || AlignmentType.JUSTIFIED,
     children: [run(text, opciones.run || {})],
     spacing: espaciado({ after: opciones.after === undefined ? 80 : opciones.after }),
+    keepNext: Boolean(opciones.keepNext),
   });
 }
 
@@ -156,7 +157,7 @@ function tabla(headers, rows, widths) {
 }
 
 function leyendaTabla(numero, text) {
-  return parrafoCentrado(`Tabla ${numero}. ${text}`, { run: { bold: true }, after: 45 });
+  return parrafoCentrado(`Tabla ${numero}. ${text}`, { run: { bold: true }, after: 45, keepNext: true });
 }
 
 function tablaConTitulo(numero, text, headers, rows, widths) {
@@ -174,6 +175,7 @@ function imagen(path, width, height) {
       transformation: { width, height },
     })],
     alignment: AlignmentType.CENTER,
+    keepNext: true,
     // No fijar line-height aquí: una altura de línea de 12 pt recorta las
     // imágenes inline en LibreOffice. El cuerpo del texto conserva espacio simple.
     spacing: { after: 40 },
@@ -181,7 +183,7 @@ function imagen(path, width, height) {
 }
 
 function leyendaFigura(numero, text) {
-  return parrafoCentrado(`Gráfico ${numero}. ${text}`, { run: { bold: true }, after: 35 });
+  return parrafoCentrado(`Gráfico ${numero}. ${text}`, { run: { bold: true }, after: 35, keepNext: true });
 }
 
 function imagenConTitulo(numero, text, path, width, height, fuente = "Elaboración propia a partir de la evidencia reproducible del PoC.") {
