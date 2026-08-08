@@ -31,10 +31,10 @@ jobs:
           python-version: '3.12'
           cache: pip
 
-      - name: Install system Graphviz
+      - name: Install system tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y graphviz
+          sudo apt-get install -y graphviz libreoffice-writer python3-uno poppler-utils
 
       - name: Install project dependencies
         run: |
@@ -53,6 +53,7 @@ jobs:
 
       - name: Run sklearn benchmark and graph baseline
         run: |
+          python src/eda.py
           python src/comparar_modelos_favoritismo.py
           python src/tuning_favoritismo.py
           python src/tuning_fraccionamiento.py
@@ -154,8 +155,10 @@ jobs:
           texto_dic = ' '.join(diccionario.astype(str).fillna('').values.ravel()).lower()
           assert 'pct_no_competitiva' not in texto_dic
           assert 's/. 400,000' not in texto_dic
+          assert 'cumple_regla_fraccionamiento' not in texto_dic
           assert 'pct_contratacion_directa' in texto_dic
           assert 'pct_comparacion_precios' in texto_dic
+          assert 'senal_priorizacion_fraccionamiento' in texto_dic
           assert len(linaje) >= 15
           assert {'campo_fuente', 'campo_plata', 'feature_modelo', 'salida_oro'} <= set(linaje.columns)
 
@@ -191,43 +194,38 @@ jobs:
           npm ci
           npm run all
 
-      - name: Validate generated DOCX content
+      - name: Materialize paginated indexes and duplex settings
         run: |
+          /usr/bin/python3 reporte/actualizar_indices_docx.py
+
+      - name: Audit formal DOCX structure
+        run: |
+          python reporte/validar_documentacion.py
+
+      - name: Render DOCX to PDF and validate paginated TOC
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/cgr-docx-pdf
+          mkdir -p /tmp/cgr-docx-pdf
+          for f in reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx reporte/productos_formales/Producto_*.docx; do
+            libreoffice --headless --convert-to pdf --outdir /tmp/cgr-docx-pdf "$f" >/dev/null
+          done
           python - <<'PY'
+          import re
+          import subprocess
           from pathlib import Path
-          from docx import Document
 
-          files = [Path('reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx')]
-          files += sorted(Path('reporte/productos_formales').glob('Producto_*.docx'))
-          assert len(files) == 8, files
-
-          banned = [
-              'pct_no_competitiva',
-              'AUC-ROC = 1.00',
-              'AUC-PR = 1.00',
-              'S/. 400,000',
-              'reentrenado automáticamente',
-          ]
-          texts = {}
-          for f in files:
-              doc = Document(f)
-              text = '\n'.join(p.text for p in doc.paragraphs)
-              for table in doc.tables:
-                  for row in table.rows:
-                      text += '\n' + ' | '.join(cell.text for cell in row.cells)
-              texts[f.name] = text
-              for token in banned:
-                  assert token not in text, f'{f}: contiene texto obsoleto: {token}'
-              assert 'prototipo' in text.lower()
-
-          reporte = texts['Reporte_Tecnico_Prototipo_CGR_1.8.2.docx']
-          assert '47,254' in reporte, 'El reporte no muestra el conteo vigente 47,254'
-          assert 'AUC-PR 0.671' in reporte, 'El reporte no muestra la métrica RF reproducida con el entorno pinneado'
-          if '47,442' in reporte:
-              assert 'conteo antiguo' in reporte and 'fue descartado' in reporte, (
-                  '47,442 solo puede aparecer como antecedente explícitamente descartado'
+          pdfs = sorted(Path('/tmp/cgr-docx-pdf').glob('*.pdf'))
+          assert len(pdfs) == 8, pdfs
+          for pdf in pdfs:
+              text = subprocess.check_output(['pdftotext', '-layout', str(pdf), '-'], text=True)
+              assert '[[TOC]]' not in text, f'{pdf.name}: marcador TOC sin resolver'
+              assert 'Índice' in text, f'{pdf.name}: falta índice renderizado'
+              assert re.search(r'\.{3,}\s*\d+\s*$', text, re.MULTILINE), (
+                  f'{pdf.name}: el índice no muestra números de página'
               )
-          print(f'DOCX validados: {len(files)}')
+              assert 'Página' in text, f'{pdf.name}: no se ve numeración en pie de página'
+          print(f'PDF smoke Sprint B: {len(pdfs)} documentos con índice paginado')
           PY
 
       - name: Upload reproducibility evidence
@@ -270,8 +268,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Retira modelos Spark/artefactos históricos cuyo formato incorpora
-          # metadatos no determinísticos. Se regeneran en outputs/runtime/.
           git rm -r --ignore-unmatch \
             outputs/models/modelo_favoritismo_spark_rf \
             outputs/models/modelo_fraccionamiento_spark_kmeans
@@ -321,7 +317,7 @@ jobs:
             outputs/linaje_datos.csv \
             outputs/run_manifest.json \
             outputs/evidencia_documental.json \
-            outputs/charts/09_diagrama_modelo_datos.png \
+            outputs/charts/*.png \
             lakehouse/oro/ranking_riesgo_favoritismo.csv \
             lakehouse/oro/ranking_riesgo_fraccionamiento.csv \
             lakehouse/oro/ranking_vinculos_proveedor_funcionario.csv \
@@ -335,6 +331,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No hay artefactos verificados nuevos que persistir."
           else
-            git commit -m "chore: regenerar artefactos Sprint A verificados [skip ci]"
+            git commit -m "chore: regenerar artefactos Sprint B verificados [skip ci]"
             git push
           fi
