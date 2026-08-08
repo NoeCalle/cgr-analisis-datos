@@ -174,7 +174,9 @@ function imagen(path, width, height) {
       transformation: { width, height },
     })],
     alignment: AlignmentType.CENTER,
-    spacing: espaciado({ after: 40 }),
+    // No fijar line-height aquí: una altura de línea de 12 pt recorta las
+    // imágenes inline en LibreOffice. El cuerpo del texto conserva espacio simple.
+    spacing: { after: 40 },
   });
 }
 
