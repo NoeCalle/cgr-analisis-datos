@@ -1,4 +1,4 @@
-id_proveedor,id_entidad,objeto,n_contratos_grupo,max_contratos_ventana_15d,monto_total_ventana_15d,pct_montos_bajo_umbral,monto_total_grupo,label_fraccionamiento_real,score_anomalia,es_anomalia_modelo,cumple_regla_fraccionamiento
+id_proveedor,id_entidad,objeto,n_contratos_grupo,max_contratos_ventana_15d,monto_total_ventana_15d,pct_montos_bajo_umbral,monto_total_grupo,label_fraccionamiento_real,score_anomalia,es_anomalia_modelo,senal_priorizacion_fraccionamiento
 P0165,E01,Servicio de transporte,10,2,1171077.53,0.3,5395897.06,False,0.24899239022140296,True,False
 P0156,E02,Adquisición de materiales de construcción,14,3,1124862.62,0.8571428571428571,4347975.350000001,False,0.24202131386217718,True,True
 P0156,E02,Servicio de mantenimiento de infraestructura,9,2,1516564.0,0.4444444444444444,4938155.42,False,0.23386637094358242,True,False

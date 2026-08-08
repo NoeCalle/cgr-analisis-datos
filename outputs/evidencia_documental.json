@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "generado_utc": "2026-08-08T01:29:43.650204+00:00",
-  "git_commit": "ef6f1b857c6073723eef34d67e077f07279ea4d7",
+  "generado_utc": "2026-08-08T02:22:16.953953+00:00",
+  "git_commit": "c440d76cfb54b29248829d5d9e44a4f35c31bc36",
   "naturaleza": "Prototipo independiente. Las métricas sintéticas evalúan el PoC y no estiman desempeño productivo. Las salidas sobre datos públicos son señales de priorización para revisión y no constituyen hallazgos ni determinaciones de irregularidad.",
   "sintetico": {
     "contratos": 3709,
@@ -72,9 +72,18 @@
     "n_registros": 2328,
     "positivos": 6,
     "criterio_primario": "AUC-PR por desbalance severo",
+    "metricas_reportadas": [
+      "accuracy",
+      "auc_pr",
+      "auc_roc",
+      "precision",
+      "recall",
+      "f1"
+    ],
     "resultados": [
       {
         "modelo": "RandomForest",
+        "accuracy": 0.997852233676976,
         "auc_pr": 0.6714285714285714,
         "auc_roc": 0.9986362331323572,
         "precision": 0.6666666666666666,
@@ -83,6 +92,7 @@
       },
       {
         "modelo": "RegresionLogistica",
+        "accuracy": 0.9957044673539519,
         "auc_pr": 0.6211419753086419,
         "auc_roc": 0.99519092736147,
         "precision": 0.3333333333333333,
@@ -91,6 +101,7 @@
       },
       {
         "modelo": "GradientBoosting",
+        "accuracy": 0.9969931271477663,
         "auc_pr": 0.41795532646048106,
         "auc_roc": 0.7492463393626184,
         "precision": 0.42857142857142855,
@@ -99,7 +110,7 @@
       }
     ],
     "mejor_candidato": "RandomForest",
-    "advertencia": "comparación sobre benchmark sintético; no estima desempeño productivo"
+    "advertencia": "comparación sobre benchmark sintético; Accuracy se reporta por el Anexo 3 pero no se usa como criterio primario"
   },
   "tuning_favoritismo": {
     "features": [
@@ -129,6 +140,15 @@
   "tuning_fraccionamiento": {
     "diseno": "holdout final separado antes del tuning; validaciones repetidas solo en desarrollo",
     "metrica_seleccion": "AUC-PR media en validaciones repetidas",
+    "metricas_reportadas_holdout": [
+      "accuracy",
+      "auc_roc",
+      "auc_pr",
+      "precision",
+      "recall",
+      "f1",
+      "recall_at_k"
+    ],
     "n_total": 180,
     "positivos_total": 8,
     "n_desarrollo": 112,
@@ -142,6 +162,7 @@
     },
     "metricas_holdout_final": {
       "recall_at_k": 0.0,
+      "accuracy": 0.7941176470588235,
       "auc_roc": 0.8564102564102564,
       "auc_pr": 0.17086247086247086,
       "precision": 0.17647058823529413,
@@ -151,7 +172,7 @@
       "positivos_test": 3,
       "anomalias_predichas": 17
     },
-    "advertencia": "benchmark sintético con pocos positivos; no estima desempeño productivo"
+    "advertencia": "benchmark sintético con pocos positivos; Accuracy se reporta por el Anexo 3 pero no se usa como criterio primario"
   },
   "validacion_datos_publicos": {
     "fecha_validacion": "2026-08-07",
@@ -214,8 +235,8 @@
   },
   "run_manifest": {
     "schema_version": 3,
-    "generado_utc": "2026-08-08T01:29:43.277037+00:00",
-    "git_commit": "ef6f1b857c6073723eef34d67e077f07279ea4d7",
+    "generado_utc": "2026-08-08T02:22:16.580334+00:00",
+    "git_commit": "c440d76cfb54b29248829d5d9e44a4f35c31bc36",
     "entorno": {
       "python": "3.12.13",
       "pandas": "3.0.2",
@@ -252,9 +273,18 @@
       "n_registros": 2328,
       "positivos": 6,
       "criterio_primario": "AUC-PR por desbalance severo",
+      "metricas_reportadas": [
+        "accuracy",
+        "auc_pr",
+        "auc_roc",
+        "precision",
+        "recall",
+        "f1"
+      ],
       "resultados": [
         {
           "modelo": "RandomForest",
+          "accuracy": 0.997852233676976,
           "auc_pr": 0.6714285714285714,
           "auc_roc": 0.9986362331323572,
           "precision": 0.6666666666666666,
@@ -263,6 +293,7 @@
         },
         {
           "modelo": "RegresionLogistica",
+          "accuracy": 0.9957044673539519,
           "auc_pr": 0.6211419753086419,
           "auc_roc": 0.99519092736147,
           "precision": 0.3333333333333333,
@@ -271,6 +302,7 @@
         },
         {
           "modelo": "GradientBoosting",
+          "accuracy": 0.9969931271477663,
           "auc_pr": 0.41795532646048106,
           "auc_roc": 0.7492463393626184,
           "precision": 0.42857142857142855,
@@ -279,7 +311,7 @@
         }
       ],
       "mejor_candidato": "RandomForest",
-      "advertencia": "comparación sobre benchmark sintético; no estima desempeño productivo"
+      "advertencia": "comparación sobre benchmark sintético; Accuracy se reporta por el Anexo 3 pero no se usa como criterio primario"
     },
     "tuning_favoritismo": {
       "features": [
@@ -309,6 +341,15 @@
     "tuning_fraccionamiento": {
       "diseno": "holdout final separado antes del tuning; validaciones repetidas solo en desarrollo",
       "metrica_seleccion": "AUC-PR media en validaciones repetidas",
+      "metricas_reportadas_holdout": [
+        "accuracy",
+        "auc_roc",
+        "auc_pr",
+        "precision",
+        "recall",
+        "f1",
+        "recall_at_k"
+      ],
       "n_total": 180,
       "positivos_total": 8,
       "n_desarrollo": 112,
@@ -322,6 +363,7 @@
       },
       "metricas_holdout_final": {
         "recall_at_k": 0.0,
+        "accuracy": 0.7941176470588235,
         "auc_roc": 0.8564102564102564,
         "auc_pr": 0.17086247086247086,
         "precision": 0.17647058823529413,
@@ -331,7 +373,7 @@
         "positivos_test": 3,
         "anomalias_predichas": 17
       },
-      "advertencia": "benchmark sintético con pocos positivos; no estima desempeño productivo"
+      "advertencia": "benchmark sintético con pocos positivos; Accuracy se reporta por el Anexo 3 pero no se usa como criterio primario"
     },
     "spark_favoritismo": {
       "motor": "Apache Spark MLlib",
@@ -363,7 +405,7 @@
       ],
       "ranking": "outputs/ranking_riesgo_favoritismo_spark.csv",
       "modelo_runtime": "outputs/runtime/modelo_favoritismo_spark_rf",
-      "duracion_s": 48.458,
+      "duracion_s": 45.748,
       "advertencia": "Benchmark sintético con solo 6 positivos: la métrica CV es de alta varianza y no se usa como estimación de desempeño productivo. Ejecución Spark real local; clúster CGR pendiente."
     },
     "spark_fraccionamiento": {
@@ -389,7 +431,7 @@
       },
       "ranking": "outputs/ranking_riesgo_fraccionamiento_spark.csv",
       "modelo_runtime": "outputs/runtime/modelo_fraccionamiento_spark_kmeans",
-      "duracion_s": 20.648,
+      "duracion_s": 19.61,
       "advertencia": "Sanity check sobre benchmark sintético; no estima desempeño productivo. Ejecución Spark real local; clúster CGR pendiente."
     },
     "graphframes": {
@@ -409,7 +451,7 @@
         "outputs/vinculos_graphframes_sospechosos.csv",
         "outputs/vinculos_graphframes_pagerank.csv"
       ],
-      "duracion_s": 22.757,
+      "duracion_s": 21.268,
       "advertencia": "Datos de contacto sintéticos; clúster y fuentes institucionales CGR pendientes."
     },
     "validacion_p0_datos_reales": {
@@ -489,8 +531,8 @@
       },
       "outputs/comparacion_modelos_favoritismo.json": {
         "existe": true,
-        "sha256": "319b0d4f0a218e49de72b2b8e7aebbf959a6f214867a5f98fe8c81e9942d7324",
-        "bytes": 1316
+        "sha256": "341406ca16fcbfb6f2f7ee6fa598e85287b82c0a3f882022ccf0edc98d2b46c5",
+        "bytes": 1587
       },
       "outputs/tuning_favoritismo_resumen.json": {
         "existe": true,
@@ -499,18 +541,18 @@
       },
       "outputs/tuning_fraccionamiento_resumen.json": {
         "existe": true,
-        "sha256": "00179a066bb1e12519b4f0f13331305ea5bd2a95b6c5ff14c1aefd61e9198891",
-        "bytes": 828
+        "sha256": "1ff9f2428bd7a221513886c7ec65eb45ca2dadb2183b8a377a244eefde466430",
+        "bytes": 1049
       },
       "outputs/ranking_riesgo_favoritismo.csv": {
         "existe": true,
-        "sha256": "eafe6894b3c5edb0dd1f79c6252fe4c4b052e49e9f4c2af83811fc5f64e34e2c",
-        "bytes": 192442
+        "sha256": "0f04779ca5e147604f2c54d00ad6d99821adafc06cab6ccd33adea082e29b24c",
+        "bytes": 192441
       },
       "outputs/ranking_riesgo_fraccionamiento.csv": {
         "existe": true,
-        "sha256": "4dbffa1c62560458337c76d318dff982a2a547f7adde114062272ad7a9d5c3d1",
-        "bytes": 20154
+        "sha256": "d87318d9447ee9d63496562f7a743c76d4db34838c50b2060c6729b7b8dbad30",
+        "bytes": 20160
       },
       "outputs/ranking_vinculos_proveedor_funcionario.csv": {
         "existe": true,
@@ -519,17 +561,17 @@
       },
       "outputs/spark_favoritismo_resumen.json": {
         "existe": true,
-        "sha256": "2925b7fb51715789f0eba22ce2ace89f2c2aa659f0bbc3b814cd176d2abea62a",
+        "sha256": "6f78b7110626fb4ce20f34642f9cc13e8b0aea9d4f192671c551852a1dca1899",
         "bytes": 1090
       },
       "outputs/spark_fraccionamiento_resumen.json": {
         "existe": true,
-        "sha256": "12b20e1e1b10d0158f6e2c8311fccc2ebffe7cd8bc58dac85a25b8ca7d41e8f3",
-        "bytes": 872
+        "sha256": "10d24ac9aa25ac67f5ccbf39eb5efe55905b7bfca33ee65da810d079d01ba8f5",
+        "bytes": 871
       },
       "outputs/graphframes_resumen.json": {
         "existe": true,
-        "sha256": "e9bd53816296936c7f9f38e8157bd60f572e76ff4b78be7494807b558696fddb",
+        "sha256": "cd764154ef9448c4f0ea50df2cf8ad8e49644417bb81aa2499de4ad1ccf90ef5",
         "bytes": 603
       },
       "outputs/ranking_riesgo_favoritismo_spark.csv": {

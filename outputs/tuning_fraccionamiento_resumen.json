@@ -1,6 +1,15 @@
 {
   "diseno": "holdout final separado antes del tuning; validaciones repetidas solo en desarrollo",
   "metrica_seleccion": "AUC-PR media en validaciones repetidas",
+  "metricas_reportadas_holdout": [
+    "accuracy",
+    "auc_roc",
+    "auc_pr",
+    "precision",
+    "recall",
+    "f1",
+    "recall_at_k"
+  ],
   "n_total": 180,
   "positivos_total": 8,
   "n_desarrollo": 112,
@@ -14,6 +23,7 @@
   },
   "metricas_holdout_final": {
     "recall_at_k": 0.0,
+    "accuracy": 0.7941176470588235,
     "auc_roc": 0.8564102564102564,
     "auc_pr": 0.17086247086247086,
     "precision": 0.17647058823529413,
@@ -23,5 +33,5 @@
     "positivos_test": 3,
     "anomalias_predichas": 17
   },
-  "advertencia": "benchmark sintético con pocos positivos; no estima desempeño productivo"
+  "advertencia": "benchmark sintético con pocos positivos; Accuracy se reporta por el Anexo 3 pero no se usa como criterio primario"
 }

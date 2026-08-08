@@ -16,9 +16,18 @@
   "n_registros": 2328,
   "positivos": 6,
   "criterio_primario": "AUC-PR por desbalance severo",
+  "metricas_reportadas": [
+    "accuracy",
+    "auc_pr",
+    "auc_roc",
+    "precision",
+    "recall",
+    "f1"
+  ],
   "resultados": [
     {
       "modelo": "RandomForest",
+      "accuracy": 0.997852233676976,
       "auc_pr": 0.6714285714285714,
       "auc_roc": 0.9986362331323572,
       "precision": 0.6666666666666666,
@@ -27,6 +36,7 @@
     },
     {
       "modelo": "RegresionLogistica",
+      "accuracy": 0.9957044673539519,
       "auc_pr": 0.6211419753086419,
       "auc_roc": 0.99519092736147,
       "precision": 0.3333333333333333,
@@ -35,6 +45,7 @@
     },
     {
       "modelo": "GradientBoosting",
+      "accuracy": 0.9969931271477663,
       "auc_pr": 0.41795532646048106,
       "auc_roc": 0.7492463393626184,
       "precision": 0.42857142857142855,
@@ -43,5 +54,5 @@
     }
   ],
   "mejor_candidato": "RandomForest",
-  "advertencia": "comparación sobre benchmark sintético; no estima desempeño productivo"
+  "advertencia": "comparación sobre benchmark sintético; Accuracy se reporta por el Anexo 3 pero no se usa como criterio primario"
 }
