@@ -211,7 +211,7 @@ def generar_graficos(resumen_pagos: pd.DataFrame, resumen_modalidades: pd.DataFr
     plt.close(fig)
 
 
-def analizar(config_path: str | Path = "config/local.yaml") -> dict:
+def analizar(config_path: str | Path = "config/local-tdr.yaml") -> dict:
     config = cargar_config(config_path)
     datasets, integration_summary = integrar(config)
     if "payments" not in datasets:
@@ -253,7 +253,7 @@ def analizar(config_path: str | Path = "config/local.yaml") -> dict:
 
 def main():
     parser = argparse.ArgumentParser(description="Analiza pagos, montos y modalidades del contrato canónico.")
-    parser.add_argument("--config", default="config/local.yaml")
+    parser.add_argument("--config", default="config/local-tdr.yaml")
     args = parser.parse_args()
     analizar(args.config)
 
