@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from connectors.local_csv import LocalCsvConnector
+from connectors.sqlserver import _quote_identifier, _quote_qualified_identifier
 from core.config import cargar_config, validar_config
 from core.schemas import aplicar_mapping, validar_dataframe
 from ingestar_canonico import integrar
@@ -100,6 +101,22 @@ def test_config_rechaza_secret_inline():
         validar_config(config)
 
 
+def test_config_rechaza_mapping_sin_ubicacion_de_fuente():
+    config = {
+        "mode": "inference",
+        "source": {
+            "type": "local_csv",
+            "datasets": {"contracts": "contratos.csv"},
+        },
+        "mapping": {
+            "contracts": _mapping(),
+            "suppliers": {"id_proveedor": "COD_PROV"},
+        },
+    }
+    with pytest.raises(ValueError, match="mappings sin fuente"):
+        validar_config(config)
+
+
 def test_plantilla_cgr_es_valida_y_no_requiere_conexion_para_validarse():
     config = cargar_config(ROOT / "config" / "cgr.example.yaml")
     assert config["source"]["type"] == "sqlserver"
@@ -118,12 +135,21 @@ def test_config_local_integracion_end_to_end_con_datos_sinteticos():
     assert "label_favoritismo" not in results["contracts"].columns
 
 
-def test_local_csv_lee_solo_columnas_mapeadas(tmp_path):
+def test_local_csv_lee_solo_columnas_mapeadas_y_preserva_ceros(tmp_path):
     path = tmp_path / "contratos.csv"
     df = _source_df()
+    df.loc[0, "COD_PROV"] = "000123"
     df["COLUMNA_QUE_NO_NECESITAMOS"] = "ignorar"
     df.to_csv(path, index=False)
 
     connector = LocalCsvConnector({"contracts": str(path)})
     out = connector.read("contracts", list(_mapping().values()))
     assert "COLUMNA_QUE_NO_NECESITAMOS" not in out.columns
+    assert out.loc[0, "COD_PROV"] == "000123"
+
+
+def test_sqlserver_escapa_identificadores_y_rechaza_sql_libre():
+    assert _quote_identifier("Monto Adjudicado") == "[Monto Adjudicado]"
+    assert _quote_qualified_identifier("dbo.Vista Contratos") == "[dbo].[Vista Contratos]"
+    with pytest.raises(ValueError, match="no permitido"):
+        _quote_identifier("monto; DROP TABLE x")
