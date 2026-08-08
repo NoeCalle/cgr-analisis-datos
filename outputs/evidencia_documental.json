@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "generado_utc": "2026-08-08T00:02:29.028482+00:00",
-  "git_commit": "f723f52e6792e4a1898a136c8436f5c809e388cf",
+  "generado_utc": "2026-08-08T00:07:24.053555+00:00",
+  "git_commit": "46b503ba67f544ce1bd06479c377d773e565d4bc",
   "naturaleza": "Prototipo independiente. Las métricas sintéticas evalúan el PoC y no estiman desempeño productivo. Las salidas sobre datos públicos son señales de priorización para revisión y no constituyen hallazgos ni determinaciones de irregularidad.",
   "sintetico": {
     "contratos": 3709,
@@ -212,7 +212,231 @@
       "validación de desempeño distribuido sobre HDFS/YARN institucional"
     ]
   },
-  "run_manifest": null,
+  "run_manifest": {
+    "schema_version": 2,
+    "generado_utc": "2026-08-08T00:07:23.721452+00:00",
+    "git_commit": "46b503ba67f544ce1bd06479c377d773e565d4bc",
+    "entorno": {
+      "python": "3.12.13",
+      "pandas": "3.0.2",
+      "numpy": "2.4.4",
+      "scikit-learn": "1.8.0",
+      "shap": "0.52.0",
+      "pyspark": null,
+      "delta-spark": null,
+      "graphframes-py": null
+    },
+    "arquitectura_datos": {
+      "entrada_modelos": "lakehouse/plata",
+      "salida_reporting": "lakehouse/oro",
+      "nota": "simulación local; no equivale al Lakehouse institucional CGR"
+    },
+    "comparacion_modelos_favoritismo": {
+      "diseno": "predicciones out-of-fold, StratifiedKFold 3-fold, mismas particiones para todos",
+      "features": [
+        "n_contratos",
+        "monto_total",
+        "monto_promedio",
+        "n_objetos_unicos",
+        "pct_contratacion_directa",
+        "pct_comparacion_precios",
+        "n_funcionarios_distintos",
+        "dias_actividad",
+        "concentracion_objeto",
+        "contratos_por_mes",
+        "monto_por_funcionario"
+      ],
+      "n_registros": 2328,
+      "positivos": 6,
+      "criterio_primario": "AUC-PR por desbalance severo",
+      "resultados": [
+        {
+          "modelo": "RandomForest",
+          "auc_pr": 0.6714285714285714,
+          "auc_roc": 0.9986362331323572,
+          "precision": 0.6666666666666666,
+          "recall": 0.3333333333333333,
+          "f1": 0.4444444444444444
+        },
+        {
+          "modelo": "RegresionLogistica",
+          "auc_pr": 0.6211419753086419,
+          "auc_roc": 0.99519092736147,
+          "precision": 0.3333333333333333,
+          "recall": 0.6666666666666666,
+          "f1": 0.4444444444444444
+        },
+        {
+          "modelo": "GradientBoosting",
+          "auc_pr": 0.41795532646048106,
+          "auc_roc": 0.7492463393626184,
+          "precision": 0.42857142857142855,
+          "recall": 0.5,
+          "f1": 0.46153846153846156
+        }
+      ],
+      "mejor_candidato": "RandomForest",
+      "advertencia": "comparación sobre benchmark sintético; no estima desempeño productivo"
+    },
+    "tuning_favoritismo": {
+      "features": [
+        "n_contratos",
+        "monto_total",
+        "monto_promedio",
+        "n_objetos_unicos",
+        "pct_contratacion_directa",
+        "pct_comparacion_precios",
+        "n_funcionarios_distintos",
+        "dias_actividad",
+        "concentracion_objeto",
+        "contratos_por_mes",
+        "monto_por_funcionario"
+      ],
+      "metrica_seleccion": "average_precision (AUC-PR)",
+      "cv": "StratifiedKFold(n_splits=3, shuffle=True, random_state=42)",
+      "mejor_configuracion": {
+        "max_depth": 3,
+        "min_samples_leaf": 1,
+        "n_estimators": 100
+      },
+      "mejor_auc_pr_cv": 0.8444444444444444,
+      "baseline_300_6_auc_pr_cv": 0.8444444444444444,
+      "advertencia": "resultado sobre ground truth sintético; no estima desempeño productivo"
+    },
+    "tuning_fraccionamiento": {
+      "diseno": "holdout final separado antes del tuning; validaciones repetidas solo en desarrollo",
+      "metrica_seleccion": "AUC-PR media en validaciones repetidas",
+      "n_total": 180,
+      "positivos_total": 8,
+      "n_desarrollo": 112,
+      "positivos_desarrollo": 5,
+      "mejor_configuracion": {
+        "n_estimators": 100,
+        "max_samples": 0.5,
+        "contamination": "auto",
+        "auc_pr_validacion_medio": 0.4019047619047619,
+        "recall_at_k_validacion_medio": 0.2
+      },
+      "metricas_holdout_final": {
+        "recall_at_k": 0.0,
+        "auc_roc": 0.8564102564102564,
+        "auc_pr": 0.17086247086247086,
+        "precision": 0.17647058823529413,
+        "recall": 1.0,
+        "f1": 0.3,
+        "n_test": 68,
+        "positivos_test": 3,
+        "anomalias_predichas": 17
+      },
+      "advertencia": "benchmark sintético con pocos positivos; no estima desempeño productivo"
+    },
+    "validacion_p0_datos_reales": {
+      "fecha_validacion": "2026-08-07",
+      "fuente": "Portal de datos abiertos OCDS de la OECE / Open Contracting Partnership, publicación usada por el prototipo",
+      "naturaleza_resultados": "Señales estadísticas para priorización de revisión; no constituyen hallazgos ni determinaciones de irregularidad",
+      "integridad_ocds": {
+        "regla_relacional": "Contract(main_ocid, awardID) -> Award(main_ocid, id) -> awards_suppliers(main_ocid, awards_id)",
+        "clave_contrato_analitica": "OCID::contract.id",
+        "contratos_crudos": 47510,
+        "contratos_con_award_y_supplier_resolubles": 47254,
+        "contratos_excluidos_sin_adjudicacion_resoluble": 256,
+        "contratos_analiticos_validos": 47254,
+        "adjudicatarios_distintos_en_contratos": 25861,
+        "entidades_distintas_en_contratos": 2732,
+        "consorcios_adjudicatarios_distintos_en_contratos": 7486,
+        "monto_total_pen": 23082420702.6,
+        "fecha_contrato_min": "2018-09-18",
+        "fecha_contrato_max": "2024-11-08",
+        "categorias_ocds": {
+          "goods": 23630,
+          "services": 18584,
+          "works": 5040
+        }
+      },
+      "analisis_regenerado": {
+        "pares_proveedor_entidad_con_2_o_mas_contratos": 5387,
+        "grupos_fraccionamiento_con_2_o_mas_contratos": 4585,
+        "grupos_priorizados_por_senal_fraccionamiento": 322,
+        "pares_proveedor_entidad_evaluados_para_vinculos_organizacionales": 37626,
+        "senales_por_telefono_o_direccion_compartidos": 0
+      },
+      "comparacion_con_ejecucion_obsoleta": {
+        "conteo_contratos_anterior": 47442,
+        "conteo_contratos_corregido": 47254,
+        "diferencia": -188,
+        "nota": "Los artefactos *_REAL.csv previos fueron retirados del repositorio porque derivaban de una asociación supplier-proceso que no respetaba la relación Contract->Award->Supplier."
+      },
+      "fuentes_hash_sha256": {
+        "main.csv": "90981c7c7553b76aafed6627295ffdb22b3afa61c3d3e5a5977370412827f7b7",
+        "contracts.csv": "e31e7c8167601ca8b631b315d1c20c78ef0da005ec53da7a58e740712860133f",
+        "awards.csv": "1e2816d543d2c18adb7942ec6dfc2b53e163633982aeeb63ac1baea6edb05721",
+        "awards_suppliers.csv": "c4f4d68fff94d7fcaad26d3d720713f3c5c3c978ac2565998d3fbe252d7a249f",
+        "parties.csv": "f3e42d1a88b69cb538c4a81fe24c6eb792b4861c9b2847c62d3c150c5bf5de5c",
+        "sources.csv": "743b02a67fd1ee49c3438763351fd9a5a64accb787011239c389daef59250a78"
+      },
+      "estado_posterior_p0": {
+        "competitividad_modalidades": "corregida: Contratación Directa y Comparación de Precios se modelan por separado",
+        "validacion_fraccionamiento": "corregida: holdout final separado antes del tuning y selección por AUC-PR",
+        "autoevaluacion": "corregida: holdout post-actualización y modelo candidato sin promoción automática",
+        "plata_oro_airflow": "corregido: modelos consumen Plata, reporting Oro y Airflow usa Python de proyecto",
+        "documentacion_formal": "generación automática desde evidencia_documental.json incorporada a CI"
+      },
+      "pendientes_institucionales": [
+        "ground truth real etiquetado y validado por auditores",
+        "despliegue en Datamart/Lakehouse y ambientes DEV/QA/PROD de la CGR",
+        "certificación funcional, marcha blanca y transferencia formal",
+        "operación de SQL Server/SSRS/SSAS/Power BI institucional",
+        "validación de desempeño distribuido sobre HDFS/YARN institucional"
+      ]
+    },
+    "artefactos": {
+      "lakehouse/plata/contratos_procesados.csv": {
+        "existe": true,
+        "sha256": "d50bf10118f18d30b956b0545f00fc837c49b2c1755df8f7d543461f4ed44be6",
+        "bytes": 730302
+      },
+      "lakehouse/plata/dataset_favoritismo.csv": {
+        "existe": true,
+        "sha256": "0db44abd6ad41df1fb15a94a79c89ac4ad4ceb83bf6a0722f8099969b692fc15",
+        "bytes": 186075
+      },
+      "lakehouse/plata/dataset_fraccionamiento.csv": {
+        "existe": true,
+        "sha256": "9ac60a0c452617cc4c4a9f2704a70f767338fd32f171b024336b5b1092c2298e",
+        "bytes": 14516
+      },
+      "outputs/comparacion_modelos_favoritismo.json": {
+        "existe": true,
+        "sha256": "319b0d4f0a218e49de72b2b8e7aebbf959a6f214867a5f98fe8c81e9942d7324",
+        "bytes": 1316
+      },
+      "outputs/tuning_favoritismo_resumen.json": {
+        "existe": true,
+        "sha256": "641a65307c520b387cb77ccc01e551caa521e756b2c2273836f8221650e8c792",
+        "bytes": 715
+      },
+      "outputs/tuning_fraccionamiento_resumen.json": {
+        "existe": true,
+        "sha256": "00179a066bb1e12519b4f0f13331305ea5bd2a95b6c5ff14c1aefd61e9198891",
+        "bytes": 828
+      },
+      "outputs/ranking_riesgo_favoritismo.csv": {
+        "existe": true,
+        "sha256": "2ed16ebf4a1112246933b2ec827c0522933e16d197b757e094817a2b94e0ef50",
+        "bytes": 192441
+      },
+      "outputs/ranking_riesgo_fraccionamiento.csv": {
+        "existe": true,
+        "sha256": "4dbffa1c62560458337c76d318dff982a2a547f7adde114062272ad7a9d5c3d1",
+        "bytes": 20154
+      },
+      "outputs/ranking_vinculos_proveedor_funcionario.csv": {
+        "existe": true,
+        "sha256": "800dfae46978faaa6d504c8feb7e4ad5b3e0e823e6be67ca4331e2768ad8ccca",
+        "bytes": 121706
+      }
+    }
+  },
   "estado_componentes": {
     "implementado_y_probado": [
       "EDA y feature engineering",
