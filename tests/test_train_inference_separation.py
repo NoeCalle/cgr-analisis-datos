@@ -51,7 +51,6 @@ def test_preprocesamiento_inference_usa_estado_train_y_no_recalcula():
     estado = ajustar_estado_preprocesamiento(train)
     assert estado["schema_version"] == PREPROCESSOR_SCHEMA_VERSION
 
-    # Lote deliberadamente extremo. Un refit sobre inference produciría estadísticas distintas.
     lote = pd.DataFrame(
         {
             "id_contrato": ["N1", "N2"],
@@ -153,5 +152,29 @@ def test_feature_engineering_train_mantiene_paridad_con_dataset_legacy():
 
     assert len(nuevo) == len(legacy)
     for col in FAV_FEATURES:
-        assert np.allclose(nuevo[col].astype(float), legacy[col].astype(float), rtol=1e-10, atol=1e-10)
+        a = nuevo[col].astype(float).to_numpy()
+        b = legacy[col].astype(float).to_numpy()
+        iguales = np.isclose(a, b, rtol=1e-10, atol=1e-10, equal_nan=True)
+        if not iguales.all():
+            indices = np.where(~iguales)[0][:10]
+            detalle = []
+            for i in indices:
+                prov = nuevo.loc[i, "id_proveedor"]
+                ent = nuevo.loc[i, "id_entidad"]
+                contratos = raw.loc[
+                    (raw["id_proveedor"] == prov) & (raw["id_entidad"] == ent),
+                    ["id_contrato", "objeto", "monto"],
+                ].to_dict("records")
+                detalle.append(
+                    {
+                        "indice": int(i),
+                        "id_proveedor": prov,
+                        "id_entidad": ent,
+                        "nuevo": None if pd.isna(a[i]) else float(a[i]),
+                        "legacy": None if pd.isna(b[i]) else float(b[i]),
+                        "diff": None if pd.isna(a[i]) or pd.isna(b[i]) else float(a[i] - b[i]),
+                        "contratos_raw": contratos,
+                    }
+                )
+            pytest.fail(f"Paridad rota en {col}: {detalle}")
     assert nuevo["label_favoritismo_real"].astype(int).tolist() == legacy["label_favoritismo_real"].astype(int).tolist()
