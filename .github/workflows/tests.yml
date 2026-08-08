@@ -44,12 +44,16 @@ jobs:
       - name: Run regression tests
         run: pytest -q
 
-      - name: Rebuild synthetic data and legacy Plata
+      - name: Rebuild synthetic data payments and legacy Plata
         run: |
           python src/generar_datos.py
+          python src/generar_pagos_sinteticos.py
           python src/preprocesamiento.py
           python src/lakehouse_capas.py bronce
           python src/lakehouse_capas.py plata
+
+      - name: Analyze payments contract amounts and modalities
+        run: python src/analisis_pagos_modalidades.py --config config/local.yaml
 
       - name: Run sklearn benchmark and graph baseline
         run: |
@@ -94,6 +98,9 @@ jobs:
           assert manifest['training']['contracts_rows'] == 3709
           assert manifest['training']['favoritismo_positives'] == 6
           assert manifest['training']['fraccionamiento_positives'] == 8
+          assert manifest['training']['favoritismo_amount_source'] == 'monto_capped'
+          assert manifest['training']['fraccionamiento_amount_source'] == 'monto'
+          assert manifest['models']['favoritismo']['amount_source'] == 'monto_capped'
           assert 'preprocessor_json' in manifest['artifacts']
 
           registry = Path('outputs/model_registry.json')
@@ -143,6 +150,8 @@ jobs:
           assert summary['contracts_rows'] == 3709
           assert summary['favoritismo_scored_rows'] == 2328
           assert summary['fraccionamiento_scored_rows'] == 180
+          assert summary['favoritismo_amount_source'] == 'monto_capped'
+          assert summary['fraccionamiento_amount_source'] == 'monto'
           assert summary['labels_consumed'] is False
           assert summary['training_invoked'] is False
           assert summary['tuning_invoked'] is False
@@ -151,7 +160,7 @@ jobs:
           assert not any(c.startswith('label_') for c in frac.columns)
           assert 'score_riesgo_favoritismo' in fav.columns
           assert 'score_anomalia' in frac.columns
-          print('Perfil sklearn de compatibilidad OK')
+          print('Perfil sklearn de compatibilidad Sprint 4 OK')
           PY
 
       - name: Run canonical legacy Spark MLlib and GraphFrames path
@@ -211,16 +220,19 @@ jobs:
           assert manifest['training']['contracts_rows'] == 3709
           assert manifest['training']['favoritismo_rows'] == 2328
           assert manifest['training']['favoritismo_positives'] == 6
+          assert manifest['training']['favoritismo_amount_source'] == 'monto_capped'
           assert manifest['training']['fraccionamiento_rows'] == 180
           assert manifest['training']['fraccionamiento_positives'] == 8
+          assert manifest['training']['fraccionamiento_amount_source'] == 'monto'
+          assert manifest['models']['favoritismo']['amount_source'] == 'monto_capped'
           assert hashlib.sha256(registry.read_bytes()).hexdigest() == before['registry_sha256']
           assert Path('outputs/champions_spark').exists() == before['spark_champion_exists']
           if before['spark_champion_exists']:
               assert sha256_ruta('outputs/champions_spark') == before['spark_champion_sha256']
-          print(f"TRAIN Spark aislado OK: candidate={manifest['candidate_id']}")
+          print(f"TRAIN Spark aislado Sprint 4 OK: candidate={manifest['candidate_id']}")
           PY
 
-      - name: Bootstrap explicit Spark champion and smoke operational inference
+      - name: Promote Sprint 4 Spark champion and smoke operational inference
         env:
           PYSPARK_PYTHON: python
           PYSPARK_DRIVER_PYTHON: python
@@ -229,8 +241,7 @@ jobs:
             --manifest outputs/runtime/spark_model_candidates/candidate_manifest.json \
             --registry outputs/model_registry.json \
             --approved-by "GitHub Actions technical PoC" \
-            --acknowledge-poc-only \
-            --if-missing
+            --acknowledge-poc-only
 
           python src/spark/score_inference_spark.py \
             --config config/local.yaml \
@@ -245,6 +256,7 @@ jobs:
 
           registry = json.loads(Path('outputs/model_registry.json').read_text(encoding='utf-8'))
           summary = json.loads(Path('outputs/inference_spark_smoke_summary.json').read_text(encoding='utf-8'))
+          candidate = json.loads(Path('outputs/runtime/spark_model_candidates/candidate_manifest.json').read_text(encoding='utf-8'))
           fav = pd.read_csv('outputs/runtime/inference_spark/ci/ranking_riesgo_favoritismo_spark.csv')
           frac = pd.read_csv('outputs/runtime/inference_spark/ci/ranking_riesgo_fraccionamiento_spark.csv')
 
@@ -253,6 +265,8 @@ jobs:
           assert {'sklearn', 'spark_mllib'} <= set(registry['serving_profiles'])
           spark_profile = registry['serving_profiles']['spark_mllib']
           assert spark_profile['promotion']['institutional_approval'] is False
+          assert spark_profile['champion_id'] == candidate['candidate_id']
+          assert spark_profile['training']['favoritismo_amount_source'] == 'monto_capped'
           assert summary['engine'] == 'Apache Spark MLlib'
           assert summary['serving_profile'] == 'spark_mllib'
           assert summary['active_serving_profile'] == 'spark_mllib'
@@ -260,6 +274,8 @@ jobs:
           assert summary['contracts_rows'] == 3709
           assert summary['favoritismo_scored_rows'] == 2328
           assert summary['fraccionamiento_scored_rows'] == 180
+          assert summary['favoritismo_amount_source'] == 'monto_capped'
+          assert summary['fraccionamiento_amount_source'] == 'monto'
           assert summary['labels_consumed'] is False
           assert summary['training_invoked'] is False
           assert summary['tuning_invoked'] is False
@@ -270,7 +286,7 @@ jobs:
           assert 'score_riesgo_favoritismo' in fav.columns
           assert 'score_anomalia' in frac.columns
           assert 'senal_priorizacion_fraccionamiento' in frac.columns
-          print('Sprint 3 serving Spark MLlib OK: champion congelado, sin labels ni reentrenamiento')
+          print('Sprint 4 serving Spark MLlib OK: candidate promovido, monto P99 congelado')
           PY
 
       - name: Publish Oro and build traceability
@@ -281,7 +297,7 @@ jobs:
           python src/generar_run_manifest.py
           python src/generar_evidencia_documental.py
 
-      - name: Validate reproducibility artifacts
+      - name: Validate reproducibility and Sprint 4 artifacts
         run: |
           python - <<'PY'
           import json
@@ -292,11 +308,17 @@ jobs:
           frac = pd.read_csv('lakehouse/plata/dataset_fraccionamiento.csv')
           spark_fav = pd.read_csv('outputs/ranking_riesgo_favoritismo_spark.csv')
           spark_frac = pd.read_csv('outputs/ranking_riesgo_fraccionamiento_spark.csv')
+          pagos_csv = pd.read_csv('data/pagos_siaf_sintetico.csv')
+          resumen_pagos = pd.read_csv('outputs/resumen_pagos_contrato.csv')
+          resumen_modalidades = pd.read_csv('outputs/resumen_modalidades_regimen.csv')
           linaje = pd.read_csv('outputs/linaje_datos.csv')
           diccionario = pd.read_csv('data/diccionario_datos.csv')
 
           assert len(fav) == 2328 and int(fav['label_favoritismo_real'].sum()) == 6
           assert len(frac) == 180 and int(frac['label_fraccionamiento_real'].sum()) == 8
+          assert len(pagos_csv) >= 3709
+          assert len(resumen_pagos) == 3709
+          assert len(resumen_modalidades) > 0
           assert {'pct_contratacion_directa', 'pct_comparacion_precios', 'score_riesgo_favoritismo'} <= set(spark_fav.columns)
           assert 'senal_priorizacion_fraccionamiento' in spark_frac.columns
           assert 'pct_no_competitiva' not in spark_fav.columns
@@ -308,6 +330,7 @@ jobs:
           spark_fav_resumen = json.loads(Path('outputs/spark_favoritismo_resumen.json').read_text(encoding='utf-8'))
           spark_frac_resumen = json.loads(Path('outputs/spark_fraccionamiento_resumen.json').read_text(encoding='utf-8'))
           graphframes = json.loads(Path('outputs/graphframes_resumen.json').read_text(encoding='utf-8'))
+          pagos = json.loads(Path('outputs/analisis_pagos_modalidades.json').read_text(encoding='utf-8'))
           manifest = json.loads(Path('outputs/run_manifest.json').read_text(encoding='utf-8'))
           evidencia = json.loads(Path('outputs/evidencia_documental.json').read_text(encoding='utf-8'))
 
@@ -324,16 +347,28 @@ jobs:
           assert spark_frac_resumen['implementacion_objetivo_tdr'] is True
           assert 'scaler_runtime' in spark_frac_resumen
           assert graphframes['implementacion_objetivo_tdr'] is True
+
+          assert pagos['payments']['orphan_payments'] == 0
+          assert pagos['payments']['contracts_rows'] == 3709
+          assert pagos['payments']['payments_rows'] == len(pagos_csv)
+          assert set(map(int, pagos['normative_provenance_2023_2026'].keys())) == {2023, 2024, 2025, 2026}
+          assert Path('outputs/charts/11_ratio_pago_contrato.png').exists()
+          assert Path('outputs/charts/12_modalidades_regimen.png').exists()
+
           assert manifest['schema_version'] == 3
           assert manifest['entorno']['pyspark'] == '4.1.1'
           assert manifest['entorno']['graphframes-py'] == '0.10.0'
+          assert manifest['analisis_pagos_modalidades']['payments']['orphan_payments'] == 0
+          assert evidencia['schema_version'] == 2
           assert evidencia['run_manifest']['git_commit'] == manifest['git_commit']
+          assert evidencia['analisis_pagos_modalidades']['payments']['orphan_payments'] == 0
           assert evidencia['validacion_datos_publicos']['integridad_ocds']['contratos_analiticos_validos'] == 47254
 
           texto_dic = ' '.join(diccionario.astype(str).fillna('').values.ravel()).lower()
           for obsoleto in ['pct_no_competitiva', 'cumple_regla_fraccionamiento', 's/. 400,000']:
               assert obsoleto not in texto_dic
-          assert len(linaje) >= 15
+          assert len(linaje) >= 20
+          assert {'pagos', 'modalidades'} <= set(linaje['dominio'])
           assert {'campo_fuente', 'campo_plata', 'feature_modelo', 'salida_oro'} <= set(linaje.columns)
 
           oro = {p.name for p in Path('lakehouse/oro').glob('*.csv')}
@@ -345,10 +380,12 @@ jobs:
               'ranking_riesgo_fraccionamiento_spark.csv',
               'vinculos_graphframes_sospechosos.csv',
               'vinculos_graphframes_pagerank.csv',
+              'resumen_pagos_contrato.csv',
+              'resumen_modalidades_regimen.csv',
           }
           assert esperados <= oro
           assert Path('outputs/extraccion_estandar_sql.csv').exists()
-          print('Reproducibilidad legacy + evidencia Spark/GraphFrames OK')
+          print('Reproducibilidad legacy + Spark/GraphFrames + pagos/modalidades Sprint 4 OK')
           PY
 
       - name: Setup Node
@@ -363,6 +400,9 @@ jobs:
         run: |
           npm ci
           npm run all
+
+      - name: Enrich formal DOCX with Sprint 4 payments analysis
+        run: python reporte/enriquecer_pagos_modalidades.py
 
       - name: Materialize paginated indexes and duplex settings
         run: /usr/bin/python3 reporte/actualizar_indices_docx.py
@@ -391,8 +431,18 @@ jobs:
               assert 'Índice' in text, f'{pdf.name}: falta índice'
               assert re.search(r'\.{3,}\s*\d+\s*$', text, re.MULTILINE)
               assert 'Página' in text
-          print(f'DOCX/PDF smoke: {len(pdfs)} documentos verificados')
+              if pdf.name in {
+                  'Reporte_Tecnico_Prototipo_CGR_1.8.2.pdf',
+                  'Producto_01_Plan_de_Trabajo.pdf',
+                  'Producto_07_Informe_Final.pdf',
+              }:
+                  assert 'ANEXO TÉCNICO SPRINT 4' in text, f'{pdf.name}: falta anexo Sprint 4'
+                  assert text.rfind('Referencias Bibliográficas') > text.rfind('ANEXO TÉCNICO SPRINT 4')
+          print(f'DOCX/PDF smoke Sprint 4: {len(pdfs)} documentos verificados')
           PY
+
+      - name: Audit complete public TDR
+        run: python src/auditar_tdr_completo.py
 
       - name: Upload reproducibility and serving evidence
         uses: actions/upload-artifact@v4
@@ -413,6 +463,13 @@ jobs:
             outputs/vinculos_graphframes_sospechosos.csv
             outputs/vinculos_graphframes_pagerank.csv
             outputs/extraccion_estandar_sql.csv
+            outputs/analisis_pagos_modalidades.json
+            outputs/resumen_pagos_contrato.csv
+            outputs/resumen_modalidades_regimen.csv
+            outputs/charts/11_ratio_pago_contrato.png
+            outputs/charts/12_modalidades_regimen.png
+            outputs/auditoria_tdr_completo.json
+            docs/Auditoria_TDR_Completo.md
             outputs/linaje_datos.csv
             outputs/run_manifest.json
             outputs/evidencia_documental.json
@@ -420,6 +477,7 @@ jobs:
             outputs/inference_smoke_summary.json
             outputs/inference_spark_smoke_summary.json
             data/diccionario_datos.csv
+            data/pagos_siaf_sintetico.csv
           retention-days: 14
 
       - name: Upload regenerated formal documentation
@@ -447,6 +505,7 @@ jobs:
 
           git add \
             data/contratos_siaf_seace.csv \
+            data/pagos_siaf_sintetico.csv \
             data/contratos_procesados.csv \
             data/dataset_favoritismo.csv \
             data/dataset_fraccionamiento.csv \
@@ -455,6 +514,7 @@ jobs:
             data/entidades.csv \
             data/funcionarios.csv \
             lakehouse/bronce/contratos_siaf_seace.csv \
+            lakehouse/bronce/pagos_siaf_sintetico.csv \
             lakehouse/bronce/proveedores.csv \
             lakehouse/bronce/entidades.csv \
             lakehouse/bronce/funcionarios.csv \
@@ -474,6 +534,11 @@ jobs:
             outputs/vinculos_graphframes_sospechosos.csv \
             outputs/vinculos_graphframes_pagerank.csv \
             outputs/extraccion_estandar_sql.csv \
+            outputs/analisis_pagos_modalidades.json \
+            outputs/resumen_pagos_contrato.csv \
+            outputs/resumen_modalidades_regimen.csv \
+            outputs/auditoria_tdr_completo.json \
+            docs/Auditoria_TDR_Completo.md \
             outputs/spark_favoritismo_resumen.json \
             outputs/spark_fraccionamiento_resumen.json \
             outputs/graphframes_resumen.json \
@@ -499,12 +564,14 @@ jobs:
             lakehouse/oro/ranking_riesgo_fraccionamiento_spark.csv \
             lakehouse/oro/vinculos_graphframes_sospechosos.csv \
             lakehouse/oro/vinculos_graphframes_pagerank.csv \
+            lakehouse/oro/resumen_pagos_contrato.csv \
+            lakehouse/oro/resumen_modalidades_regimen.csv \
             reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx \
             reporte/productos_formales/Producto_*.docx
 
           if git diff --cached --quiet; then
             echo "No hay artefactos verificados nuevos que persistir."
           else
-            git commit -m "chore: regenerar artefactos Sprint 3 verificados [skip ci]"
+            git commit -m "chore: regenerar artefactos Sprint 4 verificados [skip ci]"
             git push
           fi
