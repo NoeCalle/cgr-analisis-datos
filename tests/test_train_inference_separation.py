@@ -14,8 +14,10 @@ from core.config import cargar_config
 from preprocesamiento import (
     PREPROCESSOR_SCHEMA_VERSION,
     ajustar_estado_preprocesamiento,
+    codificar_y_normalizar,
     features_favoritismo,
     features_fraccionamiento,
+    limpiar_e_imputar,
     preparar_para_features_entrenamiento,
     preparar_para_features_inferencia,
 )
@@ -69,6 +71,21 @@ def test_preprocesamiento_inference_usa_estado_train_y_no_recalcula():
     assert scored["monto_capped"].max() <= estado["monto_p99"]
     assert "id_funcionario" in scored.columns
     assert set(scored["id_funcionario"]) == {"__NO_DISPONIBLE__"}
+
+
+def test_train_nuevo_preserva_monto_valido_aunque_objeto_sea_nulo():
+    raw = pd.read_csv(ROOT / "data" / "contratos_siaf_seace.csv", parse_dates=["fecha_contrato"])
+    caso = raw.loc[raw["id_contrato"] == "C002938"].copy()
+    assert len(caso) == 1
+    assert pd.isna(caso.iloc[0]["objeto"])
+    monto_original = float(caso.iloc[0]["monto"])
+    assert monto_original == pytest.approx(117888.71)
+
+    # El estado se aprende con todo TRAIN, pero el transform del caso nunca debe
+    # convertir un monto ya observado solo porque falte el objeto.
+    estado = ajustar_estado_preprocesamiento(raw)
+    transformado = preparar_para_features_inferencia(caso, estado)
+    assert float(transformado.iloc[0]["monto"]) == pytest.approx(monto_original)
 
 
 def test_features_inference_no_requieren_ni_generan_labels():
@@ -137,44 +154,28 @@ def test_promocion_exige_reconocimiento_explicito_antes_de_leer_manifest(tmp_pat
         )
 
 
-def test_feature_engineering_train_mantiene_paridad_con_dataset_legacy():
+def test_ruta_legacy_reproduce_dataset_favoritismo_rc1():
+    """Congela la evidencia RC1 sin obligar al serving nuevo a heredar su bug."""
     raw = pd.read_csv(ROOT / "data" / "contratos_siaf_seace.csv", parse_dates=["fecha_contrato"])
-    raw["label_favoritismo"] = raw["es_favoritismo_real"]
-    procesado, _ = preparar_para_features_entrenamiento(raw)
-    nuevo = features_favoritismo(
-        procesado,
-        label_col="label_favoritismo",
+    legacy_reconstruido = codificar_y_normalizar(limpiar_e_imputar(raw))
+    nuevo_legacy = features_favoritismo(
+        legacy_reconstruido,
+        label_col="es_favoritismo_real",
         output_label="label_favoritismo_real",
     ).sort_values(["id_proveedor", "id_entidad"]).reset_index(drop=True)
-    legacy = pd.read_csv(ROOT / "data" / "dataset_favoritismo.csv").sort_values(
+    legacy_versionado = pd.read_csv(ROOT / "data" / "dataset_favoritismo.csv").sort_values(
         ["id_proveedor", "id_entidad"]
     ).reset_index(drop=True)
 
-    assert len(nuevo) == len(legacy)
+    assert len(nuevo_legacy) == len(legacy_versionado) == 2328
     for col in FAV_FEATURES:
-        a = nuevo[col].astype(float).to_numpy()
-        b = legacy[col].astype(float).to_numpy()
-        iguales = np.isclose(a, b, rtol=1e-10, atol=1e-10, equal_nan=True)
-        if not iguales.all():
-            indices = np.where(~iguales)[0][:10]
-            detalle = []
-            for i in indices:
-                prov = nuevo.loc[i, "id_proveedor"]
-                ent = nuevo.loc[i, "id_entidad"]
-                contratos = raw.loc[
-                    (raw["id_proveedor"] == prov) & (raw["id_entidad"] == ent),
-                    ["id_contrato", "objeto", "monto"],
-                ].to_dict("records")
-                detalle.append(
-                    {
-                        "indice": int(i),
-                        "id_proveedor": prov,
-                        "id_entidad": ent,
-                        "nuevo": None if pd.isna(a[i]) else float(a[i]),
-                        "legacy": None if pd.isna(b[i]) else float(b[i]),
-                        "diff": None if pd.isna(a[i]) or pd.isna(b[i]) else float(a[i] - b[i]),
-                        "contratos_raw": contratos,
-                    }
-                )
-            pytest.fail(f"Paridad rota en {col}: {detalle}")
-    assert nuevo["label_favoritismo_real"].astype(int).tolist() == legacy["label_favoritismo_real"].astype(int).tolist()
+        assert np.allclose(
+            nuevo_legacy[col].astype(float),
+            legacy_versionado[col].astype(float),
+            rtol=1e-10,
+            atol=1e-10,
+            equal_nan=True,
+        ), col
+    assert nuevo_legacy["label_favoritismo_real"].astype(int).tolist() == legacy_versionado[
+        "label_favoritismo_real"
+    ].astype(int).tolist()
