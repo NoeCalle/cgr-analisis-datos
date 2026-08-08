@@ -58,22 +58,33 @@ def validar_config(config: dict[str, Any]) -> None:
     for domain, domain_mapping in mapping.items():
         if not isinstance(domain_mapping, dict) or not domain_mapping:
             raise ValueError(f"mapping.{domain} debe ser un objeto no vacío.")
+        if not all(isinstance(k, str) and isinstance(v, str) and k.strip() and v.strip() for k, v in domain_mapping.items()):
+            raise ValueError(f"mapping.{domain} solo admite nombres de columna no vacíos.")
         missing = set(campos_requeridos(domain, mode)) - set(domain_mapping)
-        # Solo contracts es obligatorio en Sprint 1; dimensiones pueden mapearse
-        # parcialmente hasta que la fuente real sea conocida.
+        # Contracts es el dominio mínimo obligatorio. Las dimensiones pueden
+        # mapearse parcialmente hasta conocer el esquema institucional real.
         if domain == "contracts" and missing:
             raise ValueError(
                 f"mapping.contracts no define campos obligatorios para {mode}: {sorted(missing)}"
             )
 
-    if source_type == "local_csv":
-        datasets = source.get("datasets")
-        if not isinstance(datasets, dict) or "contracts" not in datasets:
-            raise ValueError("source.datasets.contracts es obligatorio para local_csv.")
-    else:
-        tables = source.get("tables")
-        if not isinstance(tables, dict) or "contracts" not in tables:
-            raise ValueError(f"source.tables.contracts es obligatorio para {source_type}.")
+    location_key = "datasets" if source_type == "local_csv" else "tables"
+    locations = source.get(location_key)
+    if not isinstance(locations, dict) or "contracts" not in locations:
+        raise ValueError(f"source.{location_key}.contracts es obligatorio para {source_type}.")
+
+    unknown_locations = set(locations) - set(SCHEMAS)
+    if unknown_locations:
+        raise ValueError(
+            f"Dominios desconocidos en source.{location_key}: {sorted(unknown_locations)}"
+        )
+    missing_locations = domains_configured - set(locations)
+    if missing_locations:
+        raise ValueError(
+            f"Hay mappings sin fuente configurada en source.{location_key}: {sorted(missing_locations)}"
+        )
+    if not all(isinstance(v, str) and v.strip() for v in locations.values()):
+        raise ValueError(f"source.{location_key} solo admite rutas/tablas no vacías.")
 
     if source_type == "sqlserver":
         env_name = source.get("connection_env")
