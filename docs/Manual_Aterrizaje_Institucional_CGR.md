@@ -214,7 +214,7 @@ mapping:
 
 Los nombres del ejemplo son placeholders. Deben reemplazarse por objetos institucionalmente aprobados.
 
-## 7. Fase 3 — Secretos y conectividad
+## 7. Fase 3 — Secretos, conectividad y Spark
 
 ### 7.1 SQL Server
 
@@ -234,20 +234,37 @@ No colocar passwords, tokens ni connection strings dentro del YAML. El cargador 
 
 El entorno debe instalar `pyodbc` y el driver ODBC aprobado. La aplicación no impone un driver específico.
 
-### 7.2 Spark SQL
+### 7.2 Spark operacional
 
-Para fuentes accesibles como tablas/vistas Spark:
+TRAIN e INFERENCE permiten configurar el master efectivo:
 
-```yaml
-source:
-  type: spark_sql
-  tables:
-    contracts: catalogo.esquema.vw_contratos_modulo
+```bash
+export CGR_SPARK_MASTER='<master Spark aprobado>'
+export CGR_SPARK_SHUFFLE_PARTITIONS='<particiones aprobadas>'  # opcional
 ```
 
-El conector usa `SparkSession.table(...)` y no fuerza `local[*]`. El master, catálogo, autenticación y recursos deben venir de `spark-submit`, Airflow, YARN, Kubernetes u otra configuración institucional.
+Si `CGR_SPARK_MASTER` no existe, el PoC usa `local[*]` como fallback para ejecución local. La reproducción histórica continúa fijando `local[*]` deliberadamente. TRAIN/INFERENCE registran el valor efectivo de `spark.sparkContext.master` en su evidencia.
 
-**Gate 2:** la aplicación debe conectarse con una identidad de mínimo privilegio y solo lectura para la ingesta.
+La institución debe definir el valor compatible con su plataforma (`yarn`, Kubernetes u otro master válido), así como memoria, cores, dynamic allocation y demás propiedades por sus mecanismos de despliegue.
+
+### 7.3 `spark_sql`: límite de escala que debe validarse
+
+El conector `spark_sql` usa `SparkSession.table(...).select(...)`, pero la capa canónica pública actual materializa después el resultado con `toPandas()` para compartir el mismo contrato de validación usado por CSV y SQL Server. TRAIN/INFERENCE convierten posteriormente ese contrato nuevamente a Spark antes de ejecutar MLlib.
+
+Esto significa que:
+
+- los **modelos y feature engineering operacionales sí corren con Spark MLlib**;
+- la **ingesta canónica no es Spark-native end-to-end** en esta versión pública;
+- no debe usarse esta ruta para afirmar capacidad distribuida sobre un volumen que no quepa de forma segura en memoria del driver.
+
+Para una implantación de gran volumen hay dos patrones razonables, a decidir con la arquitectura CGR:
+
+1. extender la integración canónica para conservar un DataFrame Spark desde la fuente hasta el preprocesamiento; o
+2. materializar tablas/vistas canónicas previamente en el Lakehouse institucional y hacer que TRAIN/INFERENCE las consuman de forma nativa.
+
+Ambas opciones preservan nombres canónicos, features y modelos; la adaptación está en la frontera de ingesta. Debe resolverse y probarse con el volumen/topología reales antes de QA/PROD si la escala lo exige.
+
+**Gate 2:** la aplicación debe conectarse con identidad de mínimo privilegio y la arquitectura debe demostrar que el mecanismo de ingesta es adecuado para el volumen objetivo.
 
 ## 8. Fase 4 — Validar antes de leer datos
 
@@ -355,6 +372,7 @@ Revisar antes de promover:
 - estado de preprocesamiento;
 - configuración/hyperparámetros;
 - métricas de validación;
+- master/recursos Spark efectivos;
 - estabilidad por periodo/segmento;
 - capacidad operativa de revisión humana;
 - observaciones del especialista funcional.
@@ -410,7 +428,7 @@ El scorer:
 
 La ruta de INFERENCE no debe recibir labels y no debe ejecutar tuning/training.
 
-**Gate 6:** comprobar en QA que `labels_consumed=false`, `training_invoked=false` y `tuning_invoked=false` en la evidencia de serving equivalente.
+**Gate 6:** comprobar en QA que `labels_consumed=false`, `training_invoked=false` y `tuning_invoked=false` en la evidencia de serving equivalente, y que `spark_mode` corresponde al master aprobado.
 
 ## 14. Fase 10 — Pagos y modalidades
 
@@ -446,7 +464,7 @@ inferencia_modelos_1_8_2
 monitoreo_reentrenamiento_1_8_2
 ```
 
-Variables soportadas por los DAGs TRAIN/INFERENCE:
+Variables soportadas/relevantes para TRAIN/INFERENCE:
 
 ```text
 PROYECTO_DIR
@@ -456,6 +474,8 @@ CGR_TRAIN_CONFIG
 CGR_MODEL_REGISTRY
 CGR_INFERENCE_OUTPUT_DIR
 CGR_SPARK_CANDIDATE_MANIFEST
+CGR_SPARK_MASTER
+CGR_SPARK_SHUFFLE_PARTITIONS
 ```
 
 Ejemplo conceptual:
@@ -467,6 +487,7 @@ export CGR_DATA_CONFIG=/secure/config/cgr.yaml
 export CGR_TRAIN_CONFIG=/secure/config/cgr-training.yaml
 export CGR_MODEL_REGISTRY=/secure/models/model_registry.json
 export CGR_INFERENCE_OUTPUT_DIR=/secure/outputs/inference
+export CGR_SPARK_MASTER='<master institucional>'
 ```
 
 No almacenar secretos en variables de Airflow visibles para usuarios no autorizados; utilizar el backend/gestor de secretos institucional que corresponda.
@@ -543,6 +564,8 @@ Secuencia recomendada:
 - calidad de datos;
 - TRAIN inicial;
 - pruebas unitarias/integración;
+- medición de volumen máximo y memoria del driver;
+- decisión sobre adaptador Spark-native si la escala lo requiere;
 - performance preliminar;
 - ajustes de reporting.
 
@@ -550,6 +573,7 @@ Secuencia recomendada:
 
 - datos representativos aprobados;
 - validación de métricas contra umbrales institucionales;
+- prueba del mecanismo de ingesta con volumen representativo;
 - pruebas de permisos;
 - pruebas de Airflow/Spark/SQL Server/SSRS;
 - validación funcional por auditores;
@@ -562,7 +586,8 @@ Solo después de conformidad QA:
 
 - champion aprobado;
 - configuración/secretos PROD;
-- recursos Spark aprobados;
+- master/recursos Spark aprobados;
+- frontera de ingesta adecuada al volumen PROD;
 - datasource/reportes PROD;
 - monitoreo activo;
 - responsables de soporte definidos;
@@ -598,10 +623,12 @@ Una instalación institucional puede considerarse técnicamente aterrizada cuand
 
 - la configuración real pasa `--validate-only`;
 - las fuentes reales se convierten correctamente al esquema canónico;
+- el mecanismo de ingesta soporta el volumen objetivo sin depender indebidamente de memoria del driver;
 - el diccionario/linaje institucional está aprobado;
 - los datos de TRAIN incluyen ground truth validado;
 - candidate y champion están gobernados por aprobación explícita;
 - INFERENCE opera sin labels/training/tuning;
+- el master Spark efectivo coincide con la configuración aprobada;
 - el clúster cumple performance y robustez acordadas;
 - SQL Server/SSRS funcionan con permisos institucionales;
 - DEV/QA/PROD están separados;
@@ -621,7 +648,7 @@ Hasta que existan estas evidencias, los estados 🟡/🔵 de la auditoría deben
 | `CGR-DEP-03` | ground truth y umbrales institucionales aprobados |
 | `CGR-DEP-04` | repo privado, identidad, secretos y autorización institucional |
 | `CGR-DEP-05` | DDL/RDL desplegados y validados en SQL Server/SSRS |
-| `CGR-DEP-06` | pruebas y operación en DEV/QA/PROD/clúster institucional |
+| `CGR-DEP-06` | pruebas y operación en DEV/QA/PROD/clúster institucional, incluida escala de ingesta |
 | `CGR-DEP-07` | certificación de usuarios, incidencias y marcha blanca cerradas |
 | `CGR-DEP-08` | transferencia, repositorio institucional y entrega formal |
 
@@ -657,9 +684,13 @@ Es intencional. Usar archivos de configuración separados con `mode: training` y
 
 Es intencional. TRAIN no promueve. La promoción es un gate separado.
 
-### Spark arranca en un master no deseado
+### Spark sigue usando `local[*]`
 
-El conector `spark_sql` no fuerza master. Revisar `spark-submit`, variables/propiedades Airflow o configuración del clúster.
+Definir `CGR_SPARK_MASTER` en el entorno que lanza TRAIN/INFERENCE y comprobar el campo `spark_mode` de la evidencia generada. El fallback local es deliberado para el PoC.
+
+### El proceso se queda sin memoria al usar `spark_sql`
+
+La integración pública actual materializa el contrato canónico en pandas. Para volúmenes mayores, usar vistas/tablas canónicas y adaptar la frontera de ingesta a Spark nativo antes de considerar la ruta apta para PROD.
 
 ## 24. Documentos relacionados
 
