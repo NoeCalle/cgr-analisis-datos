@@ -1,10 +1,11 @@
 {
   "active_serving_profile": "spark_mllib",
-  "champion_id": "spark-poc-ec9119620f5dd99f",
+  "champion_id": "spark-poc-b512686ad432358d",
   "champion_integrity_verified": true,
   "contracts_rows": 3709,
   "detail_outputs": {
     "favoritismo": "outputs/runtime/inference_spark/ci/ranking_riesgo_favoritismo_spark.csv",
+    "format": "csv_single_file_compatibility",
     "fraccionamiento": "outputs/runtime/inference_spark/ci/ranking_riesgo_fraccionamiento_spark.csv"
   },
   "engine": "Apache Spark MLlib",

@@ -22,6 +22,6 @@
   "ranking": "outputs/ranking_riesgo_fraccionamiento_spark.csv",
   "modelo_runtime": "outputs/runtime/modelo_fraccionamiento_spark_kmeans",
   "scaler_runtime": "outputs/runtime/modelo_fraccionamiento_spark_scaler",
-  "duracion_s": 24.718,
+  "duracion_s": 21.499,
   "advertencia": "Sanity check sobre benchmark sintético; no estima desempeño productivo. Ejecución Spark real local; clúster CGR pendiente."
 }
