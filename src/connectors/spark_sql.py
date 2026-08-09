@@ -1,9 +1,16 @@
-"""Conector Spark SQL para tablas/vistas del Lakehouse institucional."""
+"""Conector Spark SQL para tablas/vistas del Lakehouse institucional.
+
+A diferencia de los conectores CSV/SQL Server, ``read`` devuelve un DataFrame
+Spark. La capa de integración Spark-native decide cómo mapear y validar sin
+materializar el dataset completo en memoria del driver.
+"""
 
 from connectors.base import DataConnector
 
 
 class SparkSqlConnector(DataConnector):
+    native_engine = "spark"
+
     def __init__(self, tables, spark=None):
         self.tables = dict(tables)
         self._spark = spark
@@ -25,14 +32,14 @@ class SparkSqlConnector(DataConnector):
         table = self.tables[domain]
         if not isinstance(table, str) or not table.strip():
             raise ValueError(f"Tabla Spark inválida para {domain!r}: {table!r}")
-        # `table()` y `select()` usan la API de DataFrame, no interpolación SQL.
-        # Esto permite nombres institucionales más variados sin construir SQL libre.
+
+        # `table()` y `select()` usan la API DataFrame, no interpolación SQL.
         sdf = self._session().table(table)
         if columns:
             if any(not isinstance(c, str) or not c.strip() for c in columns):
                 raise ValueError("Las columnas Spark configuradas deben ser nombres no vacíos.")
             sdf = sdf.select(*columns)
-        return sdf.toPandas()
+        return sdf
 
     def close(self):
         if self._owns_session and self._spark is not None:
