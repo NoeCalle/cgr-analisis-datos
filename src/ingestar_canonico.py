@@ -1,7 +1,8 @@
 """Ingesta configurable hacia el contrato canónico del módulo.
 
-Sprint 1: prueba el desacoplamiento fuente -> mapping -> esquema canónico sin
-alterar todavía los pipelines de entrenamiento/inferencia del PoC.
+Rutas de ejecución:
+- ``local_csv`` / ``sqlserver`` -> pandas;
+- ``spark_sql`` -> DataFrame Spark nativo, sin ``toPandas()``.
 
 Uso:
     python src/ingestar_canonico.py --config config/local.yaml
@@ -20,6 +21,9 @@ from core.schemas import aplicar_mapping, validar_dataframe
 
 
 def integrar_dominio(config, connector, domain):
+    """Integra un dominio pandas. No acepta spark_sql para evitar collect implícito."""
+    if config["source"]["type"] == "spark_sql":
+        raise ValueError("spark_sql requiere integrar_spark(); no se materializa implícitamente en pandas.")
     mapping = config["mapping"][domain]
     physical_columns = list(dict.fromkeys(mapping.values()))
     raw = connector.read(domain, physical_columns)
@@ -28,15 +32,15 @@ def integrar_dominio(config, connector, domain):
 
 
 def integrar(config, output_dir=None):
+    """Integración pandas para CSV/SQL Server."""
+    if config["source"]["type"] == "spark_sql":
+        raise ValueError(
+            "source.type=spark_sql usa la ruta Spark-native. Llame integrar_spark(config, spark=...)."
+        )
+
     domains = [d for d in config["mapping"] if _domain_available(config, d)]
     results = {}
-    summary = {
-        "schema_version": 1,
-        "mode": config.get("mode", "inference"),
-        "source_type": config["source"]["type"],
-        "domains": {},
-        "contains_secrets": False,
-    }
+    summary = _summary_base(config, native_engine="pandas")
 
     with _managed_connector(crear_connector(config)) as connector:
         for domain in domains:
@@ -52,11 +56,69 @@ def integrar(config, output_dir=None):
         out.mkdir(parents=True, exist_ok=True)
         for domain, df in results.items():
             df.to_csv(out / f"{domain}.csv", index=False)
-        (out / "integration_manifest.json").write_text(
-            json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        _write_manifest(out, summary)
 
     return results, summary
+
+
+def integrar_spark(config, *, spark, output_dir=None):
+    """Integración canónica Spark-native para ``source.type=spark_sql``.
+
+    Mantiene DataFrames Spark durante lectura, mapping, casteo y validación. Solo
+    colecta una fila de métricas de calidad por dominio; nunca colecta el dataset.
+    """
+    if config["source"]["type"] != "spark_sql":
+        raise ValueError("integrar_spark() está reservado a source.type=spark_sql.")
+
+    from core.schemas_spark import aplicar_mapping_spark, validar_dataframe_spark
+
+    domains = [d for d in config["mapping"] if _domain_available(config, d)]
+    results = {}
+    summary = _summary_base(config, native_engine="spark")
+
+    with _managed_connector(crear_connector(config, spark=spark)) as connector:
+        for domain in domains:
+            mapping = config["mapping"][domain]
+            physical_columns = list(dict.fromkeys(mapping.values()))
+            raw = connector.read(domain, physical_columns)
+            canonical = aplicar_mapping_spark(raw, domain, mapping)
+            canonical = validar_dataframe_spark(
+                canonical, domain, config.get("mode", "inference")
+            )
+            # count() es una agregación distribuida; no materializa filas en el driver.
+            n_rows = int(canonical.count())
+            results[domain] = canonical
+            summary["domains"][domain] = {
+                "rows": n_rows,
+                "columns": list(canonical.columns),
+            }
+
+    if output_dir is not None:
+        out = Path(output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        for domain, df in results.items():
+            target = out / domain
+            df.write.mode("overwrite").option("header", True).csv(str(target))
+        _write_manifest(out, summary)
+
+    return results, summary
+
+
+def _summary_base(config, *, native_engine: str):
+    return {
+        "schema_version": 2,
+        "mode": config.get("mode", "inference"),
+        "source_type": config["source"]["type"],
+        "native_engine": native_engine,
+        "domains": {},
+        "contains_secrets": False,
+    }
+
+
+def _write_manifest(out: Path, summary: dict) -> None:
+    (out / "integration_manifest.json").write_text(
+        json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
 
 def _domain_available(config, domain):
@@ -100,7 +162,16 @@ def main():
         )
         return
 
-    _, summary = integrar(config, output_dir=args.output_dir)
+    if config["source"]["type"] == "spark_sql":
+        from pyspark.sql import SparkSession
+
+        spark = SparkSession.builder.appName("cgr-integracion-canonica").getOrCreate()
+        try:
+            _, summary = integrar_spark(config, spark=spark, output_dir=args.output_dir)
+        finally:
+            spark.stop()
+    else:
+        _, summary = integrar(config, output_dir=args.output_dir)
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 
 
