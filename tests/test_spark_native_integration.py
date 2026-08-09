@@ -53,7 +53,7 @@ def _config(view, *, training=False):
     }
 
 
-def test_spark_sql_mapping_validacion_y_preprocesamiento_no_materializan_pandas(spark):
+def test_spark_sql_mapping_validacion_y_preprocesamiento_no_materializan_pandas(spark, tmp_path):
     rows = [
         ("X-001", "000123", "ENT-1", "125000.50", "2026-07-01", "Licitación Pública", "Bien A"),
         ("X-002", "SUP-8", "ENT-1", None, "2026-07-03", None, "Bien A"),
@@ -78,9 +78,19 @@ def test_spark_sql_mapping_validacion_y_preprocesamiento_no_materializan_pandas(
     assert contracts.schema["fecha_contrato"].dataType.simpleString() == "timestamp"
     assert contracts.where("id_proveedor = '000123'").count() == 1
 
-    estado = ajustar_estado_preprocesamiento_spark(contracts)
+    medians_path = tmp_path / "medianas_objeto"
+    estado = ajustar_estado_preprocesamiento_spark(
+        contracts, medians_output_path=medians_path
+    )
     assert estado["fit_engine"] == "spark"
-    transformed = aplicar_preprocesamiento_congelado(contracts, estado)
+    assert estado["monto_mediana_por_objeto_external"] is True
+    assert estado["monto_mediana_por_objeto"] == {}
+    medianas_df = spark.read.parquet(str(medians_path))
+    assert {"objeto", "monto_mediana"} == set(medianas_df.columns)
+
+    transformed = aplicar_preprocesamiento_congelado(
+        contracts, estado, medianas_df=medianas_df
+    )
     assert transformed.where("monto is null").count() == 0
     assert transformed.where("modalidad is null").count() == 0
     assert "monto_capped" in transformed.columns
