@@ -1,24 +1,20 @@
 """INFERENCE operacional con Apache Spark MLlib.
 
-Contrato:
-  fuente mode=inference -> mapping canónico -> preprocesamiento congelado JSON
-  -> feature engineering Spark -> modelos champion MLlib -> rankings runtime
+Para ``source.type=spark_sql`` conserva un DataFrame Spark desde la tabla/vista
+hasta el scoring y la escritura de rankings. CSV/SQL Server mantienen un
+adaptador pandas->Spark explícito por compatibilidad.
 
 No contiene fit, tuning ni requiere labels. Los artefactos champion se verifican
-por SHA-256 antes y después del scoring. Sprint 4 usa ``monto_capped`` en
-favoritismo, idéntico al TRAIN operacional promovido.
-
-El master de Spark se obtiene de la sesión operacional creada por
-``crear_sesion`` y puede configurarse con ``CGR_SPARK_MASTER``. El default local
-se conserva únicamente para poder ejecutar el PoC fuera de infraestructura CGR.
+por SHA-256 antes y después del scoring.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-import sys
 from pathlib import Path
+import shutil
+import sys
 
 from pyspark.ml.classification import RandomForestClassificationModel
 from pyspark.ml.clustering import KMeansModel
@@ -29,7 +25,7 @@ SRC_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SRC_DIR))
 
 from core.config import cargar_config
-from ingestar_canonico import integrar
+from ingestar_canonico import integrar, integrar_spark
 from registro_modelos import (
     SPARK_PROFILE,
     cargar_registry_champion,
@@ -56,6 +52,21 @@ DEFAULT_OUTPUT_DIR = Path("outputs/runtime/inference_spark/latest")
 FAVORITISMO_MONTO_OPERACIONAL = "monto_capped"
 
 
+def _write_single_csv_spark(df, target: Path) -> None:
+    """Escribe un CSV compatible sin convertir el ranking a pandas."""
+    target = Path(target)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    tmp = target.parent / f".{target.name}.spark-tmp"
+    if tmp.exists():
+        shutil.rmtree(tmp)
+    df.coalesce(1).write.mode("overwrite").option("header", True).csv(str(tmp))
+    parts = sorted(tmp.glob("part-*.csv"))
+    if len(parts) != 1:
+        raise RuntimeError(f"Spark no produjo un único part CSV para {target}: {len(parts)}")
+    shutil.copy2(parts[0], target)
+    shutil.rmtree(tmp)
+
+
 def ejecutar_inference_spark(
     config_path: str | Path,
     registry_path: str | Path,
@@ -65,14 +76,6 @@ def ejecutar_inference_spark(
     config = cargar_config(config_path)
     if config.get("mode") != "inference":
         raise ValueError("INFERENCE Spark requiere una configuración con mode: inference.")
-
-    datasets, integration_summary = integrar(config)
-    contracts = datasets["contracts"]
-    labels_present = sorted(
-        c for c in contracts.columns if c in {"label_favoritismo", "label_fraccionamiento"}
-    )
-    if labels_present:
-        raise ValueError(f"INFERENCE Spark no debe consumir ground truth: {labels_present}")
 
     registry = cargar_registry_champion(registry_path, profile=SPARK_PROFILE)
     if registry["active_serving_profile"] != SPARK_PROFILE:
@@ -87,8 +90,28 @@ def ejecutar_inference_spark(
     spark_mode = spark.sparkContext.master
     spark.sparkContext.setLogLevel("ERROR")
     spark.sparkContext.addPyFile(str(SRC_DIR / "umbrales_normativos.py"))
+
+    source_type = config["source"]["type"]
+    spark_native = source_type == "spark_sql"
     try:
-        raw_spark = pandas_a_spark(spark, contracts)
+        if spark_native:
+            datasets, integration_summary = integrar_spark(config, spark=spark)
+            raw_spark = datasets["contracts"]
+            contracts_rows = int(integration_summary["domains"]["contracts"]["rows"])
+            input_engine = "spark_native"
+        else:
+            datasets, integration_summary = integrar(config)
+            contracts = datasets["contracts"]
+            contracts_rows = int(len(contracts))
+            raw_spark = pandas_a_spark(spark, contracts)
+            input_engine = "pandas_adapter"
+
+        labels_present = sorted(
+            c for c in raw_spark.columns if c in {"label_favoritismo", "label_fraccionamiento"}
+        )
+        if labels_present:
+            raise ValueError(f"INFERENCE Spark no debe consumir ground truth: {labels_present}")
+
         procesado = aplicar_preprocesamiento_congelado(raw_spark, estado)
 
         fav_features = construir_features_favoritismo(
@@ -105,7 +128,7 @@ def ejecutar_inference_spark(
             registry["artifacts"]["favoritismo_model"]["path"]
         )
         fav_pred = fav_model.transform(vectorizar(fav_features))
-        ranking_fav = generar_ranking(fav_pred, include_label=False).toPandas()
+        ranking_fav = generar_ranking(fav_pred, include_label=False)
 
         frac_features = aplicar_senal_interpretable(
             construir_features_ventana_desde_df(procesado, label_col=None)
@@ -131,15 +154,17 @@ def ejecutar_inference_spark(
                 "senal_priorizacion_fraccionamiento",
             )
             .orderBy(F.desc("score_anomalia"))
-            .toPandas()
         )
+
+        fav_rows = int(ranking_fav.count())
+        frac_rows = int(ranking_frac.count())
 
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
         fav_path = output_dir / "ranking_riesgo_favoritismo_spark.csv"
         frac_path = output_dir / "ranking_riesgo_fraccionamiento_spark.csv"
-        ranking_fav.to_csv(fav_path, index=False)
-        ranking_frac.to_csv(frac_path, index=False)
+        _write_single_csv_spark(ranking_fav, fav_path)
+        _write_single_csv_spark(ranking_frac, frac_path)
 
         integrity_after = {
             nombre: sha256_ruta(spec["path"]) == spec["sha256"]
@@ -149,19 +174,22 @@ def ejecutar_inference_spark(
             raise RuntimeError("Un champion Spark cambió durante inference.")
 
         summary = {
-            "schema_version": 1,
+            "schema_version": 2,
             "mode": "inference",
             "engine": "Apache Spark MLlib",
             "spark_mode": spark_mode,
             "source_type": integration_summary["source_type"],
+            "input_engine": input_engine,
+            "spark_native_ingestion": spark_native,
+            "pandas_materialization": not spark_native,
             "registry_schema_version": registry["registry_schema_version"],
             "serving_profile": registry["profile_name"],
             "active_serving_profile": registry["active_serving_profile"],
             "champion_id": registry["champion_id"],
             "institutional_approval": registry["promotion"]["institutional_approval"],
-            "contracts_rows": int(len(contracts)),
-            "favoritismo_scored_rows": int(len(ranking_fav)),
-            "fraccionamiento_scored_rows": int(len(ranking_frac)),
+            "contracts_rows": contracts_rows,
+            "favoritismo_scored_rows": fav_rows,
+            "fraccionamiento_scored_rows": frac_rows,
             "favoritismo_amount_source": FAVORITISMO_MONTO_OPERACIONAL,
             "fraccionamiento_amount_source": "monto",
             "labels_consumed": False,
