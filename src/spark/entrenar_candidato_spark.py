@@ -1,16 +1,10 @@
-"""TRAIN operacional Spark MLlib — Sprint 3/Sprint 4.
+"""TRAIN operacional Spark MLlib.
 
-Esta ruta NO consume la Plata legacy congelada para reconstruir RC1. Parte de la
-fuente canónica configurable, aprende el preprocesamiento corregido una sola vez
-y aplica ese mismo estado a TRAIN antes de ajustar los modelos Spark candidate.
+La ruta operacional acepta dos fronteras de ingesta:
+- CSV/SQL Server: contrato pandas validado y adaptación explícita a Spark;
+- spark_sql: DataFrame Spark nativo desde la fuente hasta MLlib, sin toPandas.
 
-Sprint 4 consume ``monto_capped`` en favoritismo para que el tratamiento P99 sea
-parte real del modelo operacional. Fraccionamiento conserva ``monto`` porque sus
-features comparan cuantías con umbrales normativos.
-
-El resultado queda exclusivamente bajo ``outputs/runtime/spark_model_candidates``.
-No escribe ni modifica el registry/champion: la promoción es un comando separado.
-El master operacional puede inyectarse mediante ``CGR_SPARK_MASTER``.
+El resultado es siempre un candidate y nunca promueve automáticamente.
 """
 
 from __future__ import annotations
@@ -18,10 +12,9 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
-import sys
 from pathlib import Path
 import shutil
+import sys
 
 import pandas as pd
 from pyspark.ml.classification import RandomForestClassifier
@@ -31,7 +24,7 @@ SRC_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SRC_DIR))
 
 from core.config import cargar_config
-from ingestar_canonico import integrar
+from ingestar_canonico import integrar, integrar_spark
 from preprocesamiento import ajustar_estado_preprocesamiento
 from registro_modelos import guardar_json_determinista, sha256_ruta
 from spark.modelo_favoritismo_spark import (
@@ -47,6 +40,7 @@ from spark.modelo_fraccionamiento_spark import (
     entrenar_modelos_kmeans,
 )
 from spark.preprocesamiento_serving_spark import (
+    ajustar_estado_preprocesamiento_spark,
     aplicar_preprocesamiento_congelado,
     pandas_a_spark,
 )
@@ -67,8 +61,39 @@ def _fingerprint_dataframe(df: pd.DataFrame) -> str:
     ).hexdigest()
 
 
+def _fingerprint_spark_dataframe(df) -> str:
+    """Fingerprint distribuido sin colectar filas al driver.
+
+    Dos agregados xxhash64, count y extremos se combinan con el schema y luego
+    se protegen con SHA-256. No pretende ser firma criptográfica de cada fila;
+    sirve como identidad técnica reproducible del lote de TRAIN.
+    """
+    columns = sorted(df.columns)
+    values = [F.coalesce(F.col(c).cast("string"), F.lit("<NA>")) for c in columns]
+    hashed = df.select(
+        F.xxhash64(*values).alias("_h1"),
+        F.xxhash64(F.lit("cgr-spark-native-v1"), *values).alias("_h2"),
+    )
+    stats = hashed.agg(
+        F.count(F.lit(1)).alias("rows"),
+        F.sum(F.col("_h1").cast("decimal(38,0)")).cast("string").alias("sum_h1"),
+        F.sum(F.col("_h2").cast("decimal(38,0)")).cast("string").alias("sum_h2"),
+        F.min("_h1").alias("min_h1"),
+        F.max("_h1").alias("max_h1"),
+        F.min("_h2").alias("min_h2"),
+        F.max("_h2").alias("max_h2"),
+    ).first().asDict()
+    payload = {
+        "columns": columns,
+        "schema": df.schema.jsonValue(),
+        "stats": {k: (None if v is None else str(v)) for k, v in stats.items()},
+    }
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
+    ).hexdigest()
+
+
 def _parametros_favoritismo() -> tuple[int, int, str]:
-    """Reutiliza la selección metodológica Spark si existe; si no, usa baseline PoC."""
     resumen = Path("outputs/spark_favoritismo_resumen.json")
     if resumen.exists():
         data = json.loads(resumen.read_text(encoding="utf-8"))
@@ -112,14 +137,6 @@ def entrenar(
     if config.get("mode") != "training":
         raise ValueError("TRAIN Spark requiere una configuración con mode: training.")
 
-    datasets, integration_summary = integrar(config)
-    contracts = datasets["contracts"]
-    requeridos = {"label_favoritismo", "label_fraccionamiento"}
-    faltantes = requeridos - set(contracts.columns)
-    if faltantes:
-        raise ValueError(f"TRAIN Spark requiere ground truth canónico: {sorted(faltantes)}")
-
-    estado = ajustar_estado_preprocesamiento(contracts)
     manifest_path = Path(manifest_path)
     candidate_dir = manifest_path.parent
     if candidate_dir.exists():
@@ -130,14 +147,40 @@ def entrenar(
     fav_model_dir = candidate_dir / "modelo_favoritismo_rf"
     frac_model_dir = candidate_dir / "modelo_fraccionamiento_kmeans"
     frac_scaler_dir = candidate_dir / "scaler_fraccionamiento"
-    guardar_json_determinista(preprocessor_json, estado)
 
     spark = crear_sesion("cgr-train-spark-mllib-candidate", operational=True)
     spark_mode = spark.sparkContext.master
     spark.sparkContext.setLogLevel("ERROR")
     spark.sparkContext.addPyFile(str(SRC_DIR / "umbrales_normativos.py"))
+
+    source_type = config["source"]["type"]
+    spark_native = source_type == "spark_sql"
     try:
-        raw_spark = pandas_a_spark(spark, contracts)
+        if spark_native:
+            datasets, integration_summary = integrar_spark(config, spark=spark)
+            raw_spark = datasets["contracts"]
+            requeridos = {"label_favoritismo", "label_fraccionamiento"}
+            faltantes = requeridos - set(raw_spark.columns)
+            if faltantes:
+                raise ValueError(f"TRAIN Spark requiere ground truth canónico: {sorted(faltantes)}")
+            estado = ajustar_estado_preprocesamiento_spark(raw_spark)
+            data_fingerprint = _fingerprint_spark_dataframe(raw_spark)
+            contracts_rows = int(integration_summary["domains"]["contracts"]["rows"])
+            input_engine = "spark_native"
+        else:
+            datasets, integration_summary = integrar(config)
+            contracts = datasets["contracts"]
+            requeridos = {"label_favoritismo", "label_fraccionamiento"}
+            faltantes = requeridos - set(contracts.columns)
+            if faltantes:
+                raise ValueError(f"TRAIN Spark requiere ground truth canónico: {sorted(faltantes)}")
+            estado = ajustar_estado_preprocesamiento(contracts)
+            data_fingerprint = _fingerprint_dataframe(contracts)
+            contracts_rows = int(len(contracts))
+            raw_spark = pandas_a_spark(spark, contracts)
+            input_engine = "pandas_adapter"
+
+        guardar_json_determinista(preprocessor_json, estado)
         procesado = aplicar_preprocesamiento_congelado(raw_spark, estado)
 
         fav_features = construir_features_favoritismo(
@@ -187,7 +230,6 @@ def entrenar(
         },
     }
 
-    data_fingerprint = _fingerprint_dataframe(contracts)
     identity = {
         "training_data": data_fingerprint,
         "preprocessor": artifacts["preprocessor_json"]["sha256"],
@@ -211,8 +253,11 @@ def entrenar(
         "training": {
             "config": str(config_path),
             "source_type": integration_summary["source_type"],
+            "input_engine": input_engine,
+            "spark_native_ingestion": spark_native,
+            "pandas_materialization": not spark_native,
             "training_data_fingerprint_sha256": data_fingerprint,
-            "contracts_rows": int(len(contracts)),
+            "contracts_rows": contracts_rows,
             "favoritismo_rows": fav_rows,
             "favoritismo_positives": fav_positives,
             "favoritismo_amount_source": FAVORITISMO_MONTO_OPERACIONAL,
