@@ -41,15 +41,14 @@ def aplicar_mapping_spark(df, domain: str, mapping: dict[str, str]):
             f"La fuente {domain!r} no contiene columnas configuradas: {faltantes}"
         )
 
-    # select(alias) descarta deliberadamente columnas no mapeadas.
     return df.select(*[F.col(physical).alias(canonical) for canonical, physical in mapping.items()])
 
 
 def validar_dataframe_spark(df, domain: str, mode: str = "inference"):
     """Valida/castea un DataFrame Spark sin convertirlo a pandas.
 
-    La validación ejecuta una sola agregación distribuida para contabilizar
-    conversiones inválidas y nulos estructurales. No imputa calidad de negocio.
+    Los marcadores de error se calculan antes de reemplazar cada columna para
+    poder distinguir un valor físico inválido de un nulo legítimo.
     """
     if domain not in SCHEMAS:
         raise ValueError(f"Dominio desconocido {domain!r}. Válidos: {sorted(SCHEMAS)}")
@@ -69,12 +68,15 @@ def validar_dataframe_spark(df, domain: str, mode: str = "inference"):
         raise ValueError(f"Columnas no canónicas en {domain!r}: {desconocidas}")
 
     out = df
-    invalid_checks = []
-    null_checks = []
+    marker_cols: list[str] = []
 
     for col in df.columns:
         spec = specs[col]
+        tmp = f"__converted__{col}"
+        invalid_marker = f"__invalid__{col}"
+        null_marker = f"__null__{col}"
         original = F.col(col)
+
         if spec.kind == "string":
             converted = original.cast("string")
         elif spec.kind == "number":
@@ -91,40 +93,42 @@ def validar_dataframe_spark(df, domain: str, mode: str = "inference"):
         else:
             raise ValueError(f"Tipo canónico Spark no soportado: {spec.kind!r}")
 
+        out = out.withColumn(tmp, converted)
         if spec.kind in {"number", "datetime", "boolean"}:
-            invalid_checks.append(
-                F.sum(F.when(original.isNotNull() & converted.isNull(), 1).otherwise(0)).alias(
-                    f"invalid__{col}"
-                )
+            out = out.withColumn(
+                invalid_marker,
+                F.when(F.col(col).isNotNull() & F.col(tmp).isNull(), 1).otherwise(0),
             )
-        out = out.withColumn(col, converted)
+            marker_cols.append(invalid_marker)
+
+        out = out.drop(col).withColumnRenamed(tmp, col)
 
         required_here = spec.required_training if mode == "training" else spec.required_inference
         if required_here and not spec.nullable:
-            null_checks.append(
-                F.sum(F.when(F.col(col).isNull(), 1).otherwise(0)).alias(f"null__{col}")
+            out = out.withColumn(
+                null_marker, F.when(F.col(col).isNull(), 1).otherwise(0)
             )
+            marker_cols.append(null_marker)
 
-    checks = invalid_checks + null_checks
-    if checks:
-        result = out.agg(*checks).collect()[0].asDict()
+    if marker_cols:
+        result = out.agg(*[F.sum(F.col(c)).alias(c) for c in marker_cols]).first().asDict()
         invalid = {
-            key.removeprefix("invalid__"): int(value or 0)
+            key.removeprefix("__invalid__"): int(value or 0)
             for key, value in result.items()
-            if key.startswith("invalid__") and int(value or 0) > 0
+            if key.startswith("__invalid__") and int(value or 0) > 0
         }
         if invalid:
-            raise ValueError(
-                f"Conversiones inválidas en esquema Spark {domain!r}: {invalid}"
-            )
+            raise ValueError(f"Conversiones inválidas en esquema Spark {domain!r}: {invalid}")
+
         structural_nulls = {
-            key.removeprefix("null__"): int(value or 0)
+            key.removeprefix("__null__"): int(value or 0)
             for key, value in result.items()
-            if key.startswith("null__") and int(value or 0) > 0
+            if key.startswith("__null__") and int(value or 0) > 0
         }
         if structural_nulls:
             raise ValueError(
                 f"Nulos no permitidos en esquema Spark {domain!r} ({mode}): {structural_nulls}"
             )
+        out = out.drop(*marker_cols)
 
     return out
