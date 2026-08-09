@@ -27,6 +27,7 @@ from core.config import cargar_config
 from ingestar_canonico import integrar, integrar_spark
 from preprocesamiento import ajustar_estado_preprocesamiento
 from registro_modelos import guardar_json_determinista, sha256_ruta
+from spark.ajustar_preprocesamiento_spark import ajustar_estado_preprocesamiento_spark
 from spark.modelo_favoritismo_spark import (
     FEATURES as FAV_FEATURES,
     construir_features_favoritismo,
@@ -40,7 +41,6 @@ from spark.modelo_fraccionamiento_spark import (
     entrenar_modelos_kmeans,
 )
 from spark.preprocesamiento_serving_spark import (
-    ajustar_estado_preprocesamiento_spark,
     aplicar_preprocesamiento_congelado,
     pandas_a_spark,
 )
@@ -62,12 +62,7 @@ def _fingerprint_dataframe(df: pd.DataFrame) -> str:
 
 
 def _fingerprint_spark_dataframe(df) -> str:
-    """Fingerprint distribuido sin colectar filas al driver.
-
-    Dos agregados xxhash64, count y extremos se combinan con el schema y luego
-    se protegen con SHA-256. No pretende ser firma criptográfica de cada fila;
-    sirve como identidad técnica reproducible del lote de TRAIN.
-    """
+    """Fingerprint distribuido sin colectar filas al driver."""
     columns = sorted(df.columns)
     values = [F.coalesce(F.col(c).cast("string"), F.lit("<NA>")) for c in columns]
     hashed = df.select(
