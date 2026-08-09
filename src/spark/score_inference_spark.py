@@ -1,8 +1,8 @@
 """INFERENCE operacional con Apache Spark MLlib.
 
 Para ``source.type=spark_sql`` conserva un DataFrame Spark desde la tabla/vista
-hasta el scoring y la escritura de rankings. CSV/SQL Server mantienen un
-adaptador pandas->Spark explícito por compatibilidad.
+hasta el scoring y escribe rankings distribuidos en Parquet. CSV/SQL Server
+mantienen un adaptador pandas->Spark y CSV único por compatibilidad local.
 
 No contiene fit, tuning ni requiere labels. Los artefactos champion se verifican
 por SHA-256 antes y después del scoring.
@@ -53,7 +53,7 @@ FAVORITISMO_MONTO_OPERACIONAL = "monto_capped"
 
 
 def _write_single_csv_spark(df, target: Path) -> None:
-    """Escribe un CSV compatible sin convertir el ranking a pandas."""
+    """CSV único para compatibilidad local; no convierte el ranking a pandas."""
     target = Path(target)
     target.parent.mkdir(parents=True, exist_ok=True)
     tmp = target.parent / f".{target.name}.spark-tmp"
@@ -65,6 +65,30 @@ def _write_single_csv_spark(df, target: Path) -> None:
         raise RuntimeError(f"Spark no produjo un único part CSV para {target}: {len(parts)}")
     shutil.copy2(parts[0], target)
     shutil.rmtree(tmp)
+
+
+def _write_rankings(ranking_fav, ranking_frac, output_dir: Path, *, spark_native: bool) -> dict:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    if spark_native:
+        fav_path = output_dir / "ranking_riesgo_favoritismo_spark.parquet"
+        frac_path = output_dir / "ranking_riesgo_fraccionamiento_spark.parquet"
+        ranking_fav.write.mode("overwrite").parquet(str(fav_path))
+        ranking_frac.write.mode("overwrite").parquet(str(frac_path))
+        return {
+            "format": "parquet_distributed",
+            "favoritismo": fav_path.as_posix(),
+            "fraccionamiento": frac_path.as_posix(),
+        }
+
+    fav_path = output_dir / "ranking_riesgo_favoritismo_spark.csv"
+    frac_path = output_dir / "ranking_riesgo_fraccionamiento_spark.csv"
+    _write_single_csv_spark(ranking_fav, fav_path)
+    _write_single_csv_spark(ranking_frac, frac_path)
+    return {
+        "format": "csv_single_file_compatibility",
+        "favoritismo": fav_path.as_posix(),
+        "fraccionamiento": frac_path.as_posix(),
+    }
 
 
 def ejecutar_inference_spark(
@@ -173,11 +197,9 @@ def ejecutar_inference_spark(
         frac_rows = int(ranking_frac.count())
 
         output_dir = Path(output_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
-        fav_path = output_dir / "ranking_riesgo_favoritismo_spark.csv"
-        frac_path = output_dir / "ranking_riesgo_fraccionamiento_spark.csv"
-        _write_single_csv_spark(ranking_fav, fav_path)
-        _write_single_csv_spark(ranking_frac, frac_path)
+        detail_outputs = _write_rankings(
+            ranking_fav, ranking_frac, output_dir, spark_native=spark_native
+        )
 
         integrity_after = {
             nombre: sha256_ruta(spec["path"]) == spec["sha256"]
@@ -211,10 +233,7 @@ def ejecutar_inference_spark(
             "tuning_invoked": False,
             "sklearn_serving_dependency": False,
             "champion_integrity_verified": bool(all(integrity_after.values())),
-            "detail_outputs": {
-                "favoritismo": fav_path.as_posix(),
-                "fraccionamiento": frac_path.as_posix(),
-            },
+            "detail_outputs": detail_outputs,
             "notice": (
                 "Scores de priorización del PoC; no constituyen hallazgos de control "
                 "ni decisión jurídica. Clúster/infraestructura CGR pendientes."
