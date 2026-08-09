@@ -7,6 +7,10 @@ Contrato:
 No contiene fit, tuning ni requiere labels. Los artefactos champion se verifican
 por SHA-256 antes y después del scoring. Sprint 4 usa ``monto_capped`` en
 favoritismo, idéntico al TRAIN operacional promovido.
+
+El master de Spark se obtiene de la sesión operacional creada por
+``crear_sesion`` y puede configurarse con ``CGR_SPARK_MASTER``. El default local
+se conserva únicamente para poder ejecutar el PoC fuera de infraestructura CGR.
 """
 
 from __future__ import annotations
@@ -79,7 +83,8 @@ def ejecutar_inference_spark(
     preprocessor_path = Path(registry["artifacts"]["preprocessor_json"]["path"])
     estado = json.loads(preprocessor_path.read_text(encoding="utf-8"))
 
-    spark = crear_sesion("cgr-inference-spark-mllib")
+    spark = crear_sesion("cgr-inference-spark-mllib", operational=True)
+    spark_mode = spark.sparkContext.master
     spark.sparkContext.setLogLevel("ERROR")
     spark.sparkContext.addPyFile(str(SRC_DIR / "umbrales_normativos.py"))
     try:
@@ -147,7 +152,7 @@ def ejecutar_inference_spark(
             "schema_version": 1,
             "mode": "inference",
             "engine": "Apache Spark MLlib",
-            "spark_mode": "local[*]",
+            "spark_mode": spark_mode,
             "source_type": integration_summary["source_type"],
             "registry_schema_version": registry["registry_schema_version"],
             "serving_profile": registry["profile_name"],
