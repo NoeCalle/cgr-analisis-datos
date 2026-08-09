@@ -1,8 +1,8 @@
 """TRANSFORM framework-neutral usado por TRAIN/INFERENCE Spark.
 
-El estado se aprende fuera de este módulo y llega como un diccionario/JSON
-versionado. Aquí no existe ninguna operación de FIT. CSV/SQL Server pueden usar
-``pandas_a_spark`` como adaptador; ``spark_sql`` entra ya como DataFrame Spark.
+El estado se aprende fuera de este módulo y llega como JSON. Para champions
+Spark-native, las medianas por objeto pueden llegar además como DataFrame Spark
+y se aplican mediante join distribuido. Aquí no existe ninguna operación de FIT.
 """
 
 from __future__ import annotations
@@ -23,26 +23,48 @@ def pandas_a_spark(spark, df: pd.DataFrame):
     return spark.createDataFrame(serializable.to_dict("records"))
 
 
-def aplicar_preprocesamiento_congelado(df, estado: dict):
+def aplicar_preprocesamiento_congelado(df, estado: dict, *, medianas_df=None):
     """TRANSFORM Spark usando exclusivamente parámetros previamente aprendidos."""
     if estado.get("schema_version") != PREPROCESSOR_SCHEMA_VERSION:
         raise ValueError(
             f"Preprocesador JSON incompatible: schema_version={estado.get('schema_version')!r}"
         )
 
-    medianas = estado.get("monto_mediana_por_objeto", {})
-    if medianas:
-        entries = []
-        for key, value in sorted(medianas.items()):
-            entries.extend([F.lit(str(key)), F.lit(float(value))])
-        mapa_mediana = F.create_map(*entries)
-        mediana_objeto = mapa_mediana[F.col("objeto").cast("string")]
+    out = df
+    external = bool(estado.get("monto_mediana_por_objeto_external", False))
+    if external:
+        if medianas_df is None:
+            raise ValueError(
+                "El preprocesador requiere artefacto Spark de medianas por objeto y no fue suministrado."
+            )
+        requeridas = {"objeto", "monto_mediana"}
+        faltantes = sorted(requeridas - set(medianas_df.columns))
+        if faltantes:
+            raise ValueError(f"Artefacto de medianas Spark incompleto: faltan {faltantes}")
+        med = medianas_df.select(
+            F.col("objeto").cast("string").alias("__objeto_mediana"),
+            F.col("monto_mediana").cast("double").alias("__mediana_objeto"),
+        )
+        out = out.join(
+            med,
+            out["objeto"].cast("string") == med["__objeto_mediana"],
+            "left",
+        ).drop("__objeto_mediana")
+        mediana_objeto = F.col("__mediana_objeto")
     else:
-        mediana_objeto = F.lit(None).cast("double")
+        medianas = estado.get("monto_mediana_por_objeto", {})
+        if medianas:
+            entries = []
+            for key, value in sorted(medianas.items()):
+                entries.extend([F.lit(str(key)), F.lit(float(value))])
+            mapa_mediana = F.create_map(*entries)
+            mediana_objeto = mapa_mediana[F.col("objeto").cast("string")]
+        else:
+            mediana_objeto = F.lit(None).cast("double")
 
     # El monto observado tiene prioridad. Un objeto nulo nunca puede borrar un
     # monto válido, corrección explícita respecto de la ruta legacy de RC1.
-    out = df.withColumn(
+    out = out.withColumn(
         "monto",
         F.coalesce(
             F.col("monto").cast("double"),
@@ -50,6 +72,9 @@ def aplicar_preprocesamiento_congelado(df, estado: dict):
             F.lit(float(estado["monto_mediana_global"])),
         ),
     )
+    if "__mediana_objeto" in out.columns:
+        out = out.drop("__mediana_objeto")
+
     out = out.withColumn(
         "modalidad",
         F.coalesce(F.col("modalidad").cast("string"), F.lit(str(estado["modalidad_moda"]))),
