@@ -1,4 +1,4 @@
-"""Pruebas Sprint 1: fuente intercambiable -> mapping -> esquema canónico."""
+"""Pruebas de fuente intercambiable -> mapping -> esquema canónico."""
 
 import sys
 from pathlib import Path
@@ -26,6 +26,7 @@ def _source_df(include_labels=False):
         "FEC_SUSC": ["2026-07-01", "2026-07-03"],
         "TIP_PROC": ["Licitación Pública", "Contratación Directa"],
         "DESC_OBJ": ["Bien A", "Servicio B"],
+        "CAT_PRINC": ["goods", "services"],
     }
     if include_labels:
         data["GT_FAV"] = [0, 1]
@@ -42,6 +43,7 @@ def _mapping(include_labels=False):
         "fecha_contrato": "FEC_SUSC",
         "modalidad": "TIP_PROC",
         "objeto": "DESC_OBJ",
+        "categoria_principal": "CAT_PRINC",
     }
     if include_labels:
         mapping["label_favoritismo"] = "GT_FAV"
@@ -65,15 +67,19 @@ def test_integration_permite_nulos_imputables_pero_exige_la_columna():
     source.loc[0, "IMP_ADJ"] = None
     source.loc[0, "TIP_PROC"] = None
     source.loc[1, "DESC_OBJ"] = None
+    source.loc[1, "CAT_PRINC"] = None
     canonical = aplicar_mapping(source, "contracts", _mapping())
     validated = validar_dataframe(canonical, "contracts", mode="inference")
 
     assert validated["monto"].isna().sum() == 1
     assert validated["modalidad"].isna().sum() == 1
     assert validated["objeto"].isna().sum() == 1
+    assert validated["categoria_principal"].isna().sum() == 1
 
     with pytest.raises(ValueError, match="monto"):
         validar_dataframe(validated.drop(columns=["monto"]), "contracts", mode="inference")
+    with pytest.raises(ValueError, match="categoria_principal"):
+        validar_dataframe(validated.drop(columns=["categoria_principal"]), "contracts", mode="inference")
 
 
 def test_integration_rechaza_nulos_en_claves_estructurales():
