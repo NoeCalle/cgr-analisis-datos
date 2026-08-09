@@ -29,7 +29,7 @@ La versión `v1.0.0-rc.1` permanece como snapshot histórico e inmutable del rel
 | Integración canónica | Desacopla tablas/columnas físicas mediante conectores y mappings YAML |
 | Calidad y preprocesamiento | Valida esquema, trata nulos/outliers y congela el estado de preprocesamiento usado en serving |
 | Favoritismo | Prioriza pares proveedor–entidad mediante benchmark metodológico y champion Spark MLlib |
-| Fraccionamiento | Combina detección no supervisada, KMeans MLlib y una señal interpretable temporal/cuantiativa |
+| Fraccionamiento | Combina detección no supervisada, KMeans MLlib y una señal interpretable temporal/cuantitativa |
 | Grafos | Analiza vínculos proveedor–funcionario con NetworkX/GraphFrames |
 | Pagos y modalidades | Resume ejecución de pagos, ratios, demoras y contexto de modalidades por régimen |
 | MLOps | Separa TRAIN, candidate, promoción explícita, champion e INFERENCE sin reentrenamiento |
@@ -317,6 +317,19 @@ GitHub Actions ejecuta una cadena end-to-end que incluye:
 - auditoría integral del TDR.
 
 Los resultados de auditoría se materializan en `outputs/` y `docs/` y no equivalen a conformidad institucional.
+
+## Desarrollo y contribuciones
+
+Para mantener reproducibilidad y trazabilidad, cualquier cambio funcional debería:
+
+1. evitar incluir datos reales, PII o secretos en Git;
+2. añadir/actualizar pruebas cuando cambie un contrato de datos o comportamiento;
+3. ejecutar `pytest -q` antes de integrar;
+4. mantener separados TRAIN, promoción e INFERENCE;
+5. actualizar documentación, diccionario/linaje o configuración de ejemplo cuando cambie una interfaz pública;
+6. dejar que CI regenere y audite la evidencia derivada en lugar de editar outputs canónicos manualmente.
+
+Para una adopción institucional se recomienda trabajar mediante ramas/PR y proteger `main` con los checks de CI que defina la CGR.
 
 ## Documentación
 
