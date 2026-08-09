@@ -139,6 +139,7 @@ def entrenar(
     candidate_dir.mkdir(parents=True, exist_ok=True)
 
     preprocessor_json = candidate_dir / "preprocesador_contratos.json"
+    preprocessor_medians_dir = candidate_dir / "medianas_monto_por_objeto"
     fav_model_dir = candidate_dir / "modelo_favoritismo_rf"
     frac_model_dir = candidate_dir / "modelo_fraccionamiento_kmeans"
     frac_scaler_dir = candidate_dir / "scaler_fraccionamiento"
@@ -158,7 +159,10 @@ def entrenar(
             faltantes = requeridos - set(raw_spark.columns)
             if faltantes:
                 raise ValueError(f"TRAIN Spark requiere ground truth canónico: {sorted(faltantes)}")
-            estado = ajustar_estado_preprocesamiento_spark(raw_spark)
+            estado = ajustar_estado_preprocesamiento_spark(
+                raw_spark, medians_output_path=preprocessor_medians_dir
+            )
+            medianas_df = spark.read.parquet(str(preprocessor_medians_dir))
             data_fingerprint = _fingerprint_spark_dataframe(raw_spark)
             contracts_rows = int(integration_summary["domains"]["contracts"]["rows"])
             input_engine = "spark_native"
@@ -173,10 +177,13 @@ def entrenar(
             data_fingerprint = _fingerprint_dataframe(contracts)
             contracts_rows = int(len(contracts))
             raw_spark = pandas_a_spark(spark, contracts)
+            medianas_df = None
             input_engine = "pandas_adapter"
 
         guardar_json_determinista(preprocessor_json, estado)
-        procesado = aplicar_preprocesamiento_congelado(raw_spark, estado)
+        procesado = aplicar_preprocesamiento_congelado(
+            raw_spark, estado, medianas_df=medianas_df
+        )
 
         fav_features = construir_features_favoritismo(
             procesado,
@@ -224,10 +231,17 @@ def entrenar(
             "kind": "spark_model_directory",
         },
     }
+    if spark_native:
+        artifacts["preprocessor_medians"] = {
+            "path": preprocessor_medians_dir.as_posix(),
+            "sha256": sha256_ruta(preprocessor_medians_dir),
+            "kind": "spark_parquet_directory",
+        }
 
     identity = {
         "training_data": data_fingerprint,
         "preprocessor": artifacts["preprocessor_json"]["sha256"],
+        "preprocessor_medians": artifacts.get("preprocessor_medians", {}).get("sha256"),
         "fav_model": artifacts["favoritismo_model"]["sha256"],
         "fav_amount_source": FAVORITISMO_MONTO_OPERACIONAL,
         "frac_model": artifacts["fraccionamiento_model"]["sha256"],
