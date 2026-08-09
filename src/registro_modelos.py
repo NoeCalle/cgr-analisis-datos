@@ -1,13 +1,11 @@
 """Registry técnico unificado para TRAIN, promoción e INFERENCE.
 
 El PoC mantiene dos perfiles diferenciados dentro de un único registry:
-
-- ``sklearn``: benchmark/serving de compatibilidad del Sprint 2;
+- ``sklearn``: benchmark/serving de compatibilidad;
 - ``spark_mllib``: serving objetivo alineado a la arquitectura del TDR.
 
 La promoción siempre es explícita y nunca implica aprobación institucional CGR.
-Los artefactos pueden ser archivos (joblib/json) o directorios Spark MLlib; en
-ambos casos se verifica una huella SHA-256 determinística antes de inference.
+Los artefactos pueden ser archivos o directorios Spark y se verifican por SHA-256.
 """
 
 from __future__ import annotations
@@ -43,11 +41,19 @@ SKLEARN_REQUERIDOS = {
 
 SPARK_DESTINOS = {
     "preprocessor_json": SPARK_CHAMPION_DIR / "preprocesador_contratos.json",
+    "preprocessor_medians": SPARK_CHAMPION_DIR / "medianas_monto_por_objeto",
     "favoritismo_model": SPARK_CHAMPION_DIR / "modelo_favoritismo_rf",
     "fraccionamiento_model": SPARK_CHAMPION_DIR / "modelo_fraccionamiento_kmeans",
     "fraccionamiento_scaler": SPARK_CHAMPION_DIR / "scaler_fraccionamiento",
 }
-SPARK_REQUERIDOS = set(SPARK_DESTINOS)
+# Las medianas externas son opcionales para conservar compatibilidad con
+# champions entrenados desde CSV/SQL Server, cuyo mapa vive dentro del JSON.
+SPARK_REQUERIDOS = {
+    "preprocessor_json",
+    "favoritismo_model",
+    "fraccionamiento_model",
+    "fraccionamiento_scaler",
+}
 
 
 def sha256_archivo(path: str | Path) -> str:
@@ -59,11 +65,6 @@ def sha256_archivo(path: str | Path) -> str:
 
 
 def sha256_ruta(path: str | Path) -> str:
-    """Huella estable para archivo o directorio Spark.
-
-    Hadoop puede crear ``*.crc`` locales que no se versionan; se excluyen para
-    que la huella del champion sea idéntica antes y después de un checkout Git.
-    """
     path = Path(path)
     if path.is_file():
         return sha256_archivo(path)
@@ -109,7 +110,6 @@ def _registry_vacio() -> dict:
 
 
 def _migrar_registry_v1(data: dict) -> dict:
-    """Migra en memoria el registry del Sprint 2 sin alterar artefactos."""
     if data.get("schema_version") != 1 or data.get("status") != "champion":
         raise ValueError("Registry legacy incompatible.")
     profile = {
@@ -216,7 +216,6 @@ def promover_candidato(
     acknowledge_poc_only: bool,
     registry_path: str | Path = DEFAULT_REGISTRY,
 ) -> dict:
-    """Promueve el candidato sklearn sin borrar un champion Spark existente."""
     if not acknowledge_poc_only:
         raise ValueError(
             "Promoción bloqueada: debe reconocer explícitamente que es solo para el PoC "
@@ -241,8 +240,6 @@ def promover_candidato(
     registry["serving_profiles"][SKLEARN_PROFILE] = _perfil_desde_candidato(
         candidato, artefactos_champion, approved_by
     )
-    # Una vez exista Spark, sklearn queda como benchmark/compatibilidad y no
-    # recupera automáticamente el rol de serving activo.
     if SPARK_PROFILE not in registry["serving_profiles"]:
         registry["active_serving_profile"] = SKLEARN_PROFILE
     guardar_json_determinista(registry_path, registry)
@@ -257,12 +254,6 @@ def promover_candidato_spark(
     registry_path: str | Path = DEFAULT_REGISTRY,
     if_missing: bool = False,
 ) -> dict:
-    """Promueve explícitamente un candidato MLlib y lo vuelve serving activo.
-
-    ``if_missing`` sirve al bootstrap reproducible de CI: si ya existe un
-    champion Spark válido, el entrenamiento de una nueva corrida queda como
-    candidate y no reemplaza silenciosamente el modelo servido.
-    """
     if not acknowledge_poc_only:
         raise ValueError(
             "Promoción Spark bloqueada: debe reconocer explícitamente que es solo para el PoC."
@@ -277,9 +268,11 @@ def promover_candidato_spark(
 
     candidato = cargar_manifest_candidato_spark(manifest_path)
     artefactos_champion = {}
-    for nombre, destino in SPARK_DESTINOS.items():
-        origen = Path(candidato["artifacts"][nombre]["path"])
-        _copiar_artefacto(origen, destino)
+    for nombre, spec in candidato["artifacts"].items():
+        if nombre not in SPARK_DESTINOS:
+            continue
+        destino = SPARK_DESTINOS[nombre]
+        _copiar_artefacto(Path(spec["path"]), destino)
         artefactos_champion[nombre] = {
             "path": destino.as_posix(),
             "sha256": sha256_ruta(destino),
