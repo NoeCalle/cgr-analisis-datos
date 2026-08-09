@@ -4,6 +4,10 @@ Modelo de Favoritismo con Apache Spark MLlib — implementación objetivo del Po
 Consume la capa Plata para la corrida reproducible. Sprint 3 reutiliza el mismo
 feature engineering en serving. Sprint 4 parametriza la columna monetaria:
 legacy conserva ``monto`` y TRAIN/INFERENCE operacional usan ``monto_capped``.
+
+La reproducción histórica conserva ``local[*]``. Las rutas operacionales pueden
+definir ``CGR_SPARK_MASTER`` y ``CGR_SPARK_SHUFFLE_PARTITIONS`` para no quedar
+acopladas al master local del PoC.
 """
 
 from __future__ import annotations
@@ -35,14 +39,49 @@ MODEL_DIR = Path(os.environ.get(
 N_FOLDS = 3
 
 
-def crear_sesion(app_name: str = "cgr-modulo-favoritismo-poc"):
-    return (
+def crear_sesion(
+    app_name: str = "cgr-modulo-favoritismo-poc",
+    *,
+    operational: bool = False,
+):
+    """Crea SparkSession preservando local[*] solo como default del PoC.
+
+    La ruta legacy fija ``local[*]`` y 4 particiones para reproducibilidad. En
+    TRAIN/INFERENCE operacional el master puede inyectarse con
+    ``CGR_SPARK_MASTER``. Si la variable no existe se usa ``local[*]`` como
+    fallback local. ``CGR_SPARK_SHUFFLE_PARTITIONS`` es opcional; cuando no se
+    define y el master es local se conserva el valor 4 del PoC.
+    """
+    builder = (
         SparkSession.builder.appName(app_name)
-        .master("local[*]")
         .config("spark.ui.showConsoleProgress", "false")
-        .config("spark.sql.shuffle.partitions", "4")
-        .getOrCreate()
     )
+
+    if not operational:
+        return (
+            builder.master("local[*]")
+            .config("spark.sql.shuffle.partitions", "4")
+            .getOrCreate()
+        )
+
+    master = os.environ.get("CGR_SPARK_MASTER", "local[*]").strip()
+    if not master:
+        raise ValueError("CGR_SPARK_MASTER no puede estar vacío.")
+    builder = builder.master(master)
+
+    shuffle = os.environ.get("CGR_SPARK_SHUFFLE_PARTITIONS")
+    if shuffle is not None:
+        try:
+            n_shuffle = int(shuffle)
+        except ValueError as exc:
+            raise ValueError("CGR_SPARK_SHUFFLE_PARTITIONS debe ser entero positivo.") from exc
+        if n_shuffle < 1:
+            raise ValueError("CGR_SPARK_SHUFFLE_PARTITIONS debe ser entero positivo.")
+        builder = builder.config("spark.sql.shuffle.partitions", str(n_shuffle))
+    elif master.startswith("local"):
+        builder = builder.config("spark.sql.shuffle.partitions", "4")
+
+    return builder.getOrCreate()
 
 
 def cargar_plata(spark):
