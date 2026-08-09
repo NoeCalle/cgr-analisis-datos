@@ -1,17 +1,20 @@
 """FIT distribuido del preprocesador para TRAIN con ``source.type=spark_sql``.
 
 Aprende medianas, modas y P99 sin materializar filas contractuales en pandas.
-El resultado conserva el schema JSON consumido por el TRANSFORM de serving.
+Cuando se suministra ``medians_output_path``, la dimensión objeto->mediana se
+persiste como Parquet Spark y tampoco se colecta al driver.
 """
 
 from __future__ import annotations
+
+from pathlib import Path
 
 from pyspark.sql import functions as F
 
 PREPROCESSOR_SCHEMA_VERSION = 1
 
 
-def ajustar_estado_preprocesamiento_spark(df) -> dict:
+def ajustar_estado_preprocesamiento_spark(df, *, medians_output_path: str | Path | None = None) -> dict:
     requeridas = {"monto", "objeto", "modalidad"}
     faltantes = sorted(requeridas - set(df.columns))
     if faltantes:
@@ -51,26 +54,42 @@ def ajustar_estado_preprocesamiento_spark(df) -> dict:
 
     modalidad_moda = _moda_spark(base, "modalidad")
     objeto_moda = _moda_spark(base, "objeto")
+    n_medians = int(medians_df.count())
 
-    # Se colecta solo la dimensión agregada objeto->mediana que forma parte del
-    # artefacto de preprocesamiento, no el dataset de contratos.
-    medians_rows = medians_df.collect()
-    medianas_objeto = {
-        str(row["_objeto_fit"]): float(row["_mediana_objeto"])
-        for row in medians_rows
-        if row["_objeto_fit"] is not None and row["_mediana_objeto"] is not None
-    }
+    if medians_output_path is not None:
+        medians_path = Path(medians_output_path)
+        (
+            medians_df.select(
+                F.col("_objeto_fit").alias("objeto"),
+                F.col("_mediana_objeto").cast("double").alias("monto_mediana"),
+            )
+            .write.mode("overwrite")
+            .parquet(str(medians_path))
+        )
+        medianas_objeto = {}
+        external_medians = True
+    else:
+        # Solo para pruebas/compatibilidad de lotes pequeños. TRAIN spark_sql
+        # productivo debe suministrar medians_output_path.
+        medians_rows = medians_df.collect()
+        medianas_objeto = {
+            str(row["_objeto_fit"]): float(row["_mediana_objeto"])
+            for row in medians_rows
+            if row["_objeto_fit"] is not None and row["_mediana_objeto"] is not None
+        }
+        external_medians = False
 
     return {
         "schema_version": PREPROCESSOR_SCHEMA_VERSION,
         "fit_engine": "spark",
         "quantile_method": "percentile_approx_accuracy_10000",
         "monto_mediana_por_objeto": medianas_objeto,
+        "monto_mediana_por_objeto_external": external_medians,
         "monto_mediana_global": mediana_global,
         "modalidad_moda": str(modalidad_moda),
         "objeto_moda": str(objeto_moda),
         "monto_p99": p99,
-        "object_medians_count": len(medianas_objeto),
+        "object_medians_count": n_medians,
     }
 
 
