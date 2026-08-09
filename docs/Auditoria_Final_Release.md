@@ -2,14 +2,14 @@
 
 > Release candidate del PoC independiente. `release_ready=true` significa coherencia técnica del repositorio, **no conformidad ni aprobación institucional de la CGR**.
 
-- Commit auditado: `8150b682a10b3e6d59c51c7fb816863f44576e51`
+- Commit auditado: `e187e7f586a4014718ca92cf3a3b13a441952213`
 - Checks: **19/19 OK**
 - Resultado: **READY**
 
 | Estado | Verificación | Detalle |
 |:---:|---|---|
 | ✅ | versión semántica release candidate | 1.0.0-rc.1 |
-| ✅ | disclaimer público explícito | README distingue el PoC de una implementación oficial |
+| ✅ | disclaimer público explícito | README distingue el PoC de una implementación oficial sin depender de una frase literal |
 | ✅ | release no se presenta como oficial | RELEASE_NOTES mantiene el alcance independiente |
 | ✅ | Anexo 3 sin brechas rojas | ✅=6, 🟡=4, 🔵=1, 🔴=0 |
 | ✅ | distribución esperada del checklist | 6 ✅ / 4 🟡 / 1 🔵 |
@@ -24,7 +24,7 @@
 | ✅ | Oro sin datasets intermedios | artefactos Oro=9 |
 | ✅ | sin derivados reales identificables versionados | raw/derivados reales identificables permanecen fuera del repositorio |
 | ✅ | documentación formal completa | 8 DOCX (7 productos + informe final) |
-| ✅ | manifiesto reproducible Spark/GraphFrames | commit evidencia=9d6b68d304c74f8bdc715fc195996b257793cda6 |
+| ✅ | manifiesto reproducible Spark/GraphFrames | commit evidencia=5690a20f3c35cf2956b5e8ea791cabe2bd11148b |
 | ✅ | sin residuos de nomenclatura obsoleta en artefactos canónicos | nomenclatura y conteos vigentes |
 | ✅ | licencia presente | MIT para el código del PoC |
 
