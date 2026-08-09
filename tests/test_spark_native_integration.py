@@ -113,6 +113,17 @@ def test_spark_sql_training_con_labels_booleanos(spark):
     assert contracts.where("label_fraccionamiento = true").count() == 1
 
 
+def test_spark_sql_rechaza_monto_fisico_no_convertible(spark):
+    view = "vw_test_invalid_amount_spark_native"
+    spark.createDataFrame(
+        [("C1", "P1", "E1", "NO_ES_NUMERO", "2026-01-01", "Licitación Pública", "A")],
+        ["NRO_CONTRATO", "COD_PROV", "SEC_EJEC", "IMP_ADJ", "FEC_SUSC", "TIP_PROC", "DESC_OBJ"],
+    ).createOrReplaceTempView(view)
+
+    with pytest.raises(ValueError, match="monto"):
+        integrar_spark(_config(view), spark=spark)
+
+
 def test_integracion_pandas_rechaza_spark_sql_para_evitar_collect_implicito():
     config = _config("vista_no_necesita_existir")
     with pytest.raises(ValueError, match="Spark-native"):
