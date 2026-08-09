@@ -15,6 +15,6 @@
     "outputs/vinculos_graphframes_sospechosos.csv",
     "outputs/vinculos_graphframes_pagerank.csv"
   ],
-  "duracion_s": 21.129,
+  "duracion_s": 21.423,
   "advertencia": "Datos de contacto sintéticos; clúster y fuentes institucionales CGR pendientes."
 }
