@@ -16,9 +16,11 @@ La rama `main` contiene el PoC endurecido para facilitar una futura integración
 | ✅ | 12 | Cubiertos con evidencia reproducible del repositorio |
 | 🟡 | 8 | Software/contrato resuelto; cierre literal requiere datos, infraestructura o validación CGR |
 | 🔵 | 5 | Actividades exclusivamente institucionales/contractuales |
-| 🔴 | **0** | **No quedan brechas técnicas conocidas cerrables únicamente desde este repositorio** |
+| 🔴 | **0** | **No quedan brechas rojas dentro de los criterios evaluados del TDR público** |
 
 El checklist específico del Anexo 3 se mantiene en **6 ✅ / 4 🟡 / 1 🔵 / 0 🔴**.
+
+`0 🔴` describe el resultado de esa auditoría y **no significa “cero trabajo de endurecimiento productivo”**. En particular, la integración `spark_sql` pública todavía materializa el contrato canónico en pandas antes del procesamiento MLlib; para volúmenes institucionales masivos debe validarse o sustituirse esa frontera por una ruta Spark-native. El detalle está en [`docs/Integracion_Datos.md`](docs/Integracion_Datos.md).
 
 La versión `v1.0.0-rc.1` permanece como snapshot histórico e inmutable del release candidate original. `main` incorpora mejoras posteriores de integración institucional, separación TRAIN/INFERENCE, serving Spark MLlib, análisis de pagos y auditoría integral del TDR.
 
@@ -194,7 +196,9 @@ Los resultados se generan en `outputs/analisis_pagos_modalidades.json`, `outputs
 
 ## Integración institucional
 
-La adaptación prevista es **configuración + infraestructura**, no una reescritura del ML:
+La adaptación principal prevista es **configuración + infraestructura**, no una reescritura del ML. Si el volumen institucional excede lo que puede materializarse de forma segura en el driver, también debe endurecerse la frontera de ingesta a Spark-native antes de producción.
+
+Secuencia de aterrizaje:
 
 1. llevar el código a un repositorio institucional privado;
 2. aprobar las vistas/tablas que alimentarán cada dominio canónico;
@@ -202,12 +206,13 @@ La adaptación prevista es **configuración + infraestructura**, no una reescrit
 4. mapear columnas físicas a campos canónicos;
 5. inyectar credenciales mediante variables de entorno/gestor de secretos;
 6. validar configuración y calidad en DEV;
-7. preparar dataset histórico con ground truth para TRAIN;
-8. entrenar candidate Spark, evaluar y promover solo mediante aprobación autorizada;
-9. ejecutar INFERENCE sobre contratos actuales;
-10. conectar las salidas aprobadas a SQL Server/SSRS y operar en QA/PROD.
+7. medir volumen/memoria y decidir si la frontera de ingesta requiere adaptación Spark-native;
+8. preparar dataset histórico con ground truth para TRAIN;
+9. entrenar candidate Spark, evaluar y promover solo mediante aprobación autorizada;
+10. ejecutar INFERENCE sobre contratos actuales;
+11. conectar las salidas aprobadas a SQL Server/SSRS y operar en QA/PROD.
 
-El procedimiento detallado, responsabilidades, gates, rollback y checklist de cierre están en:
+El procedimiento detallado, responsabilidades, gates, escala, rollback y checklist de cierre están en:
 
 **[`docs/Manual_Aterrizaje_Institucional_CGR.md`](docs/Manual_Aterrizaje_Institucional_CGR.md)**
 
@@ -245,6 +250,15 @@ Este comando solo representa promoción técnica dentro del PoC. En una implanta
 
 El perfil activo del PoC es `spark_mllib`. El perfil sklearn se conserva para benchmark, compatibilidad y regresión.
 
+TRAIN/INFERENCE aceptan un master operacional mediante:
+
+```bash
+export CGR_SPARK_MASTER='<master Spark>'
+export CGR_SPARK_SHUFFLE_PARTITIONS='<n>'  # opcional
+```
+
+Sin `CGR_SPARK_MASTER`, el PoC usa `local[*]` como fallback local. El manifest/resumen registra el master efectivo de `spark.sparkContext.master`.
+
 Más detalle: [`docs/Train_Inference.md`](docs/Train_Inference.md).
 
 ## Airflow
@@ -267,6 +281,8 @@ CGR_DATA_CONFIG
 CGR_TRAIN_CONFIG
 CGR_MODEL_REGISTRY
 CGR_INFERENCE_OUTPUT_DIR
+CGR_SPARK_MASTER
+CGR_SPARK_SHUFFLE_PARTITIONS
 ```
 
 Airflow debe ejecutarse en su entorno propio; las tareas ML usan el Python del proyecto indicado por `CGR_PROJECT_PYTHON`.
@@ -311,6 +327,7 @@ GitHub Actions ejecuta una cadena end-to-end que incluye:
 - TRAIN candidate aislado;
 - promoción técnica controlada para el smoke;
 - INFERENCE sin labels/reentrenamiento;
+- verificación del contrato de Spark operacional configurable;
 - Oro, linaje, diccionario y manifiesto;
 - generación y QA de los ocho DOCX;
 - auditoría del Anexo 3;
@@ -336,7 +353,7 @@ Para una adopción institucional se recomienda trabajar mediante ramas/PR y prot
 | Documento | Uso |
 |---|---|
 | [`docs/Manual_Aterrizaje_Institucional_CGR.md`](docs/Manual_Aterrizaje_Institucional_CGR.md) | guía principal para adaptar el repo a infraestructura CGR |
-| [`docs/Integracion_Datos.md`](docs/Integracion_Datos.md) | contrato canónico, conectores y mappings |
+| [`docs/Integracion_Datos.md`](docs/Integracion_Datos.md) | contrato canónico, conectores, mappings y límite de escala de ingesta |
 | [`docs/Train_Inference.md`](docs/Train_Inference.md) | lifecycle de modelos y serving |
 | [`docs/Dependencias_Institucionales_CGR.md`](docs/Dependencias_Institucionales_CGR.md) | pendientes que solo puede cerrar la institución |
 | [`docs/Checklist_Anexo_03.md`](docs/Checklist_Anexo_03.md) | auditoría de los 11 criterios del Anexo 3 |
@@ -377,7 +394,9 @@ El repositorio no puede sustituir ni simular como completadas las siguientes res
 - certificación, marcha blanca e incidencias reales;
 - transferencia y entrega contractual.
 
-Estas dependencias se mantienen de forma canónica en [`docs/Dependencias_Institucionales_CGR.md`](docs/Dependencias_Institucionales_CGR.md).
+Además, la versión pública tiene una limitación técnica explícita: **`spark_sql` materializa actualmente el contrato canónico en pandas antes de que TRAIN/INFERENCE lo conviertan nuevamente a Spark**. El procesamiento de modelos es MLlib, pero la ingesta no debe presentarse como distribuida end-to-end hasta reemplazar o validar esa frontera para el volumen institucional objetivo.
+
+Estas dependencias y gates se detallan en [`docs/Dependencias_Institucionales_CGR.md`](docs/Dependencias_Institucionales_CGR.md) y en el [`Manual de Aterrizaje Institucional`](docs/Manual_Aterrizaje_Institucional_CGR.md).
 
 ## Licencia
 
