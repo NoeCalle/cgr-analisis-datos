@@ -348,6 +348,24 @@ Para mantener reproducibilidad y trazabilidad, cualquier cambio funcional deber�
 
 Para una adopción institucional se recomienda trabajar mediante ramas/PR y proteger `main` con los checks de CI que defina la CGR.
 
+<!-- RELEASE-CANDIDATE-START -->
+## Release candidate histórico
+
+Versión declarada del snapshot del PoC independiente: **`v1.0.0-rc.1`**.
+
+Este bloque conserva la trazabilidad del release candidate histórico. El estado funcional vigente de la herramienta se documenta en las secciones superiores de este README y puede incluir mejoras posteriores al tag.
+
+Evidencia de cierre del snapshot:
+
+- `RELEASE_NOTES.md` — alcance congelado y límites de la versión;
+- `docs/Checklist_Anexo_03.md` — 11 criterios del Anexo 3;
+- `docs/Dependencias_Institucionales_CGR.md` — fuente única `CGR-DEP-01..08` de pendientes que requieren CGR;
+- `docs/Auditoria_Final_Release.md` — gate de coherencia previo al tag;
+- `outputs/auditoria_release.json` — resultado machine-readable del gate.
+
+El tag histórico no representa aprobación ni despliegue institucional de la CGR.
+<!-- RELEASE-CANDIDATE-END -->
+
 ## Documentación
 
 | Documento | Uso |
