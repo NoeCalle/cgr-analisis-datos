@@ -11,10 +11,8 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from core.config import validar_config
 from ingestar_canonico import integrar, integrar_spark
-from spark.preprocesamiento_serving_spark import (
-    ajustar_estado_preprocesamiento_spark,
-    aplicar_preprocesamiento_congelado,
-)
+from spark.ajustar_preprocesamiento_spark import ajustar_estado_preprocesamiento_spark
+from spark.preprocesamiento_serving_spark import aplicar_preprocesamiento_congelado
 
 
 @pytest.fixture(scope="module")
@@ -130,13 +128,16 @@ def test_integracion_pandas_rechaza_spark_sql_para_evitar_collect_implicito():
         integrar(config)
 
 
-def test_ruta_operacional_spark_no_contiene_to_pandas():
+def test_ruta_operacional_spark_no_contiene_to_pandas_y_serving_no_hace_fit():
     connector = (ROOT / "src" / "connectors" / "spark_sql.py").read_text(encoding="utf-8")
     train = (ROOT / "src" / "spark" / "entrenar_candidato_spark.py").read_text(encoding="utf-8")
     inference = (ROOT / "src" / "spark" / "score_inference_spark.py").read_text(encoding="utf-8")
+    serving = (ROOT / "src" / "spark" / "preprocesamiento_serving_spark.py").read_text(encoding="utf-8")
 
     assert ".toPandas(" not in connector
     assert ".toPandas(" not in train
     assert ".toPandas(" not in inference
     assert "integrar_spark(config, spark=spark)" in train
     assert "integrar_spark(config, spark=spark)" in inference
+    assert "ajustar_estado_preprocesamiento" not in serving
+    assert ".fit(" not in serving
