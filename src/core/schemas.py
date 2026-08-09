@@ -1,16 +1,16 @@
 """Contratos canónicos de datos para desacoplar fuentes externas del ML.
 
-Los modelos y feature engineering deben depender de estos nombres canónicos,
-no de nombres físicos de tablas/columnas de CGR, SIAF, SEACE u otra fuente.
+Los modelos y feature engineering dependen de estos nombres canónicos, no de
+nombres físicos de tablas/columnas de CGR, SIAF, SEACE u otra fuente.
 
-Sprint 1 distingue explícitamente dos usos:
+Se distinguen explícitamente dos usos:
 - inference: contratos actuales, sin etiquetas obligatorias;
 - training: histórico con ground truth requerido para los modelos entrenables.
 
 `required_*` significa que la columna debe existir. `nullable=False` se reserva
 para claves/campos que la capa de integración no puede recuperar de forma
-segura. Nulos imputables de negocio (monto, modalidad, objeto) se permiten aquí
-y se resuelven o rechazan posteriormente en el quality gate/preprocesamiento.
+segura. Nulos imputables de negocio se permiten aquí y se resuelven o rechazan
+posteriormente en el quality gate/preprocesamiento.
 """
 
 from __future__ import annotations
@@ -35,15 +35,15 @@ SCHEMAS: dict[str, tuple[FieldSpec, ...]] = {
         FieldSpec("id_proveedor", "string", True, True, False),
         FieldSpec("id_entidad", "string", True, True, False),
         FieldSpec("id_funcionario", "string"),
-        # La columna monto debe existir, pero el PoC ya contempla imputación de
-        # nulos en preprocesamiento; no se debe rechazar antes de ese quality gate.
         FieldSpec("monto", "number", True, True, True),
         FieldSpec("fecha_contrato", "datetime", True, True, False),
         FieldSpec("modalidad", "string", True, True, True),
         FieldSpec("objeto", "string", True, True, True),
-        FieldSpec("categoria_principal", "string"),
+        # Fraccionamiento necesita la columna para resolver el umbral normativo.
+        # Puede venir nula y el proveedor de umbrales aplicará su fallback, pero
+        # la ausencia estructural debe detectarse antes del feature engineering.
+        FieldSpec("categoria_principal", "string", True, True, True),
         FieldSpec("fecha_actualizacion", "datetime"),
-        # Ground truth canónico. Los nombres físicos/sintéticos se adaptan vía mapping.
         FieldSpec("label_favoritismo", "boolean", False, True, False),
         FieldSpec("label_fraccionamiento", "boolean", False, True, False),
     ),
@@ -160,9 +160,8 @@ def validar_dataframe(
             elif spec.kind == "boolean":
                 out[col] = _coerce_bool(out[col])
             elif spec.kind == "string":
-                # Mantiene NA en vez de convertirlo a la cadena "nan".
                 out[col] = out[col].astype("string")
-        except Exception as exc:  # pandas expone varias excepciones por dtype
+        except Exception as exc:
             raise ValueError(
                 f"No se pudo convertir {domain}.{col} al tipo {spec.kind}: {exc}"
             ) from exc
