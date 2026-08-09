@@ -13,6 +13,7 @@ from core.config import validar_config
 from ingestar_canonico import integrar, integrar_spark
 from spark.ajustar_preprocesamiento_spark import ajustar_estado_preprocesamiento_spark
 from spark.preprocesamiento_serving_spark import aplicar_preprocesamiento_congelado
+from spark.score_inference_spark import _write_rankings
 
 
 @pytest.fixture(scope="module")
@@ -137,6 +138,26 @@ def test_spark_sql_rechaza_monto_fisico_no_convertible(spark):
 
     with pytest.raises(ValueError, match="monto"):
         integrar_spark(_config(view), spark=spark)
+
+
+def test_spark_native_escribe_rankings_distribuidos_en_parquet(spark, tmp_path):
+    fav = spark.createDataFrame(
+        [("P1", "E1", 0.9), ("P2", "E2", 0.3)],
+        ["id_proveedor", "id_entidad", "score_riesgo_favoritismo"],
+    )
+    frac = spark.createDataFrame(
+        [("P1", "E1", "A", 0.8)],
+        ["id_proveedor", "id_entidad", "objeto", "score_anomalia"],
+    )
+    outputs = _write_rankings(fav, frac, tmp_path, spark_native=True)
+
+    assert outputs["format"] == "parquet_distributed"
+    fav_path = Path(outputs["favoritismo"])
+    frac_path = Path(outputs["fraccionamiento"])
+    assert fav_path.is_dir() and any(fav_path.glob("part-*.parquet"))
+    assert frac_path.is_dir() and any(frac_path.glob("part-*.parquet"))
+    assert spark.read.parquet(str(fav_path)).count() == 2
+    assert spark.read.parquet(str(frac_path)).count() == 1
 
 
 def test_integracion_pandas_rechaza_spark_sql_para_evitar_collect_implicito():
