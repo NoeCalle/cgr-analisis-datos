@@ -1,6 +1,6 @@
 {
   "active_serving_profile": "spark_mllib",
-  "champion_id": "spark-poc-853c1a0eef7fbc12",
+  "champion_id": "spark-poc-ec9119620f5dd99f",
   "champion_integrity_verified": true,
   "contracts_rows": 3709,
   "detail_outputs": {
@@ -12,16 +12,20 @@
   "favoritismo_scored_rows": 2328,
   "fraccionamiento_amount_source": "monto",
   "fraccionamiento_scored_rows": 180,
+  "input_engine": "pandas_adapter",
   "institutional_approval": false,
   "labels_consumed": false,
   "mode": "inference",
   "notice": "Scores de priorización del PoC; no constituyen hallazgos de control ni decisión jurídica. Clúster/infraestructura CGR pendientes.",
+  "pandas_materialization": true,
+  "preprocessor_medians_external": false,
   "registry_schema_version": 2,
-  "schema_version": 1,
+  "schema_version": 2,
   "serving_profile": "spark_mllib",
   "sklearn_serving_dependency": false,
   "source_type": "local_csv",
   "spark_mode": "local[*]",
+  "spark_native_ingestion": false,
   "training_invoked": false,
   "tuning_invoked": false
 }

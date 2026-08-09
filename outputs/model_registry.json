@@ -100,22 +100,22 @@
       "artifacts": {
         "favoritismo_model": {
           "path": "outputs/champions_spark/modelo_favoritismo_rf",
-          "sha256": "d7a45ea5eb075ac6f4882220327f9f2743a50f1ac4c91c0fae9bc0236511f3cc"
+          "sha256": "39f919cff89db94c39c388f36ad61c932f8ab5049dcfc207f1bafe53b6015ae0"
         },
         "fraccionamiento_model": {
           "path": "outputs/champions_spark/modelo_fraccionamiento_kmeans",
-          "sha256": "e8be0ce32890cd6cb094dcfe522d7eed2d5a2072922e13fe252f2912324075db"
+          "sha256": "5454d4dad0ac57b83cb0ccbc198271d16566f9d78a28ae9dfbb4d8c7d7230240"
         },
         "fraccionamiento_scaler": {
           "path": "outputs/champions_spark/scaler_fraccionamiento",
-          "sha256": "49aca44a3dbd1e5c52ee9537e56ef8a0ec3cd3c242e6545ac9e76a64e5df9db5"
+          "sha256": "ac6f662bb12d35eee0ea748a147d4d2791a45ee7d8778e6fed7e5be584ee34fb"
         },
         "preprocessor_json": {
           "path": "outputs/champions_spark/preprocesador_contratos.json",
           "sha256": "8314ed1e6d320aaea9d512f4765317492a667c751e7d73137e9a8c3c45e750fd"
         }
       },
-      "champion_id": "spark-poc-853c1a0eef7fbc12",
+      "champion_id": "spark-poc-ec9119620f5dd99f",
       "models": {
         "favoritismo": {
           "algorithm": "RandomForestClassificationModel",
@@ -175,9 +175,12 @@
         "fraccionamiento_positives": 8,
         "fraccionamiento_rows": 180,
         "ground_truth_required": true,
+        "input_engine": "pandas_adapter",
+        "pandas_materialization": true,
         "preprocessing_contract": "corrected_frozen_json_v1",
         "source_type": "local_csv",
         "spark_mode": "local[*]",
+        "spark_native_ingestion": false,
         "training_data_fingerprint_sha256": "cc965662fe78c476b59d08e2065450d5e9a47561be184f73a843899fc096eff2",
         "validation_evidence": [
           "outputs/spark_favoritismo_resumen.json",
