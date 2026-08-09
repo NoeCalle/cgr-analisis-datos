@@ -111,7 +111,16 @@ No recibe SQL libre desde el YAML. Para joins, filtros o consolidaciones complej
 
 Usa `src/connectors/spark_sql.py` y tablas/vistas accesibles mediante `SparkSession.table`.
 
-El conector no fuerza `local[*]`; toma el master/catálogo/seguridad del entorno Spark que lo ejecuta (`spark-submit`, Airflow, YARN, Kubernetes u otro mecanismo institucional). Selecciona columnas mediante la API DataFrame y devuelve el contrato para validación canónica.
+El conector no fija el master al crear su propia sesión y selecciona columnas mediante la API DataFrame. Sin embargo, la implementación pública actual termina materializando el resultado canónico con `toPandas()` porque `ingestar_canonico.py` comparte el mismo contrato pandas con `local_csv` y `sqlserver`.
+
+Por tanto:
+
+- el **entrenamiento y scoring de los modelos sí se ejecutan con Apache Spark MLlib**;
+- el adaptador canónico público **no es todavía Spark-native end-to-end para volúmenes masivos**;
+- `spark_sql` es adecuado para validación de integración y volúmenes que puedan materializarse de forma segura en el driver;
+- una implantación institucional de gran volumen debe sustituir/extender esta frontera por un adaptador canónico Spark nativo o materializar previamente vistas/tablas canónicas dentro del Lakehouse institucional.
+
+Ese endurecimiento no cambia las features ni los modelos: cambia únicamente cómo se materializa el contrato canónico antes del pipeline MLlib. Su diseño final debe validarse contra la topología, seguridad y tamaño real de los datos CGR.
 
 ## Configuración
 
@@ -218,6 +227,15 @@ INFERENCE -> TRANSFORM congelado -> champion -> scores
 
 TRAIN exige labels; INFERENCE no. INFERENCE no debe ejecutar `.fit()`, tuning ni reentrenamiento.
 
+La sesión Spark operacional admite:
+
+```text
+CGR_SPARK_MASTER
+CGR_SPARK_SHUFFLE_PARTITIONS
+```
+
+Si `CGR_SPARK_MASTER` no se define, el PoC usa `local[*]` como fallback para ejecución local. En un despliegue institucional debe definirse el master aprobado (`yarn`, Kubernetes u otro valor válido para la plataforma adoptada). La corrida registra el master efectivo obtenido de `spark.sparkContext.master`.
+
 Referencia: [`Train_Inference.md`](Train_Inference.md).
 
 ## Pagos y modalidades
@@ -245,5 +263,7 @@ La capa de integración resuelve el **contrato de software** para desacoplar fue
 - umbrales productivos;
 - SQL Server/SSRS real;
 - DEV/QA/PROD, certificación o marcha blanca.
+
+Además, la versión pública mantiene la frontera `Spark SQL -> pandas -> Spark MLlib` descrita arriba. Antes de afirmar escalabilidad distribuida end-to-end con datos institucionales debe validarse o reemplazarse esa frontera en el entorno CGR.
 
 Esas responsabilidades permanecen documentadas en [`Dependencias_Institucionales_CGR.md`](Dependencias_Institucionales_CGR.md).
