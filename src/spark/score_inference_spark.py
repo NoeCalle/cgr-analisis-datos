@@ -112,7 +112,20 @@ def ejecutar_inference_spark(
         if labels_present:
             raise ValueError(f"INFERENCE Spark no debe consumir ground truth: {labels_present}")
 
-        procesado = aplicar_preprocesamiento_congelado(raw_spark, estado)
+        medianas_spec = registry["artifacts"].get("preprocessor_medians")
+        medianas_df = (
+            spark.read.parquet(medianas_spec["path"])
+            if medianas_spec is not None
+            else None
+        )
+        if estado.get("monto_mediana_por_objeto_external", False) and medianas_df is None:
+            raise ValueError(
+                "Champion Spark-native incompleto: falta artefacto preprocessor_medians."
+            )
+
+        procesado = aplicar_preprocesamiento_congelado(
+            raw_spark, estado, medianas_df=medianas_df
+        )
 
         fav_features = construir_features_favoritismo(
             procesado,
@@ -182,6 +195,7 @@ def ejecutar_inference_spark(
             "input_engine": input_engine,
             "spark_native_ingestion": spark_native,
             "pandas_materialization": not spark_native,
+            "preprocessor_medians_external": bool(medianas_spec),
             "registry_schema_version": registry["registry_schema_version"],
             "serving_profile": registry["profile_name"],
             "active_serving_profile": registry["active_serving_profile"],
