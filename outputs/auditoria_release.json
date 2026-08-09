@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "version": "1.0.0-rc.1",
-  "git_commit_auditado": "e187e7f586a4014718ca92cf3a3b13a441952213",
+  "git_commit_auditado": "4640f1792f9db965958d6b1b776d002bba7ec371",
   "naturaleza": "release candidate del PoC público independiente; no aprobación CGR",
   "total_checks": 19,
   "checks_ok": 19,
@@ -91,7 +91,7 @@
     {
       "check": "manifiesto reproducible Spark/GraphFrames",
       "ok": true,
-      "detalle": "commit evidencia=5690a20f3c35cf2956b5e8ea791cabe2bd11148b"
+      "detalle": "commit evidencia=f96f7504913d27d0cab0cc23cedacdfaba4f8dff"
     },
     {
       "check": "sin residuos de nomenclatura obsoleta en artefactos canónicos",
