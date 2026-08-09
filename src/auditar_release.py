@@ -48,11 +48,16 @@ def main():
     )
 
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme_lower = readme.lower()
     release_notes = (ROOT / "RELEASE_NOTES.md").read_text(encoding="utf-8")
     check(
         "disclaimer público explícito",
-        "Prototipo independiente" in readme and "no constituye una implementación" in readme.lower(),
-        "README distingue el PoC de una implementación oficial",
+        all(token in readme_lower for token in [
+            "prototipo",
+            "independiente",
+            "no constituye una implementación",
+        ]),
+        "README distingue el PoC de una implementación oficial sin depender de una frase literal",
     )
     check(
         "release no se presenta como oficial",
