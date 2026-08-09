@@ -10,6 +10,7 @@ features comparan cuantías con umbrales normativos.
 
 El resultado queda exclusivamente bajo ``outputs/runtime/spark_model_candidates``.
 No escribe ni modifica el registry/champion: la promoción es un comando separado.
+El master operacional puede inyectarse mediante ``CGR_SPARK_MASTER``.
 """
 
 from __future__ import annotations
@@ -131,7 +132,8 @@ def entrenar(
     frac_scaler_dir = candidate_dir / "scaler_fraccionamiento"
     guardar_json_determinista(preprocessor_json, estado)
 
-    spark = crear_sesion("cgr-train-spark-mllib-candidate")
+    spark = crear_sesion("cgr-train-spark-mllib-candidate", operational=True)
+    spark_mode = spark.sparkContext.master
     spark.sparkContext.setLogLevel("ERROR")
     spark.sparkContext.addPyFile(str(SRC_DIR / "umbrales_normativos.py"))
     try:
@@ -219,7 +221,7 @@ def entrenar(
             "fraccionamiento_amount_source": "monto",
             "ground_truth_required": True,
             "engine": "Apache Spark MLlib",
-            "spark_mode": "local[*]",
+            "spark_mode": spark_mode,
             "preprocessing_contract": "corrected_frozen_json_v1",
             "validation_evidence": [
                 "outputs/spark_favoritismo_resumen.json",
