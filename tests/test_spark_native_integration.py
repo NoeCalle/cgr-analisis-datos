@@ -38,6 +38,7 @@ def _mapping(include_labels=False):
         "fecha_contrato": "FEC_SUSC",
         "modalidad": "TIP_PROC",
         "objeto": "DESC_OBJ",
+        "categoria_principal": "CAT_PRINC",
     }
     if include_labels:
         mapping["label_favoritismo"] = "GT_FAV"
@@ -55,13 +56,16 @@ def _config(view, *, training=False):
 
 def test_spark_sql_mapping_validacion_y_preprocesamiento_no_materializan_pandas(spark, tmp_path):
     rows = [
-        ("X-001", "000123", "ENT-1", "125000.50", "2026-07-01", "Licitación Pública", "Bien A"),
-        ("X-002", "SUP-8", "ENT-1", None, "2026-07-03", None, "Bien A"),
-        ("X-003", "SUP-8", "ENT-2", "98000.00", "2026-07-05", "Contratación Directa", None),
+        ("X-001", "000123", "ENT-1", "125000.50", "2026-07-01", "Licitación Pública", "Bien A", "goods"),
+        ("X-002", "SUP-8", "ENT-1", None, "2026-07-03", None, "Bien A", "goods"),
+        ("X-003", "SUP-8", "ENT-2", "98000.00", "2026-07-05", "Contratación Directa", None, None),
     ]
     physical = spark.createDataFrame(
         rows,
-        ["NRO_CONTRATO", "COD_PROV", "SEC_EJEC", "IMP_ADJ", "FEC_SUSC", "TIP_PROC", "DESC_OBJ"],
+        [
+            "NRO_CONTRATO", "COD_PROV", "SEC_EJEC", "IMP_ADJ", "FEC_SUSC",
+            "TIP_PROC", "DESC_OBJ", "CAT_PRINC",
+        ],
     )
     view = "vw_test_contracts_spark_native"
     physical.createOrReplaceTempView(view)
@@ -98,16 +102,16 @@ def test_spark_sql_mapping_validacion_y_preprocesamiento_no_materializan_pandas(
 
 def test_spark_sql_training_con_labels_booleanos(spark):
     rows = [
-        ("C1", "P1", "E1", 100.0, "2026-01-01", "Licitación Pública", "A", 0, 0),
-        ("C2", "P1", "E1", 200.0, "2026-01-02", "Licitación Pública", "A", 1, 0),
-        ("C3", "P2", "E2", 90.0, "2026-01-03", "Contratación Directa", "B", 0, 1),
+        ("C1", "P1", "E1", 100.0, "2026-01-01", "Licitación Pública", "A", "goods", 0, 0),
+        ("C2", "P1", "E1", 200.0, "2026-01-02", "Licitación Pública", "A", "goods", 1, 0),
+        ("C3", "P2", "E2", 90.0, "2026-01-03", "Contratación Directa", "B", "services", 0, 1),
     ]
     view = "vw_test_training_spark_native"
     spark.createDataFrame(
         rows,
         [
             "NRO_CONTRATO", "COD_PROV", "SEC_EJEC", "IMP_ADJ", "FEC_SUSC",
-            "TIP_PROC", "DESC_OBJ", "GT_FAV", "GT_FRAC",
+            "TIP_PROC", "DESC_OBJ", "CAT_PRINC", "GT_FAV", "GT_FRAC",
         ],
     ).createOrReplaceTempView(view)
     config = _config(view, training=True)
@@ -124,8 +128,11 @@ def test_spark_sql_training_con_labels_booleanos(spark):
 def test_spark_sql_rechaza_monto_fisico_no_convertible(spark):
     view = "vw_test_invalid_amount_spark_native"
     spark.createDataFrame(
-        [("C1", "P1", "E1", "NO_ES_NUMERO", "2026-01-01", "Licitación Pública", "A")],
-        ["NRO_CONTRATO", "COD_PROV", "SEC_EJEC", "IMP_ADJ", "FEC_SUSC", "TIP_PROC", "DESC_OBJ"],
+        [("C1", "P1", "E1", "NO_ES_NUMERO", "2026-01-01", "Licitación Pública", "A", "goods")],
+        [
+            "NRO_CONTRATO", "COD_PROV", "SEC_EJEC", "IMP_ADJ", "FEC_SUSC",
+            "TIP_PROC", "DESC_OBJ", "CAT_PRINC",
+        ],
     ).createOrReplaceTempView(view)
 
     with pytest.raises(ValueError, match="monto"):
