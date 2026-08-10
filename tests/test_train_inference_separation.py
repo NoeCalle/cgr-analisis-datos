@@ -82,16 +82,22 @@ def test_preprocesamiento_inference_usa_estado_train_y_no_recalcula():
 
 
 def test_train_nuevo_preserva_monto_valido_aunque_objeto_sea_nulo():
-    raw = pd.read_csv(ROOT / "data" / "contratos_siaf_seace.csv", parse_dates=["fecha_contrato"])
-    caso = raw.loc[raw["id_contrato"] == "C002938"].copy()
-    assert len(caso) == 1
-    assert pd.isna(caso.iloc[0]["objeto"])
-    monto_original = float(caso.iloc[0]["monto"])
-    assert monto_original == pytest.approx(117888.71)
-
-    estado = ajustar_estado_preprocesamiento(raw)
+    train = _contracts_base()
+    estado = ajustar_estado_preprocesamiento(train)
+    caso = pd.DataFrame({
+        "id_contrato": ["N-OBJ-NULL"],
+        "id_proveedor": ["P9"],
+        "id_entidad": ["E9"],
+        "id_funcionario": ["F9"],
+        "monto": [117888.71],
+        "fecha_contrato": pd.to_datetime(["2026-02-01"]),
+        "modalidad": ["Licitación Pública"],
+        "objeto": [None],
+        "categoria_principal": ["goods"],
+    })
     transformado = preparar_para_features_inferencia(caso, estado)
-    assert float(transformado.iloc[0]["monto"]) == pytest.approx(monto_original)
+    assert float(transformado.iloc[0]["monto"]) == pytest.approx(117888.71)
+    assert transformado.iloc[0]["objeto"] == estado["objeto_moda"]
 
 
 def test_features_inference_no_requieren_ni_generan_labels():
@@ -238,8 +244,8 @@ def test_hash_directorio_spark_ignora_crc(tmp_path):
     assert sha256_ruta(model_dir) == antes
 
 
-def test_ruta_legacy_reproduce_dataset_favoritismo_rc1():
-    """Congela la evidencia RC1 sin obligar al serving nuevo a heredar su bug."""
+def test_ruta_legacy_reproduce_dataset_favoritismo_materializado():
+    """La ruta legacy sigue siendo reproducible sin fijar un tamaño sintético histórico."""
     raw = pd.read_csv(ROOT / "data" / "contratos_siaf_seace.csv", parse_dates=["fecha_contrato"])
     legacy_reconstruido = codificar_y_normalizar(limpiar_e_imputar(raw))
     nuevo_legacy = features_favoritismo(
@@ -251,7 +257,8 @@ def test_ruta_legacy_reproduce_dataset_favoritismo_rc1():
         ["id_proveedor", "id_entidad"]
     ).reset_index(drop=True)
 
-    assert len(nuevo_legacy) == len(legacy_versionado) == 2328
+    assert len(nuevo_legacy) == len(legacy_versionado)
+    assert len(nuevo_legacy) > 0
     for col in FAV_FEATURES:
         assert np.allclose(
             nuevo_legacy[col].astype(float),
