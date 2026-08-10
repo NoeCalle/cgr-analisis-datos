@@ -173,13 +173,18 @@ def ejecutar(
 
         escenario = resultado["escenario"]
         runtime = Path("outputs/runtime/retraining") / escenario
-        runtime.mkdir(parents=True, exist_ok=True)
+        input_dir = runtime / "input"
+        input_dir.mkdir(parents=True, exist_ok=True)
         combined = pd.concat([train_raw, lotes[escenario]], ignore_index=True)
-        contracts_path = runtime / "contracts_training.csv"
+        contracts_path = input_dir / "contracts_training.csv"
         combined.to_csv(contracts_path, index=False)
-        cfg_path = runtime / "training.yaml"
+        cfg_path = input_dir / "training.yaml"
         _crear_config_retraining(base_config, contracts_path, cfg_path)
-        manifest_path = runtime / "candidate_manifest.json"
+
+        # ``entrenar_candidato_spark`` limpia por diseño el directorio padre de
+        # su manifest antes de escribir artefactos. Mantener inputs y candidate
+        # en subdirectorios hermanos evita que el TRAIN borre su propio CSV/YAML.
+        manifest_path = runtime / "candidate" / "candidate_manifest.json"
         manifest = entrenar_candidate_spark(cfg_path, manifest_path)
         resultado["candidate_generated"] = True
         resultado["candidate_id"] = manifest["candidate_id"]
