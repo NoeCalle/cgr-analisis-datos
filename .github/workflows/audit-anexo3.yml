@@ -52,16 +52,16 @@ jobs:
           block = f'''{start}
           ## Release candidate histórico
 
-          Versión declarada del snapshot del PoC independiente: **`v{version}`**.
+          Versión declarada del snapshot original del PoC independiente: **`v{version}`**.
 
-          Este bloque conserva la trazabilidad del release candidate histórico. El estado funcional vigente de la herramienta se documenta en las secciones superiores de este README y puede incluir mejoras posteriores al tag.
+          Si el tag ya existe, permanece como snapshot histórico e inmutable y no se mueve con las mejoras posteriores de `main`. El estado funcional vigente de la herramienta se documenta en las secciones superiores de este README.
 
-          Evidencia de cierre del snapshot:
+          Referencias del ecosistema de release:
 
-          - `RELEASE_NOTES.md` — alcance congelado y límites de la versión;
+          - `RELEASE_NOTES.md` — alcance histórico y límites de la versión;
           - `docs/Checklist_Anexo_03.md` — 11 criterios del Anexo 3;
-          - `docs/Dependencias_Institucionales_CGR.md` — fuente única `CGR-DEP-01..08` de pendientes que requieren CGR;
-          - `docs/Auditoria_Final_Release.md` — gate de coherencia previo al tag;
+          - `docs/Dependencias_Institucionales_CGR.md` — fuente única `CGR-DEP-01..08` de dependencias institucionales;
+          - `docs/Auditoria_Final_Release.md` — gate de coherencia del estado actual de `main` frente a la VERSION declarada;
           - `outputs/auditoria_release.json` — resultado machine-readable del gate.
 
           El tag histórico no representa aprobación ni despliegue institucional de la CGR.
@@ -73,9 +73,6 @@ jobs:
               after = text.split(end, 1)[1].lstrip()
               text = before + '\n\n' + block + '\n\n' + after
           else:
-              # El README moderno está organizado como documentación de producto;
-              # el release histórico se mantiene cerca del índice documental y
-              # no vuelve a ocupar la portada ni exige encabezados de sprints.
               marker = '## Documentación'
               if marker not in text:
                   raise SystemExit('README: no se encontró el marcador de Documentación')
