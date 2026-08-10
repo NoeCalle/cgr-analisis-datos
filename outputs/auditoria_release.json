@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "version_declarada": "1.0.0-rc.1",
-  "git_commit_auditado": "822ccea2fcddede4d923a6ea1ae67e913de2d199",
+  "git_commit_auditado": "30664ec7c120118fd1605bc87f28d51971dccd2f",
   "naturaleza": "gate de coherencia del estado actual de main; la versión declarada puede corresponder a un snapshot histórico y no implica que el tag se mueva con cambios posteriores",
   "total_checks": 19,
   "checks_ok": 19,
