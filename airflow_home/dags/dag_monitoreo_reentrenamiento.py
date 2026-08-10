@@ -1,10 +1,8 @@
-"""
-DAG de monitoreo — objetivo específico 3.2.c del TDR.
+"""DAG de monitoreo del champion activo — objetivo específico 3.2.c del TDR.
 
-El reentrenamiento genera un MODELO CANDIDATO y nunca lo promueve de forma
-automática. La eventual promoción requiere revisión/aprobación institucional.
-Airflow se ejecuta en su entorno propio, mientras las tareas usan el Python del
-proyecto definido por CGR_PROJECT_PYTHON o `.venv/bin/python`.
+El flujo genera lotes de prueba, evalúa exactamente el perfil activo del
+registry y, si se supera un gate, produce un MODELO CANDIDATO. Nunca existe
+promoción automática; la eventual promoción requiere revisión explícita.
 """
 
 from datetime import datetime
@@ -33,7 +31,7 @@ def comando(script):
 
 with DAG(
     dag_id="monitoreo_reentrenamiento_1_8_2",
-    description="PSI + recall mínimo; genera candidato sin promoción automática",
+    description="PSI + recall@K del champion activo; genera candidate sin autopromoción",
     start_date=datetime(2026, 8, 1),
     schedule="@monthly",
     catchup=False,
@@ -45,9 +43,9 @@ with DAG(
         bash_command=comando("src/generar_lote_nuevo.py"),
     )
 
-    evaluar_y_generar_candidato = BashOperator(
-        task_id="evaluar_y_generar_modelo_candidato_si_corresponde",
-        bash_command=comando("src/autoevaluacion.py"),
+    evaluar_champion_y_generar_candidato = BashOperator(
+        task_id="evaluar_champion_activo_y_generar_candidato_si_corresponde",
+        bash_command=comando("src/autoevaluacion_champion.py"),
     )
 
-    generar_lote_nuevo >> evaluar_y_generar_candidato
+    generar_lote_nuevo >> evaluar_champion_y_generar_candidato
