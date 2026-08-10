@@ -32,7 +32,7 @@ La versión `v1.0.0-rc.1` permanece como snapshot histórico e inmutable del pri
 | Spark-native | `spark_sql` mantiene DataFrames Spark en mapping, validación, preprocesamiento, TRAIN e INFERENCE |
 | Calidad y preprocesamiento | Valida esquema, trata nulos/outliers y congela el estado usado en serving |
 | Favoritismo | Prioriza pares proveedor–entidad con benchmark metodológico y champion Spark MLlib |
-| Fraccionamiento | Combina KMeans MLlib, distancia al centroide y señal interpretable temporal/cuantiativa |
+| Fraccionamiento | Combina KMeans MLlib, distancia al centroide y señal interpretable temporal/cuantitativa |
 | Grafos | Analiza vínculos proveedor–funcionario con NetworkX/GraphFrames |
 | Pagos y modalidades | Resume ejecución de pagos, ratios, demoras y contexto de modalidades por régimen |
 | MLOps | Separa TRAIN, candidate, promoción explícita, champion e INFERENCE sin reentrenamiento |
@@ -379,8 +379,8 @@ Evidencia de ese snapshot:
 | [`docs/Dependencias_Institucionales_CGR.md`](docs/Dependencias_Institucionales_CGR.md) | pendientes institucionales |
 | [`docs/Checklist_Anexo_03.md`](docs/Checklist_Anexo_03.md) | auditoría Anexo 3 |
 | [`docs/Auditoria_TDR_Completo.md`](docs/Auditoria_TDR_Completo.md) | auditoría integral del TDR |
-| [`docs/Auditoria_Final_Release.md`](docs/Auditoria_Final_Release.md) | gate técnico del RC histórico |
-| [`RELEASE_NOTES.md`](RELEASE_NOTES.md) | alcance de `v1.0.0-rc.1` |
+| [`docs/Auditoria_Final_Release.md`](docs/Auditoria_Final_Release.md) | gate de coherencia de `main` y referencia a la VERSION declarada |
+| [`RELEASE_NOTES.md`](RELEASE_NOTES.md) | alcance histórico de `v1.0.0-rc.1` |
 
 ## Estructura del repositorio
 
