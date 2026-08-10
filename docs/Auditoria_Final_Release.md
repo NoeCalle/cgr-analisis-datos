@@ -4,7 +4,7 @@
 
 `release_ready=true` significa que los gates técnicos del repositorio están coherentes; **no significa conformidad, aprobación ni despliegue institucional de la CGR**.
 
-- Commit auditado: `47226e0495146294dbd181fc9bfafd50db168fb2`
+- Commit auditado: `822ccea2fcddede4d923a6ea1ae67e913de2d199`
 - Checks: **19/19 OK**
 - Resultado del gate: **READY**
 
