@@ -1,6 +1,5 @@
 """Regresiones metodológicas de la Etapa 2B."""
 
-import json
 import sys
 from pathlib import Path
 
@@ -100,3 +99,11 @@ def test_scripts_operacionales_declaran_evidencia_correcta():
     assert "tuning_fraccionamiento_spark_resumen.json" in train
     assert "holdout" in fav.lower()
     assert "holdout" in frac.lower()
+
+
+def test_clis_historicos_favoritismo_delegan_al_evaluador_operacional():
+    for rel in ["src/tuning_favoritismo.py", "src/comparar_modelos_favoritismo.py"]:
+        source = (ROOT / rel).read_text(encoding="utf-8")
+        assert "evaluar_favoritismo_operacional" in source
+        assert "entrada_plata" not in source
+        assert "dataset_favoritismo.csv" not in source
