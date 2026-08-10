@@ -1,15 +1,15 @@
 """Construye una fuente única de evidencia para la documentación formal.
 
 Los Productos 1-7 y el reporte técnico no deben copiar métricas a mano. Este
-script consolida los datasets generados y los JSON de selección/validación en
-`outputs/evidencia_documental.json`, que es la única fuente numérica que deben
-leer los generadores de DOCX.
+script consolida los datasets y JSON de selección/validación en
+``outputs/evidencia_documental.json``.
 
 La evidencia distingue explícitamente:
-- benchmark sintético del PoC;
-- análisis sintético de pagos, montos y modalidades exigido por el TDR;
+- benchmark sintético del PoC y benchmarks de compatibilidad;
+- validación CV/holdout del pipeline Spark actualmente servido;
+- monitoreo ligado al champion activo;
+- análisis sintético de pagos, montos y modalidades;
 - validación de integridad sobre datos públicos OCDS/OECE;
-- componentes ejecutados del prototipo;
 - dependencias institucionales que NO fueron demostradas.
 """
 
@@ -52,14 +52,10 @@ def resumen_sintetico():
 
     monto = pd.to_numeric(contratos["monto"], errors="coerce")
     p99 = float(monto.quantile(0.99))
-    modalidades = (
-        contratos["modalidad"].fillna("SIN_DATO").value_counts(dropna=False).to_dict()
-    )
+    modalidades = contratos["modalidad"].fillna("SIN_DATO").value_counts(dropna=False).to_dict()
     categorias = {}
     if "categoria_principal" in contratos.columns:
-        categorias = (
-            contratos["categoria_principal"].fillna("SIN_DATO").value_counts(dropna=False).to_dict()
-        )
+        categorias = contratos["categoria_principal"].fillna("SIN_DATO").value_counts(dropna=False).to_dict()
 
     return {
         "contratos": int(len(contratos)),
@@ -80,11 +76,14 @@ def resumen_sintetico():
         },
         "fraccionamiento": {
             "grupos_proveedor_entidad_objeto": int(len(frac)),
+            "grupos_proveedor_entidad_objeto_familia": int(len(frac)),
             "positivos_sembrados": int(frac["label_fraccionamiento_real"].astype(int).sum()),
+            "usa_objeto_familia": "objeto_familia" in frac.columns,
             "features": [
                 c for c in frac.columns
                 if c not in {
-                    "id_proveedor", "id_entidad", "objeto", "label_fraccionamiento_real"
+                    "id_proveedor", "id_entidad", "objeto", "objeto_familia",
+                    "label_fraccionamiento_real",
                 }
             ],
         },
@@ -95,12 +94,22 @@ def main():
     comparacion = leer_json("outputs/comparacion_modelos_favoritismo.json")
     tuning_fav = leer_json("outputs/tuning_favoritismo_resumen.json")
     tuning_frac = leer_json("outputs/tuning_fraccionamiento_resumen.json")
+    tuning_fav_spark = leer_json("outputs/tuning_favoritismo_spark_resumen.json")
+    tuning_frac_spark = leer_json("outputs/tuning_fraccionamiento_spark_resumen.json")
+    registry = leer_json("outputs/model_registry.json")
+    monitor_champion = leer_json("outputs/monitoreo_champion.json")
     pagos_modalidades = leer_json("outputs/analisis_pagos_modalidades.json")
     p0 = leer_json("outputs/validacion_p0_datos_reales.json")
     manifest = leer_json("outputs/run_manifest.json", requerido=False)
 
+    spark_profile = registry["serving_profiles"]["spark_mllib"]
+    if registry.get("active_serving_profile") != "spark_mllib":
+        raise ValueError("La evidencia formal exige spark_mllib como perfil activo del PoC.")
+    if monitor_champion.get("champion_id") != spark_profile.get("champion_id"):
+        raise ValueError("Monitoreo y registry no apuntan al mismo champion Spark.")
+
     evidencia = {
-        "schema_version": 2,
+        "schema_version": 3,
         "generado_utc": datetime.now(timezone.utc).isoformat(),
         "git_commit": git_sha(),
         "naturaleza": (
@@ -114,23 +123,32 @@ def main():
         "seleccion_favoritismo": comparacion,
         "tuning_favoritismo": tuning_fav,
         "tuning_fraccionamiento": tuning_frac,
+        "evaluacion_champion_spark": {
+            "champion_id": spark_profile["champion_id"],
+            "favoritismo": tuning_fav_spark,
+            "fraccionamiento": tuning_frac_spark,
+            "registry_models": spark_profile["models"],
+        },
+        "monitoreo_champion": monitor_champion,
         "validacion_datos_publicos": p0,
         "run_manifest": manifest,
         "estado_componentes": {
             "implementado_y_probado": [
                 "EDA y feature engineering",
                 "análisis sintético de pagos, montos contractuales y modalidades",
-                "Random Forest para priorización de favoritismo",
-                "Isolation Forest + regla interpretable para posible fraccionamiento",
-                "SHAP para explicabilidad del modelo supervisado",
-                "Spark MLlib en modo local del PoC",
+                "Random Forest Spark de favoritismo con CV/holdout del mismo pipeline operacional",
+                "KMeans Spark de fraccionamiento con tuning/holdout propios",
+                "Isolation Forest como benchmark de compatibilidad para fraccionamiento",
+                "Feature Importance ligada al champion Spark activo y SHAP complementario sklearn",
+                "objeto_familia y ventanas de 15 días con semántica pandas/Spark alineada",
+                "Spark MLlib en modo local/configurable del PoC",
                 "GraphFrames en escenario sintético",
                 "Airflow con Python de proyecto separado",
                 "simulación local de capas Bronce/Plata/Oro",
                 "Delta Lake local con time travel sujeto a retención",
                 "esquema T-SQL y RDL de SSRS como artefactos de despliegue",
                 "CI de regresión y smoke del pipeline sintético",
-                "autoevaluación que genera candidato sin promoción automática",
+                "autoevaluación registry-aware del champion activo que genera candidate sin promoción automática",
                 "TRAIN/INFERENCE con favoritismo operacional basado en monto_capped congelado",
             ],
             "dependencia_institucional_no_demostrada": [
@@ -153,6 +171,8 @@ def main():
             "promocion_modelo_requiere_revision_humana": True,
             "pagos_sinteticos_no_equivalen_siaf_real": True,
             "modalidad_requiere_contexto_juridico": True,
+            "metricas_champion_deben_corresponder_al_pipeline_servido": True,
+            "monitoreo_debe_apuntar_al_champion_activo": True,
         },
     }
 
