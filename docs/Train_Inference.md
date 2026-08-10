@@ -1,8 +1,8 @@
 # TRAIN / INFERENCE — ciclo operacional de modelos
 
-Este documento describe la separación operacional incorporada después del release candidate `v1.0.0-rc.1` del PoC público independiente.
+Este documento describe el ciclo operacional vigente del PoC público independiente.
 
-> Nada de lo aquí descrito constituye aprobación, despliegue ni arquitectura oficial de la Contraloría General de la República. El objetivo es reducir el trabajo de adaptación futura y dejar explícitas las dependencias institucionales.
+> Nada de lo aquí descrito constituye aprobación, despliegue ni arquitectura oficial de la Contraloría General de la República. El objetivo es dejar un contrato técnico preparado para una futura integración institucional.
 
 ## Objetivo
 
@@ -14,7 +14,7 @@ Una ejecución destinada a puntuar contratos actuales no debe poder:
 - reentrenar modelos;
 - sobrescribir el modelo servido.
 
-El contrato objetivo es:
+El contrato es:
 
 ```text
 TRAIN Spark -> candidate Spark -> promoción explícita -> champion Spark
@@ -25,75 +25,76 @@ TRAIN Spark -> candidate Spark -> promoción explícita -> champion Spark
 
 `scikit-learn` se conserva como benchmark metodológico y perfil de compatibilidad. El perfil operacional activo del PoC es `spark_mllib`.
 
-La promoción técnica del PoC **no equivale a aprobación institucional CGR**. El registry persiste `institutional_approval=false`.
+La promoción técnica del PoC **no equivale a aprobación institucional CGR**. El registry público persiste `institutional_approval=false`.
 
 ## 1. Dos rutas que no deben confundirse
 
 ### Reproducibilidad histórica
 
-La ruta `reproducibilidad_poc_1_8_2` reconstruye la evidencia congelada del RC1. Incluye la Plata legacy, benchmarks sklearn, Spark MLlib y GraphFrames. Puede entrenar porque su función es reconstruir evidencia. Esta ruta conserva `local[*]` deliberadamente.
+`reproducibilidad_poc_1_8_2` reconstruye la evidencia histórica del PoC. Incluye Plata legacy, benchmarks sklearn, Spark MLlib y GraphFrames. Puede entrenar porque su función es reconstruir evidencia y conserva `local[*]` deliberadamente.
 
 ### Serving operacional
 
 TRAIN e INFERENCE usan la integración canónica y el preprocesamiento corregido. No consumen la Plata legacy como fuente de serving.
 
-Esta separación es deliberada: promover directamente un modelo Spark entrenado sobre la Plata legacy y puntuarlo con el preprocesamiento corregido produciría *train-serving skew*.
+Para `source.type: spark_sql`, la ruta operacional mantiene un DataFrame Spark desde la tabla/vista hasta MLlib y la salida distribuida. Para `local_csv` y `sqlserver`, se conserva un adaptador pandas→Spark por compatibilidad.
+
+La separación evita *train-serving skew* y evita confundir benchmark histórico con serving.
 
 ## 2. Preprocesamiento: FIT solo en TRAIN
+
+Existen dos implementaciones equivalentes según la frontera de datos.
+
+### Fuentes pandas (`local_csv` / `sqlserver`)
 
 `src/preprocesamiento.py` mantiene:
 
 - `ajustar_estado_preprocesamiento(...)`: aprende estadísticas;
 - `aplicar_estado_preprocesamiento(...)`: aplica estadísticas ya aprendidas;
-- `preparar_para_features_entrenamiento(...)`: FIT + TRANSFORM sklearn;
-- `preparar_para_features_inferencia(...)`: TRANSFORM sklearn.
+- `preparar_para_features_entrenamiento(...)`: FIT + TRANSFORM;
+- `preparar_para_features_inferencia(...)`: TRANSFORM.
 
-El estado aprendido contiene:
+### Fuente Spark (`spark_sql`)
+
+`src/spark/ajustar_preprocesamiento_spark.py` aprende las mismas categorías de estado de forma distribuida:
 
 - mediana de monto por objeto;
-- mediana global de monto;
+- mediana global;
 - moda de modalidad;
 - moda de objeto;
 - P99 de monto;
 - versión del esquema.
 
-Ese estado se exporta además como JSON framework-neutral. `src/spark/preprocesamiento_serving_spark.py` aplica ese JSON con expresiones Spark y **no contiene ningún `.fit()`**.
+Las medianas por objeto no se colectan al driver en la ruta operacional. Se persisten como un **directorio Parquet Spark** y el JSON del preprocesador marca `monto_mediana_por_objeto_external=true`.
 
-### Corrección legacy preservada sin contaminar serving
+`src/spark/preprocesamiento_serving_spark.py` aplica el JSON y, cuando corresponde, el DataFrame de medianas externo. No contiene `.fit()`.
 
-Durante el endurecimiento se detectó que el pipeline histórico:
+### Corrección legacy preservada
 
-```python
-df.groupby("objeto")["monto"].transform(...)
-```
+El pipeline histórico podía sustituir un monto válido cuando `objeto` era nulo debido a la semántica de `groupby(...).transform(...)`. Esa conducta se conserva únicamente en la reconstrucción legacy para reproducir el RC histórico.
 
-podía excluir filas con `objeto` nulo y sustituir posteriormente un `monto` válido por la mediana global. El caso de regresión `C002938` tenía `objeto` nulo y monto observado `117888.71`.
-
-La ruta legacy conserva esa semántica únicamente para reconstruir las métricas históricas de `v1.0.0-rc.1`. TRAIN/INFERENCE nuevos preservan siempre un monto observado válido.
+TRAIN/INFERENCE modernos siempre preservan un monto observado válido.
 
 ## 3. TRAIN Spark operacional
 
-Configuración de demostración: `config/local-training.yaml`.
-
-TRAIN requiere:
-
-- `label_favoritismo`;
-- `label_fraccionamiento`.
-
-Ejecución objetivo:
+Ejecución local de demostración:
 
 ```bash
 python src/spark/entrenar_candidato_spark.py \
   --config config/local-training.yaml
 ```
 
-Flujo:
+TRAIN requiere:
+
+- `label_favoritismo`;
+- `label_fraccionamiento`.
+
+Flujo conceptual:
 
 ```text
 fuente histórica con labels
     -> integración canónica
-    -> FIT estado de preprocesamiento corregido
-    -> JSON congelado
+    -> FIT estado de preprocesamiento
     -> TRANSFORM Spark
     -> features Spark
     -> RandomForestClassifier MLlib
@@ -101,26 +102,58 @@ fuente histórica con labels
     -> candidate Spark
 ```
 
-Los artefactos candidate quedan bajo `outputs/runtime/spark_model_candidates/`, ignorado por Git. TRAIN no modifica `outputs/model_registry.json` ni `outputs/champions_spark/`; CI compara hashes antes y después para impedir regresiones.
+### TRAIN con `spark_sql`
 
-Para favoritismo, el entrenamiento final reutiliza la configuración seleccionada por la evidencia metodológica Spark cuando está disponible (`outputs/spark_favoritismo_resumen.json`), pero **no vuelve a ejecutar tuning dentro de INFERENCE**. Para fraccionamiento se persisten por separado el `StandardScalerModel` y el `KMeansModel`.
+```text
+Spark table/view
+    -> integrar_spark()
+    -> schema Spark canónico
+    -> FIT distribuido
+    -> medianas por objeto Parquet
+    -> features Spark
+    -> MLlib
+    -> candidate
+```
 
-### Master Spark operacional
+No existe `toPandas()` en esta ruta.
 
-TRAIN e INFERENCE usan `crear_sesion(..., operational=True)`. El entorno puede definir:
+El manifest del candidate registra:
+
+```text
+source_type
+input_engine
+spark_native_ingestion
+pandas_materialization
+spark_mode
+training_data_fingerprint_sha256
+```
+
+Para `spark_sql` se espera:
+
+```text
+input_engine = spark_native
+spark_native_ingestion = true
+pandas_materialization = false
+```
+
+Los artefactos candidate quedan bajo `outputs/runtime/spark_model_candidates/`, ignorado por Git. TRAIN no modifica el champion ni el registry activo.
+
+## 4. Master Spark operacional
+
+TRAIN e INFERENCE usan una sesión operacional configurable mediante:
 
 ```text
 CGR_SPARK_MASTER
 CGR_SPARK_SHUFFLE_PARTITIONS
 ```
 
-Si `CGR_SPARK_MASTER` no existe, el PoC usa `local[*]` como fallback local. La corrida registra el master efectivo mediante `spark.sparkContext.master`; por tanto, una ejecución institucional puede comprobar que no se puntuó accidentalmente en modo local.
+Si `CGR_SPARK_MASTER` no existe, el PoC usa `local[*]` como fallback local. La corrida registra `spark.sparkContext.master`.
 
-Los recursos adicionales de executor/driver, dynamic allocation, catálogo y autenticación deben definirse conforme a la plataforma institucional.
+Memoria, cores, dynamic allocation, catálogo, autenticación y otras propiedades deben configurarse conforme a la plataforma institucional.
 
-## 4. Registry unificado
+## 5. Registry unificado
 
-`outputs/model_registry.json` usa `schema_version: 2` y admite múltiples perfiles:
+`outputs/model_registry.json` usa `schema_version: 2` y admite perfiles:
 
 ```text
 serving_profiles
@@ -128,25 +161,19 @@ serving_profiles
 └── spark_mllib   <- active_serving_profile
 ```
 
-El perfil `sklearn` conserva:
-
-- RandomForestClassifier;
-- IsolationForest;
-- StandardScaler;
-- preprocesador joblib/JSON.
-
 El perfil `spark_mllib` conserva:
 
 - `RandomForestClassificationModel`;
 - `KMeansModel`;
 - `StandardScalerModel`;
-- estado de preprocesamiento JSON.
+- estado de preprocesamiento JSON;
+- opcionalmente `preprocessor_medians` como Parquet Spark para candidates entrenados desde `spark_sql`.
 
-Los modelos Spark son directorios MLlib. `src/registro_modelos.py` calcula una huella SHA-256 determinística sobre sus archivos y excluye únicamente los `.crc` locales de Hadoop, que no forman parte del artefacto versionado.
+Los modelos Spark son directorios MLlib. `src/registro_modelos.py` calcula huellas SHA-256 de los artefactos. La promoción copia y registra también el artefacto de medianas cuando existe.
 
-El loader sigue aceptando en memoria el registry schema 1 del primer perfil de compatibilidad y lo migra a un perfil `sklearn`, evitando romper la trazabilidad histórica.
+El loader conserva compatibilidad con el registry schema 1 histórico del perfil sklearn.
 
-## 5. Candidate no es Champion
+## 6. Candidate no es Champion
 
 TRAIN solo produce `status: candidate`. La promoción Spark se ejecuta por separado:
 
@@ -157,25 +184,13 @@ python src/promover_candidato_spark.py \
   --acknowledge-poc-only
 ```
 
-Sin `--acknowledge-poc-only` la operación se bloquea.
+Sin `--acknowledge-poc-only` la promoción técnica del PoC se bloquea.
 
-El bootstrap CI puede crear/promover el champion requerido para su smoke técnico, pero una nueva corrida TRAIN posterior **no lo reemplaza silenciosamente**. La promoción de una versión nueva debe seguir siendo una acción explícita.
+En una implantación institucional este paso debe quedar detrás del workflow, aprobación, segregación de funciones y registry/MLOps que defina la CGR.
 
-Los artefactos activos quedan en:
+## 7. INFERENCE Spark MLlib
 
-```text
-outputs/model_registry.json
-outputs/champions_spark/preprocesador_contratos.json
-outputs/champions_spark/modelo_favoritismo_rf/
-outputs/champions_spark/modelo_fraccionamiento_kmeans/
-outputs/champions_spark/scaler_fraccionamiento/
-```
-
-## 6. INFERENCE Spark MLlib
-
-Configuración local: `config/local.yaml`. No contiene labels.
-
-Ejecución:
+Ejecución local:
 
 ```bash
 python src/spark/score_inference_spark.py \
@@ -188,42 +203,60 @@ Flujo:
 ```text
 contratos actuales SIN labels
     -> integración canónica
-    -> carga registry schema 2
-    -> verificación SHA-256 champion Spark
-    -> carga estado JSON congelado
+    -> carga registry/champion
+    -> verificación SHA-256
+    -> carga estado congelado
     -> TRANSFORM Spark sin FIT
-    -> feature engineering Spark sin labels
+    -> features Spark
     -> load RandomForestClassificationModel
     -> load StandardScalerModel + KMeansModel
     -> scores de priorización
-    -> segunda verificación SHA-256 champion
+    -> verificación SHA-256 posterior
 ```
 
-`src/spark/score_inference_spark.py` no importa sklearn/joblib, no instancia algoritmos de entrenamiento y no contiene `.fit()`.
+`score_inference_spark.py` no importa sklearn/joblib, no instancia algoritmos de entrenamiento y no contiene `.fit()`.
 
-Las salidas detalladas permanecen bajo `outputs/runtime/inference_spark/`. La evidencia agregada reproducible se conserva en `outputs/inference_spark_smoke_summary.json`.
+### INFERENCE con `spark_sql`
 
-## 7. Frontera actual de escalabilidad de la ingesta
+```text
+Spark table/view
+    -> integrar_spark()
+    -> preprocesamiento Spark
+    -> features Spark
+    -> champion MLlib
+    -> ranking Spark
+    -> Parquet distribuido
+```
 
-El hecho de que TRAIN/INFERENCE ejecuten MLlib no significa que toda la ruta de datos sea distribuida end-to-end.
+No existe conversión a pandas. Si el champion fue entrenado con medianas distribuidas, INFERENCE vuelve a cargarlas con `spark.read.parquet(...)`.
 
-Actualmente `src/connectors/spark_sql.py` obtiene tablas/vistas Spark, pero materializa el contrato con `toPandas()` para pasar por la validación canónica común. TRAIN/INFERENCE convierten luego ese DataFrame nuevamente a Spark mediante `pandas_a_spark(...)`.
+La evidencia de serving registra:
 
-Consecuencias:
+```text
+input_engine = spark_native
+spark_native_ingestion = true
+pandas_materialization = false
+detail_outputs.format = parquet_distributed
+```
 
-- la lógica ML/feature engineering operacional es Spark;
-- la frontera de integración canónica sigue dependiendo de memoria del driver;
-- el adaptador público debe considerarse válido para pruebas/volúmenes controlados, no como prueba de ingesta distribuida a escala CGR.
+Para fuentes pandas, el scorer utiliza el adapter pandas→Spark y conserva CSV único por compatibilidad local.
 
-Para datos masivos, antes de QA/PROD debe implementarse un adaptador canónico Spark-native o materializarse previamente una capa canónica institucional en el Lakehouse. Esa adaptación debe mantener el mismo esquema canónico y el mismo estado de preprocesamiento, evitando cambios innecesarios en el modelo.
+## 8. Salidas
 
-## 8. Perfil sklearn de compatibilidad
+Por defecto las salidas operacionales permanecen bajo `outputs/runtime/inference_spark/`.
 
-`src/score_inference.py` continúa disponible para regresión y comparación. Carga explícitamente el perfil `sklearn`; ya no define cuál es el serving activo.
+- `spark_sql`: rankings como **Parquet distribuido**;
+- `local_csv` / `sqlserver`: CSV de archivo único de compatibilidad.
 
-Su evidencia queda en `outputs/inference_smoke_summary.json` y permite comprobar que la evolución a MLlib no destruyó el contrato probado anteriormente.
+Los outputs reales/identificables deben residir únicamente en almacenamiento institucional autorizado.
 
-## 9. Airflow: responsabilidades separadas
+## 9. Perfil sklearn de compatibilidad
+
+`src/score_inference.py` continúa disponible para regresión y comparación. Carga explícitamente el perfil `sklearn`; no define el serving activo.
+
+Esta ruta permite comprobar que la evolución hacia MLlib no destruyó el contrato probado anteriormente.
+
+## 10. Airflow: responsabilidades separadas
 
 ### Reproducibilidad
 
@@ -233,7 +266,7 @@ DAG: reproducibilidad_poc_1_8_2
 
 Reconstruye benchmark/evidencia legacy.
 
-### TRAIN operacional
+### TRAIN
 
 ```text
 DAG: entrenamiento_candidato_1_8_2
@@ -241,7 +274,7 @@ DAG: entrenamiento_candidato_1_8_2
 
 Llama `src/spark/entrenar_candidato_spark.py`. Genera candidate; no promueve.
 
-### INFERENCE operacional
+### INFERENCE
 
 ```text
 DAG: inferencia_modelos_1_8_2
@@ -249,40 +282,41 @@ DAG: inferencia_modelos_1_8_2
 
 Llama `src/spark/score_inference_spark.py`. No genera datos sintéticos, no ejecuta tuning y no entrena.
 
-El entorno de las tareas puede inyectar `CGR_SPARK_MASTER` y `CGR_SPARK_SHUFFLE_PARTITIONS` junto con `CGR_DATA_CONFIG`, `CGR_TRAIN_CONFIG` y el registry.
+Las tareas pueden recibir `CGR_SPARK_MASTER`, `CGR_SPARK_SHUFFLE_PARTITIONS`, `CGR_DATA_CONFIG`, `CGR_TRAIN_CONFIG` y el registry.
 
-## 10. Evidencia CI vigente
+## 11. Evidencia CI
 
 GitHub Actions valida automáticamente que:
 
-1. las regresiones legacy siguen reconstruyendo RC1;
-2. el preprocesamiento nuevo conserva montos válidos aunque `objeto` sea nulo;
-3. TRAIN sklearn de compatibilidad no modifica champion;
-4. TRAIN Spark operacional no modifica registry/champion;
-5. el candidate Spark declara el contrato de preprocesamiento corregido;
-6. la promoción exige reconocimiento explícito del alcance PoC;
-7. `active_serving_profile` termina en `spark_mllib`;
-8. INFERENCE Spark consume cero labels y ejecuta cero training/tuning;
-9. `sklearn_serving_dependency=false`;
-10. los hashes del champion Spark permanecen idénticos durante scoring;
-11. TRAIN/INFERENCE usan una sesión operacional y registran el master efectivo;
-12. para el dataset sintético vigente se producen 2,328 scores de favoritismo y 180 de fraccionamiento a partir de 3,709 contratos;
-13. después del serving smoke siguen pasando Spark legacy, GraphFrames, Oro, trazabilidad y los ocho DOCX formales.
+1. las regresiones legacy siguen reconstruyendo el baseline histórico;
+2. TRAIN/INFERENCE modernos preservan montos observados válidos;
+3. TRAIN no modifica champion;
+4. la promoción exige reconocimiento explícito del alcance PoC;
+5. INFERENCE no consume labels ni ejecuta training/tuning;
+6. los hashes del champion permanecen estables durante scoring;
+7. el master operacional es configurable;
+8. `spark_sql` devuelve un DataFrame Spark;
+9. mapping, casteo y validación `spark_sql` permanecen en Spark;
+10. el FIT distribuido persiste medianas por objeto como Parquet;
+11. `spark_sql.py`, TRAIN e INFERENCE no contienen `.toPandas()`;
+12. la ruta pandas rechaza `spark_sql` para impedir collect implícito;
+13. rankings `spark_sql` se escriben como Parquet distribuido;
+14. después del serving siguen pasando Spark legacy, GraphFrames, Oro, trazabilidad y documentación formal.
 
-El champion Spark vigente del PoC se identifica mediante `champion_id` dentro del registry. El identificador es técnico; no es una aprobación ni versión institucional.
+La regresión específica está en `tests/test_spark_native_integration.py`.
 
-## 11. Qué sigue dependiendo de CGR
+## 12. Qué sigue dependiendo de CGR
 
-La separación TRAIN/INFERENCE, el master Spark configurable y el serving MLlib resuelven gran parte del **contrato de software** dentro del PoC. No pueden resolver desde este repositorio:
+El contrato de software ya cubre separación TRAIN/INFERENCE, registry, master configurable y una frontera `spark_sql` Spark-native. No puede resolver desde este repositorio:
 
 - autoridad institucional para aprobar/promover modelos;
-- registry/MLOps corporativo que defina CGR;
+- registry/MLOps corporativo;
 - credenciales, roles y segregación DEV/QA/PROD;
 - fuentes históricas y ground truth institucional;
-- HDFS/YARN/Lakehouse y clúster Spark institucional;
-- políticas de recursos, particionamiento y tuning del clúster real;
-- volumen real que determine si debe sustituirse la frontera pandas por ingesta Spark-native;
+- clúster, catálogo y almacenamiento Spark institucional;
+- particionamiento, capacidad, performance y robustez con volumen real;
 - criterios numéricos de aceptación productiva no consignados en el TDR público;
-- despliegue SQL Server/SSRS real, marcha blanca, certificación y transferencia formal.
+- SQL Server/SSRS institucional;
+- marcha blanca, certificación y transferencia formal.
 
-Esas responsabilidades deben integrarse mediante los controles, plataformas y autorizaciones que defina la CGR.
+La ruta Spark-native elimina la materialización pandas que existía anteriormente, pero **no sustituye una prueba de carga y operación en el clúster real**.
