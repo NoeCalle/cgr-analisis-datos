@@ -6,7 +6,7 @@
 
 Este manual describe cómo pasar de la versión pública reproducible a una instalación controlada dentro de infraestructura institucional, procurando que la adaptación se concentre en **fuentes, mappings, secretos, ambientes y gobierno**, sin reescribir los modelos por cambios de nombres físicos de tablas o columnas.
 
-El resultado esperado del aterrizaje es:
+El resultado esperado es:
 
 ```text
 fuentes CGR aprobadas
@@ -28,55 +28,49 @@ aprobación institucional  scores de priorización
        SQL Server / SSRS
 ```
 
+Cuando la fuente institucional se expone como `spark_sql`, la ruta puede mantenerse Spark-native desde la tabla/vista hasta MLlib y la salida Parquet distribuida.
+
 ## 2. Qué debe proporcionar la CGR
 
-Antes de ejecutar el software con información institucional se necesitan, como mínimo, los elementos asociados a las dependencias `CGR-DEP-01..08`.
+Antes de ejecutar el software con información institucional se necesitan los elementos asociados a `CGR-DEP-01..08`.
 
-| Frente | Insumo/decisión institucional necesaria |
+| Frente | Insumo/decisión necesaria |
 |---|---|
 | Fuentes | tablas/vistas aprobadas, diccionario, linaje y permisos de lectura |
 | Ground truth | histórico etiquetado para favoritismo/fraccionamiento y criterio de validación |
 | Infraestructura | DEV/QA/PROD, Spark, almacenamiento y orquestación aprobados |
 | Seguridad | identidad, roles, secretos, repositorio privado y segregación de funciones |
-| MLOps | autoridad que aprueba/promueve modelos y ubicación del registry institucional |
+| MLOps | autoridad que aprueba/promueve modelos y registry institucional |
 | Reporting | SQL Server/SSRS, datasource, permisos y ruta de publicación |
-| Aceptación | umbrales de métricas, casos de prueba, responsables y evidencias de conformidad |
+| Aceptación | umbrales de métricas, casos de prueba y responsables |
 | Operación | responsables de monitoreo, incidentes, rollback y mantenimiento normativo |
 
 Sin esos elementos el repositorio puede demostrar el software, pero no declarar integración o certificación institucional.
 
-## 3. Roles recomendados para el aterrizaje
-
-Los nombres concretos pueden variar según la organización; lo importante es separar responsabilidades:
+## 3. Roles recomendados
 
 - **Administrador de plataforma:** repositorio, runtimes, Spark/Airflow, almacenamiento y despliegue.
-- **Administrador/owner de datos:** vistas, diccionario, calidad, permisos y linaje.
-- **Equipo analítico/científico de datos:** validación de features, métricas, candidate y drift.
+- **Owner de datos:** vistas, diccionario, calidad, permisos y linaje.
+- **Equipo analítico/científico de datos:** features, métricas, candidate y drift.
 - **Especialista funcional/auditor:** ground truth, interpretación de señales y aceptación funcional.
-- **Seguridad:** secretos, cuentas de servicio, privilegios mínimos y revisión de datos sensibles.
-- **Aprobador de modelo:** autoridad diferente del proceso automático de TRAIN.
-- **Administrador SQL Server/SSRS:** DDL, datasource, RDL y permisos de reportes.
-
-El código no debe utilizarse para reemplazar estos controles de gobierno.
+- **Seguridad:** secretos, cuentas de servicio, privilegio mínimo y datos sensibles.
+- **Aprobador de modelo:** autoridad separada del proceso automático de TRAIN.
+- **Administrador SQL Server/SSRS:** DDL, datasource, RDL y permisos.
 
 ## 4. Fase 0 — Congelar el punto de partida
-
-### 4.1 Llevar el código a un repositorio institucional
 
 Antes de introducir datos o secretos reales:
 
 1. clonar el repositorio público;
-2. crear/migrar a un repositorio privado institucional;
-3. verificar permisos por rol;
-4. mantener referencia al commit de origen para trazabilidad;
-5. ejecutar CI sin datos institucionales;
-6. evitar que cualquier output real pueda volver al remoto público.
+2. migrarlo a un repositorio privado institucional;
+3. registrar el commit de origen;
+4. proteger ramas/checks conforme a la política CGR;
+5. ejecutar CI sin datos internos;
+6. impedir que outputs reales puedan volver al remoto público.
 
-El snapshot `v1.0.0-rc.1` es histórico. Para integración debe partirse de una revisión de `main` que contenga la capa institution-ready y la auditoría integral vigente.
+`v1.0.0-rc.1` es un snapshot histórico. Para integración debe usarse una revisión aprobada de `main` que incluya la capa institution-ready y la ruta Spark-native vigente.
 
-### 4.2 Baseline mínimo
-
-En una estación/runner limpio:
+Baseline mínimo:
 
 ```bash
 python3 -m venv .venv
@@ -89,31 +83,29 @@ Requisitos adicionales según uso:
 
 - Java 17 para Spark;
 - `pyodbc` + driver ODBC aprobado para SQL Server;
-- Graphviz para gráficos del PoC;
-- Airflow en entorno virtual/imagen independiente si se usarán DAGs;
-- LibreOffice únicamente para regeneración/QA documental.
+- Graphviz para artefactos gráficos;
+- Airflow en runtime separado si se usarán DAGs;
+- LibreOffice solo para regeneración/QA documental.
 
 **Gate 0:** el repositorio debe pasar pruebas sin conectarse a datos internos.
 
-## 5. Fase 1 — Diseñar las fuentes institucionales
+## 5. Fase 1 — Diseñar las fuentes
 
 ### 5.1 Dominios canónicos
-
-El repositorio entiende cinco dominios:
 
 | Dominio | Propósito |
 |---|---|
 | `contracts` | contratos y atributos necesarios para scoring |
 | `suppliers` | dimensión de proveedores |
 | `entities` | dimensión de entidades |
-| `officials` | dimensión/vínculos de funcionarios cuando exista base legal y permiso |
+| `officials` | vínculos de funcionarios cuando exista base legal y permiso |
 | `payments` | pagos/devengados/girados vinculados a contrato |
 
-`contracts` es el mínimo obligatorio para el serving de los modelos. Los otros dominios se habilitan cuando el caso de uso y la fuente los requieren.
+`contracts` es el mínimo para serving. Los demás dominios se habilitan según el caso de uso.
 
-### 5.2 Campos obligatorios de contracts
+### 5.2 Campos obligatorios de `contracts`
 
-INFERENCE requiere que existan en el mapping:
+INFERENCE requiere:
 
 ```text
 id_contrato
@@ -123,22 +115,25 @@ monto
 fecha_contrato
 modalidad
 objeto
+categoria_principal
 ```
 
-Las claves estructurales y `fecha_contrato` no pueden llegar nulas. `monto`, `modalidad` y `objeto` pueden contener nulos porque el quality gate/preprocesamiento tiene tratamiento explícito.
+Las claves estructurales y `fecha_contrato` no pueden llegar nulas. `monto`, `modalidad`, `objeto` y `categoria_principal` pueden contener nulos porque existe tratamiento/fallback explícito.
 
-TRAIN requiere además:
+`categoria_principal` debe existir para resolver el contexto normativo del análisis de fraccionamiento.
+
+TRAIN añade:
 
 ```text
 label_favoritismo
 label_fraccionamiento
 ```
 
-Los labels deben provenir de una definición institucional aprobada de ground truth. No deben inferirse automáticamente de los scores del mismo modelo.
+Los labels deben provenir de ground truth institucional aprobado y no de los scores del propio modelo.
 
 ### 5.3 Pagos
 
-El dominio `payments` admite:
+`payments` admite:
 
 ```text
 id_pago
@@ -151,39 +146,27 @@ monto_pagado
 estado
 ```
 
-`id_pago` e `id_contrato` son las claves estructurales requeridas por el contrato canónico.
-
 ### 5.4 Vistas recomendadas
 
-El conector SQL Server del repositorio **no recibe SQL libre desde YAML**. Ejecuta una proyección `SELECT columnas FROM tabla_o_vista` sobre identificadores configurados.
+El conector SQL Server no recibe SQL libre desde YAML. Para joins, filtros, vigencias o consolidaciones SIAF/SEACE, se recomienda publicar **vistas estables y aprobadas** por dominio.
 
-Por ello, si el origen institucional necesita joins, filtros, reglas de vigencia o consolidación SIAF/SEACE, la opción recomendada es que el equipo de datos publique **vistas estables y aprobadas**, por ejemplo una vista por dominio. Esto permite:
-
-- controlar el SQL en la base de datos;
-- revisar planes de ejecución;
-- aplicar permisos mínimos;
-- versionar el diccionario y linaje;
-- mantener el ML desacoplado del modelo físico.
-
-**Gate 1:** cada campo canónico debe tener fuente, definición, owner y regla de calidad conocidas.
+**Gate 1:** cada campo canónico debe tener fuente, definición, owner y regla de calidad.
 
 ## 6. Fase 2 — Configurar la integración
 
-Copiar la plantilla fuera del control de versiones:
+Copiar la plantilla a una configuración privada:
 
 ```bash
 cp config/cgr.example.yaml config/cgr.yaml
 ```
 
-`config/cgr.yaml` está ignorado por Git.
-
-La dirección del mapping es siempre:
+La dirección del mapping es:
 
 ```yaml
 campo_canonico: COLUMNA_FISICA
 ```
 
-Ejemplo abreviado para INFERENCE:
+Ejemplo:
 
 ```yaml
 mode: inference
@@ -204,71 +187,60 @@ mapping:
     fecha_contrato: FECHA_CONTRATO_FUENTE
     modalidad: MODALIDAD_FUENTE
     objeto: OBJETO_CONTRATO_FUENTE
-  payments:
-    id_pago: ID_PAGO_FUENTE
-    id_contrato: ID_CONTRATO_FUENTE
-    fecha_devengado: FECHA_DEVENGADO_FUENTE
-    fecha_pagado: FECHA_PAGADO_FUENTE
-    monto_pagado: MONTO_PAGADO_FUENTE
+    categoria_principal: CATEGORIA_PRINCIPAL_FUENTE
 ```
 
-Los nombres del ejemplo son placeholders. Deben reemplazarse por objetos institucionalmente aprobados.
+Los nombres son placeholders, no objetos reales de CGR.
 
 ## 7. Fase 3 — Secretos, conectividad y Spark
 
 ### 7.1 SQL Server
 
-El YAML solo referencia el nombre de una variable:
+El YAML solo referencia una variable:
 
 ```yaml
 connection_env: CGR_SOURCE_DATABASE_URL
 ```
 
-La cadena real se suministra por el mecanismo aprobado por la institución:
-
-```bash
-export CGR_SOURCE_DATABASE_URL='<cadena ODBC suministrada por infraestructura>'
-```
-
-No colocar passwords, tokens ni connection strings dentro del YAML. El cargador rechaza secrets inline.
-
-El entorno debe instalar `pyodbc` y el driver ODBC aprobado. La aplicación no impone un driver específico.
+La cadena real se inyecta mediante el gestor de secretos/entorno aprobado. No guardar passwords, tokens ni connection strings en YAML o Git.
 
 ### 7.2 Spark operacional
 
-TRAIN e INFERENCE permiten configurar el master efectivo:
+TRAIN e INFERENCE aceptan:
 
 ```bash
 export CGR_SPARK_MASTER='<master Spark aprobado>'
 export CGR_SPARK_SHUFFLE_PARTITIONS='<particiones aprobadas>'  # opcional
 ```
 
-Si `CGR_SPARK_MASTER` no existe, el PoC usa `local[*]` como fallback para ejecución local. La reproducción histórica continúa fijando `local[*]` deliberadamente. TRAIN/INFERENCE registran el valor efectivo de `spark.sparkContext.master` en su evidencia.
+Sin `CGR_SPARK_MASTER`, el PoC usa `local[*]` como fallback local. La reconstrucción histórica mantiene `local[*]` deliberadamente. TRAIN/INFERENCE registran el master efectivo.
 
-La institución debe definir el valor compatible con su plataforma (`yarn`, Kubernetes u otro master válido), así como memoria, cores, dynamic allocation y demás propiedades por sus mecanismos de despliegue.
+La institución debe definir memoria, cores, dynamic allocation, catálogo, autenticación y demás propiedades en su plataforma.
 
-### 7.3 `spark_sql`: límite de escala que debe validarse
+### 7.3 `spark_sql`: ruta distribuida vigente
 
-El conector `spark_sql` usa `SparkSession.table(...).select(...)`, pero la capa canónica pública actual materializa después el resultado con `toPandas()` para compartir el mismo contrato de validación usado por CSV y SQL Server. TRAIN/INFERENCE convierten posteriormente ese contrato nuevamente a Spark antes de ejecutar MLlib.
+Para `source.type: spark_sql`, el flujo ya es:
 
-Esto significa que:
+```text
+SparkSession.table(...)
+      -> Spark DataFrame
+      -> mapping canónico Spark
+      -> validación/casteo Spark
+      -> FIT/TRANSFORM Spark
+      -> feature engineering Spark
+      -> MLlib
+      -> Parquet distribuido
+```
 
-- los **modelos y feature engineering operacionales sí corren con Spark MLlib**;
-- la **ingesta canónica no es Spark-native end-to-end** en esta versión pública;
-- no debe usarse esta ruta para afirmar capacidad distribuida sobre un volumen que no quepa de forma segura en memoria del driver.
+No existe `toPandas()` en esta ruta. La integración pandas rechaza `spark_sql` explícitamente para evitar un collect implícito.
 
-Para una implantación de gran volumen hay dos patrones razonables, a decidir con la arquitectura CGR:
+Durante TRAIN, las medianas por objeto se calculan en Spark y se persisten como Parquet. INFERENCE las carga nuevamente como DataFrame Spark.
 
-1. extender la integración canónica para conservar un DataFrame Spark desde la fuente hasta el preprocesamiento; o
-2. materializar tablas/vistas canónicas previamente en el Lakehouse institucional y hacer que TRAIN/INFERENCE las consuman de forma nativa.
+Esto elimina el cuello de botella pandas que existía en una versión anterior del adaptador, pero **no demuestra por sí solo capacidad productiva en el clúster CGR**. Deben probarse particionamiento, tiempos, memoria, skew, concurrencia y volumen real.
 
-Ambas opciones preservan nombres canónicos, features y modelos; la adaptación está en la frontera de ingesta. Debe resolverse y probarse con el volumen/topología reales antes de QA/PROD si la escala lo exige.
-
-**Gate 2:** la aplicación debe conectarse con identidad de mínimo privilegio y la arquitectura debe demostrar que el mecanismo de ingesta es adecuado para el volumen objetivo.
+**Gate 2:** identidad de mínimo privilegio, master aprobado y prueba de que la ruta elegida soporta el volumen objetivo.
 
 ## 8. Fase 4 — Validar antes de leer datos
-
-Validación estática del YAML:
 
 ```bash
 .venv/bin/python src/ingestar_canonico.py \
@@ -276,24 +248,11 @@ Validación estática del YAML:
   --validate-only
 ```
 
-Este comando comprueba, entre otros:
+Comprueba estructura YAML, tipo de fuente, modo, dominios, campos canónicos, obligatorios, mappings duplicados, correspondencia mapping↔fuente y ausencia de secrets inline.
 
-- `source.type` soportado;
-- modo `training`/`inference`;
-- dominios conocidos;
-- campos canónicos;
-- campos obligatorios de contracts;
-- mappings duplicados;
-- correspondencia mapping ↔ fuente;
-- ausencia de secrets inline.
+**Gate 3:** `--validate-only` debe terminar correctamente.
 
-No abre conexión y no escribe datos.
-
-**Gate 3:** `--validate-only` debe terminar correctamente antes de cualquier acceso real.
-
-## 9. Fase 5 — Prueba controlada de lectura en DEV
-
-Ejecutar la integración en un entorno con permisos controlados. Para datos sensibles, usar un directorio seguro fuera del working tree:
+## 9. Fase 5 — Lectura controlada en DEV
 
 ```bash
 .venv/bin/python src/ingestar_canonico.py \
@@ -301,87 +260,69 @@ Ejecutar la integración en un entorno con permisos controlados. Para datos sens
   --output-dir /ruta/segura/integracion_preview
 ```
 
-El manifest de integración reporta filas y columnas canónicas. Verificar al menos:
+Verificar:
 
-- IDs conservados como texto;
-- ausencia de truncamiento de ceros a la izquierda;
+- IDs preservados como texto;
 - fechas convertibles;
 - montos numéricos;
 - nulos estructurales = 0;
 - cardinalidades razonables;
-- relaciones contract–supplier/entity/payments consistentes;
-- ausencia de columnas no autorizadas en el dataset canónico.
+- relaciones con proveedores/entidades/pagos;
+- ausencia de columnas no autorizadas.
 
-No versionar el preview institucional.
+Para `spark_sql`, confirmar además que el manifest reporte `native_engine=spark` y que el preview se escriba de forma distribuida sin colectar filas.
 
 **Gate 4:** owner de datos + equipo analítico aprueban el contrato canónico de DEV.
 
 ## 10. Fase 6 — Configuración de TRAIN
 
-Crear un archivo separado, por ejemplo `config/cgr-training.yaml`:
+Crear `config/cgr-training.yaml` con:
 
 ```yaml
 mode: training
 ```
 
-El mapping de `contracts` debe incluir los labels físicos aprobados:
+y mapear los labels aprobados.
 
-```yaml
-mapping:
-  contracts:
-    # ...campos operacionales...
-    label_favoritismo: LABEL_FAVORITISMO_APROBADO
-    label_fraccionamiento: LABEL_FRACCIONAMIENTO_APROBADO
-```
+Antes de entrenar, documentar definición de etiquetas, periodo, responsable, inclusión/exclusión, desbalance, casos inciertos, partición temporal/holdout y métricas de aceptación.
 
-Antes de entrenar, documentar:
-
-- definición de cada etiqueta;
-- periodo temporal cubierto;
-- quién la validó;
-- reglas de inclusión/exclusión;
-- desbalance de clases;
-- tratamiento de casos inciertos;
-- partición temporal/holdout acordada;
-- métricas y umbrales de aceptación institucional.
-
-**No usar como ground truth una etiqueta derivada del score del propio modelo.**
-
-## 11. Fase 7 — Entrenar un candidate Spark
+## 11. Fase 7 — Entrenar candidate Spark
 
 ```bash
 .venv/bin/python src/spark/entrenar_candidato_spark.py \
   --config config/cgr-training.yaml
 ```
 
-El proceso debe producir un **candidate**, no modificar el champion activo.
+TRAIN produce un **candidate**, no modifica el champion.
 
-Artefactos de candidate se ubican por defecto bajo:
+Antes de promover revisar:
+
+- manifest y `candidate_id`;
+- commit;
+- hashes;
+- preprocesador y medianas Parquet si aplica;
+- configuración/hyperparámetros;
+- métricas;
+- `spark_mode`;
+- `input_engine`;
+- `spark_native_ingestion`;
+- `pandas_materialization`;
+- estabilidad por periodo/segmento;
+- capacidad de revisión humana.
+
+Si la fuente es `spark_sql`, se espera:
 
 ```text
-outputs/runtime/spark_model_candidates/
+input_engine = spark_native
+spark_native_ingestion = true
+pandas_materialization = false
 ```
 
-En producción institucional esa ubicación puede sustituirse por almacenamiento/registry corporativo.
+**Gate 5:** entrenar no implica aprobar.
 
-Revisar antes de promover:
+## 12. Fase 8 — Promoción y gobierno
 
-- manifest del candidate;
-- versión de código/commit;
-- hash de artefactos;
-- estado de preprocesamiento;
-- configuración/hyperparámetros;
-- métricas de validación;
-- master/recursos Spark efectivos;
-- estabilidad por periodo/segmento;
-- capacidad operativa de revisión humana;
-- observaciones del especialista funcional.
-
-**Gate 5:** un candidate nunca se convierte en champion por el mero hecho de entrenarse.
-
-## 12. Fase 8 — Promoción y gobierno del modelo
-
-El PoC contiene una promoción técnica explícita:
+El PoC ofrece una promoción técnica explícita:
 
 ```bash
 .venv/bin/python src/promover_candidato_spark.py \
@@ -390,22 +331,9 @@ El PoC contiene una promoción técnica explícita:
   --acknowledge-poc-only
 ```
 
-Esta operación **no equivale a aprobación CGR**. El registry público conserva `institutional_approval=false`.
-
-Para QA/PROD, la institución debe decidir si:
-
-- envuelve este paso en un workflow aprobado;
-- reemplaza el registry local por MLflow/u otra plataforma corporativa;
-- exige firma/aprobación dual;
-- separa cuenta de entrenamiento de cuenta de promoción;
-- registra ticket, acta o evidencia equivalente;
-- implementa rollback al champion anterior.
-
-Condición mínima recomendada: TRAIN no debe tener permisos para promover automáticamente a PROD.
+No equivale a aprobación CGR. En QA/PROD debe integrarse al workflow y segregación institucional, idealmente con registry corporativo, auditoría y rollback.
 
 ## 13. Fase 9 — INFERENCE institucional
-
-Con un champion aprobado técnicamente y configuración `mode: inference`:
 
 ```bash
 .venv/bin/python src/spark/score_inference_spark.py \
@@ -416,44 +344,42 @@ Con un champion aprobado técnicamente y configuración `mode: inference`:
 
 El scorer:
 
-1. integra contratos actuales al esquema canónico;
+1. integra contratos al esquema canónico;
 2. carga registry/champion;
-3. verifica integridad SHA-256;
-4. carga el estado de preprocesamiento congelado;
-5. aplica TRANSFORM sin FIT;
-6. genera features Spark;
-7. carga modelos MLlib persistidos;
-8. produce scores;
-9. vuelve a comprobar que el champion no cambió durante scoring.
+3. verifica SHA-256;
+4. carga preprocesamiento congelado;
+5. carga medianas Parquet si el champion las usa;
+6. aplica TRANSFORM sin FIT;
+7. genera features Spark;
+8. carga modelos MLlib;
+9. produce rankings;
+10. verifica nuevamente los hashes.
 
-La ruta de INFERENCE no debe recibir labels y no debe ejecutar tuning/training.
+La ruta no debe recibir labels ni ejecutar tuning/training.
 
-**Gate 6:** comprobar en QA que `labels_consumed=false`, `training_invoked=false` y `tuning_invoked=false` en la evidencia de serving equivalente, y que `spark_mode` corresponde al master aprobado.
+Para `spark_sql`, verificar:
+
+```text
+input_engine = spark_native
+spark_native_ingestion = true
+pandas_materialization = false
+detail_outputs.format = parquet_distributed
+```
+
+**Gate 6:** además confirmar que `spark_mode` es el aprobado y que los tiempos/recursos cumplen lo acordado.
 
 ## 14. Fase 10 — Pagos y modalidades
-
-El módulo de pagos consume `contracts + payments`:
 
 ```bash
 .venv/bin/python src/analisis_pagos_modalidades.py \
   --config config/cgr.yaml
 ```
 
-Produce:
+Produce resumen por contrato, devengados/pagados, ratio de pago, estados analíticos, demoras, modalidades por régimen y clasificación referencial frente a cuantía.
 
-- resumen por contrato;
-- montos devengados/pagados;
-- ratio pagado / monto contractual;
-- estados analíticos de pago;
-- percentiles de demora;
-- agregación de modalidades por régimen;
-- clasificación **referencial** frente a cuantía.
+La clasificación normativa **no declara ilegalidad** ni reemplaza revisión jurídica/funcional.
 
-La clasificación normativa **no declara ilegalidad**. Categorías como Contratación Directa, Comparación de Precios, Subasta Inversa, catálogos/acuerdos marco u otros supuestos pueden depender de hechos que no se deducen del monto.
-
-Antes de usar este módulo con datos reales, el repositorio debe estar dentro del perímetro institucional, porque los CSV detallados pueden contener identificadores de contrato y montos.
-
-## 15. Fase 11 — Airflow institucional
+## 15. Fase 11 — Airflow
 
 DAGs relevantes:
 
@@ -464,7 +390,7 @@ inferencia_modelos_1_8_2
 monitoreo_reentrenamiento_1_8_2
 ```
 
-Variables soportadas/relevantes para TRAIN/INFERENCE:
+Variables relevantes:
 
 ```text
 PROYECTO_DIR
@@ -478,19 +404,7 @@ CGR_SPARK_MASTER
 CGR_SPARK_SHUFFLE_PARTITIONS
 ```
 
-Ejemplo conceptual:
-
-```bash
-export PROYECTO_DIR=/opt/cgr/modulo-analisis
-export CGR_PROJECT_PYTHON=/opt/cgr/modulo-analisis/.venv/bin/python
-export CGR_DATA_CONFIG=/secure/config/cgr.yaml
-export CGR_TRAIN_CONFIG=/secure/config/cgr-training.yaml
-export CGR_MODEL_REGISTRY=/secure/models/model_registry.json
-export CGR_INFERENCE_OUTPUT_DIR=/secure/outputs/inference
-export CGR_SPARK_MASTER='<master institucional>'
-```
-
-No almacenar secretos en variables de Airflow visibles para usuarios no autorizados; utilizar el backend/gestor de secretos institucional que corresponda.
+No almacenar secretos en variables de Airflow visibles para usuarios no autorizados.
 
 ## 16. Fase 12 — SQL Server y SSRS
 
@@ -502,82 +416,60 @@ ssrs/ReporteRiesgoFavoritismo.rdl
 ssrs/ReporteRiesgoFraccionamiento.rdl
 ```
 
-`src/publicar_ssrs.py` es un stand-in local para validar contrato, columnas y conteos. No despliega en un servidor CGR.
+`src/publicar_ssrs.py` valida localmente el contrato, pero no despliega en un servidor CGR.
 
-Para cierre institucional:
+Para cierre institucional: revisar DDL, crear objetos DEV, definir datasource, cargar salidas aprobadas, desplegar RDL, validar permisos/tiempos y promover vía QA/PROD.
 
-1. revisar/adaptar DDL con DBA;
-2. crear objetos en DEV;
-3. definir datasource y cuenta de lectura de SSRS;
-4. cargar salidas aprobadas;
-5. desplegar RDL en carpeta institucional;
-6. validar filtros, permisos y tiempos de consulta;
-7. probar QA con usuarios funcionales;
-8. promover a PROD mediante el proceso estándar.
-
-**Gate 7:** la existencia de los RDL en Git no equivale a publicación SSRS.
+**Gate 7:** RDL en Git no equivale a publicación SSRS.
 
 ## 17. Fase 13 — Monitoreo y reentrenamiento
 
-El proyecto incluye autoevaluación/monitor de solo lectura y un DAG mensual de referencia. En operación deben definirse institucionalmente:
+El proyecto incluye autoevaluación/monitor de solo lectura y un DAG mensual de referencia. En operación deben definirse frecuencia, features vigiladas, drift, ground truth, métricas mínimas, responsables, condiciones de TRAIN, rollback y retención.
 
-- frecuencia real;
-- features vigiladas;
-- umbrales de drift;
-- ground truth disponible y latencia de etiquetado;
-- métricas mínimas;
-- responsable de investigar alertas;
-- condición que habilita nuevo TRAIN;
-- criterio de rollback;
-- retención de logs y auditoría.
+Reentrenamiento produce candidate. **No debe existir autopromoción silenciosa.**
 
-Reentrenamiento produce candidate. **No debe haber autopromoción silenciosa.**
+## 18. Fase 14 — Seguridad
 
-## 18. Fase 14 — Seguridad y datos sensibles
+Checklist mínimo:
 
-Checklist mínimo antes de QA/PROD:
-
-- repositorio privado institucional;
-- cuentas de servicio separadas por ambiente;
-- privilegio mínimo de lectura en fuentes;
+- repositorio privado;
+- cuentas separadas por ambiente;
+- privilegio mínimo;
 - secretos fuera del repo;
-- salida de INFERENCE en almacenamiento autorizado;
-- PII restringida a quienes la necesiten;
-- cifrado en tránsito/en reposo conforme política institucional;
-- logs sin credenciales ni payloads sensibles innecesarios;
-- retención y purga definidas;
-- auditoría de promociones de modelo;
+- outputs en almacenamiento autorizado;
+- PII restringida;
+- cifrado según política;
+- logs sin secretos/payloads innecesarios;
+- retención/purga definidas;
+- auditoría de promociones;
 - segregación TRAIN/promoción/PROD;
-- revisión de dependencias y vulnerabilidades;
-- backups/rollback del registry y salidas críticas.
+- revisión de dependencias/vulnerabilidades;
+- backups y rollback.
 
-El PoC no define políticas internas de CGR; estas deben prevalecer sobre cualquier ejemplo de este manual.
+Las políticas internas CGR prevalecen sobre cualquier ejemplo de este manual.
 
 ## 19. Fase 15 — DEV → QA → PROD
-
-Secuencia recomendada:
 
 ### DEV
 
 - mappings y vistas;
-- conectividad;
-- calidad de datos;
+- conectividad y calidad;
 - TRAIN inicial;
 - pruebas unitarias/integración;
-- medición de volumen máximo y memoria del driver;
-- decisión sobre adaptador Spark-native si la escala lo requiere;
+- validación Spark-native si se usa `spark_sql`;
+- pruebas de particionamiento, skew y volumen;
 - performance preliminar;
-- ajustes de reporting.
+- reporting.
 
 ### QA
 
 - datos representativos aprobados;
-- validación de métricas contra umbrales institucionales;
-- prueba del mecanismo de ingesta con volumen representativo;
-- pruebas de permisos;
-- pruebas de Airflow/Spark/SQL Server/SSRS;
-- validación funcional por auditores;
-- casos de error/rollback;
+- métricas contra umbrales institucionales;
+- volumen representativo;
+- permisos;
+- Airflow/Spark/SQL Server/SSRS;
+- validación funcional;
+- error/rollback;
 - documentación de incidencias.
 
 ### PROD
@@ -585,122 +477,117 @@ Secuencia recomendada:
 Solo después de conformidad QA:
 
 - champion aprobado;
-- configuración/secretos PROD;
+- secretos/configuración PROD;
 - master/recursos Spark aprobados;
-- frontera de ingesta adecuada al volumen PROD;
+- particionamiento/capacidad probados;
 - datasource/reportes PROD;
 - monitoreo activo;
-- responsables de soporte definidos;
-- plan de rollback probado.
+- responsables de soporte;
+- rollback probado.
 
 ## 20. Rollback
 
-Antes de cada promoción guardar de forma trazable:
+Antes de cada promoción registrar:
 
-- `champion_id` anterior;
+- champion anterior;
 - registry anterior;
-- hashes de artefactos;
-- commit/tag de código;
-- configuración de preprocesamiento;
+- hashes;
+- commit/tag;
+- preprocesador y medianas asociadas;
 - fecha/aprobador;
-- motivo de promoción.
+- motivo.
 
-Ante degradación, error de datos o incidente:
-
-1. detener nuevas ejecuciones si corresponde;
-2. identificar último champion estable;
-3. restaurar registry/artefactos aprobados;
-4. verificar hashes;
-5. ejecutar smoke controlado;
-6. documentar incidente y causa;
-7. reanudar solo con autorización.
-
-El repo público demuestra hashes y promoción explícita; el mecanismo final de rollback debe integrarse al MLOps corporativo.
+Ante degradación: detener si corresponde, restaurar champion estable, verificar hashes, ejecutar smoke, documentar incidente y reanudar solo con autorización.
 
 ## 21. Criterios de aceptación del aterrizaje
 
-Una instalación institucional puede considerarse técnicamente aterrizada cuando existe evidencia de que:
+Una instalación puede considerarse técnicamente aterrizada cuando existe evidencia de que:
 
 - la configuración real pasa `--validate-only`;
-- las fuentes reales se convierten correctamente al esquema canónico;
-- el mecanismo de ingesta soporta el volumen objetivo sin depender indebidamente de memoria del driver;
-- el diccionario/linaje institucional está aprobado;
-- los datos de TRAIN incluyen ground truth validado;
-- candidate y champion están gobernados por aprobación explícita;
+- las fuentes reales se convierten al esquema canónico;
+- `spark_sql`, si se usa, permanece Spark-native sin pandas intermedio;
+- la ruta soporta el volumen objetivo en el clúster real;
+- diccionario/linaje están aprobados;
+- TRAIN usa ground truth validado;
+- candidate/champion están gobernados;
 - INFERENCE opera sin labels/training/tuning;
-- el master Spark efectivo coincide con la configuración aprobada;
-- el clúster cumple performance y robustez acordadas;
+- el master coincide con la configuración aprobada;
+- performance y robustez cumplen lo acordado;
 - SQL Server/SSRS funcionan con permisos institucionales;
 - DEV/QA/PROD están separados;
-- seguridad y secretos están validados;
+- seguridad/secretos están validados;
 - monitoreo/rollback están operativos;
-- usuarios funcionales completaron certificación/marcha blanca;
+- usuarios completaron certificación/marcha blanca;
 - transferencia y entrega están formalizadas.
 
-Hasta que existan estas evidencias, los estados 🟡/🔵 de la auditoría deben permanecer abiertos.
+Hasta entonces los estados 🟡/🔵 deben permanecer abiertos.
 
 ## 22. Mapeo de dependencias CGR
 
-| ID | Cómo se cierra durante el aterrizaje |
+| ID | Cierre institucional |
 |---|---|
-| `CGR-DEP-01` | vistas/tablas, permisos, diccionario y linaje reales aprobados |
-| `CGR-DEP-02` | revisión SQL + planes de ejecución en infraestructura real |
-| `CGR-DEP-03` | ground truth y umbrales institucionales aprobados |
-| `CGR-DEP-04` | repo privado, identidad, secretos y autorización institucional |
-| `CGR-DEP-05` | DDL/RDL desplegados y validados en SQL Server/SSRS |
-| `CGR-DEP-06` | pruebas y operación en DEV/QA/PROD/clúster institucional, incluida escala de ingesta |
-| `CGR-DEP-07` | certificación de usuarios, incidencias y marcha blanca cerradas |
-| `CGR-DEP-08` | transferencia, repositorio institucional y entrega formal |
+| `CGR-DEP-01` | vistas/tablas, permisos, diccionario y linaje reales |
+| `CGR-DEP-02` | estándares SQL + planes de ejecución |
+| `CGR-DEP-03` | ground truth y umbrales aprobados |
+| `CGR-DEP-04` | repo privado, identidad, secretos y autorizaciones |
+| `CGR-DEP-05` | DDL/RDL desplegados y validados |
+| `CGR-DEP-06` | DEV/QA/PROD/clúster, carga, performance y operación |
+| `CGR-DEP-07` | certificación, incidencias y marcha blanca |
+| `CGR-DEP-08` | transferencia y entrega formal |
 
-La fuente canónica de estas dependencias es [`Dependencias_Institucionales_CGR.md`](Dependencias_Institucionales_CGR.md).
+Fuente canónica: [`Dependencias_Institucionales_CGR.md`](Dependencias_Institucionales_CGR.md).
 
 ## 23. Troubleshooting rápido
 
-### `Falta la variable de entorno ... con la conexión SQL Server`
+### Falta `CGR_SOURCE_DATABASE_URL`
 
-La variable indicada en `source.connection_env` no está disponible para el proceso. Revisar el gestor de secretos/entorno del runner.
+Revisar gestor de secretos/entorno del runner.
 
-### `El conector SQL Server requiere pyodbc...`
+### `pyodbc` o driver ODBC no disponible
 
-Instalar `pyodbc` y el driver ODBC aprobado en la imagen/host institucional.
+Instalar el driver aprobado en la imagen/host institucional.
 
 ### `mapping.contracts no define campos obligatorios`
 
-Falta al menos un campo canónico requerido por el modo. Revisar `src/core/schemas.py` y el mapping institucional.
+Revisar `src/core/schemas.py`; `categoria_principal` también es estructuralmente requerida.
 
-### `La fuente ... no contiene columnas configuradas`
+### Columna física inexistente
 
-El mapping referencia una columna física inexistente o el usuario no ve la versión esperada de la vista.
+El mapping no coincide con la vista/tabla o el usuario no ve la versión esperada.
 
-### Error por nulos en `id_contrato`, `id_proveedor`, `id_entidad` o `fecha_contrato`
+### Nulos en claves o `fecha_contrato`
 
-Es una falla estructural de calidad. No se imputa automáticamente porque no existe una recuperación genérica segura.
+Es una falla estructural de calidad; no se imputa automáticamente.
 
 ### TRAIN pide labels pero INFERENCE no
 
-Es intencional. Usar archivos de configuración separados con `mode: training` y `mode: inference`.
+Es intencional. Mantener configs separadas.
 
-### El candidate no aparece como champion
+### Candidate no aparece como champion
 
-Es intencional. TRAIN no promueve. La promoción es un gate separado.
+Es intencional. La promoción es un gate separado.
 
-### Spark sigue usando `local[*]`
+### Spark usa `local[*]`
 
-Definir `CGR_SPARK_MASTER` en el entorno que lanza TRAIN/INFERENCE y comprobar el campo `spark_mode` de la evidencia generada. El fallback local es deliberado para el PoC.
+Definir `CGR_SPARK_MASTER` y comprobar `spark_mode`.
 
-### El proceso se queda sin memoria al usar `spark_sql`
+### `spark_sql` aparece con `pandas_materialization=true`
 
-La integración pública actual materializa el contrato canónico en pandas. Para volúmenes mayores, usar vistas/tablas canónicas y adaptar la frontera de ingesta a Spark nativo antes de considerar la ruta apta para PROD.
+No es el comportamiento esperado de la ruta actual. Revisar que se esté usando `source.type: spark_sql`, `integrar_spark()` y una versión vigente del código. La regresión `tests/test_spark_native_integration.py` debe pasar.
+
+### Rendimiento insuficiente en `spark_sql`
+
+La ruta ya es distribuida; revisar particionamiento de las tablas, skew, shuffle partitions, tamaño de executors, dynamic allocation, catálogo y estrategia de escritura. Ajustar en DEV/QA y medir con volumen representativo antes de PROD.
 
 ## 24. Documentos relacionados
 
-- [`Integracion_Datos.md`](Integracion_Datos.md) — referencia técnica de conectores y esquema canónico.
-- [`Train_Inference.md`](Train_Inference.md) — lifecycle de modelos y serving.
-- [`Dependencias_Institucionales_CGR.md`](Dependencias_Institucionales_CGR.md) — dependencias que no puede cerrar el repo público.
-- [`Checklist_Anexo_03.md`](Checklist_Anexo_03.md) — estado de criterios del Anexo 3.
-- [`Auditoria_TDR_Completo.md`](Auditoria_TDR_Completo.md) — auditoría integral del TDR público.
-- `../config/cgr.example.yaml` — plantilla de configuración sin datos/secretos reales.
+- [`Integracion_Datos.md`](Integracion_Datos.md) — conectores, esquema canónico y Spark-native.
+- [`Train_Inference.md`](Train_Inference.md) — lifecycle y serving.
+- [`Dependencias_Institucionales_CGR.md`](Dependencias_Institucionales_CGR.md) — dependencias institucionales.
+- [`Checklist_Anexo_03.md`](Checklist_Anexo_03.md) — Anexo 3.
+- [`Auditoria_TDR_Completo.md`](Auditoria_TDR_Completo.md) — auditoría integral.
+- `../config/cgr.example.yaml` — plantilla sin secretos reales.
 
 ## 25. Regla final
 
-El objetivo del aterrizaje no es “hacer que el PoC parezca productivo”. Es **sustituir de forma controlada los stand-ins públicos por fuentes, infraestructura, gobierno y evidencias institucionales reales**, preservando trazabilidad y evitando que una señal analítica se convierta automáticamente en una conclusión de control.
+El objetivo del aterrizaje no es hacer que el PoC “parezca productivo”. Es **sustituir de forma controlada los stand-ins públicos por fuentes, infraestructura, gobierno y evidencias institucionales reales**, preservando trazabilidad y revisión humana.
