@@ -179,7 +179,7 @@ const p2 = informeProducto({
 const p3 = informeProducto({
   numero: 3,
   nombre: 'Selección del Algoritmo y Desarrollo del Modelo para Identificación de Proveedores Favoritos',
-  resumen: `Se compararon Regresión Logística, Random Forest y Gradient Boosting con las mismas predicciones out-of-fold. Random Forest obtuvo el mayor AUC-PR (${rf.auc_pr.toFixed(3)}). Además, la implementación objetivo del TDR se ejecutó con Apache Spark MLlib en modo local reproducible.`,
+  resumen: `Se compararon Regresión Logística, Random Forest y Gradient Boosting con las mismas predicciones out-of-fold. Random Forest obtuvo el mayor AUC-PR (${rf.auc_pr.toFixed(3)}). La evidencia histórica de Spark MLlib se reproduce en local[*], mientras que la ruta operacional vigente admite master configurable y spark_sql Spark-native sin toPandas().`,
   introduccion: 'Este producto cubre patrones y tendencias, análisis estadístico, propuesta fundamentada de algoritmos, diseño/arquitectura, implementación Spark MLlib y parámetros de entrenamiento.',
   tablas: ['Comparación de algoritmos candidatos para favoritismo', 'Implementación Spark MLlib para favoritismo'],
   graficos: ['Concentración de proveedores por entidad', 'Diagrama del modelo de datos del PoC'],
@@ -197,7 +197,7 @@ const p3 = informeProducto({
     ], [2200, 1300, 1300, 1300, 1300, 1300]),
     parrafo('Random Forest se selecciona como candidato principal por AUC-PR y por su compatibilidad con explicabilidad basada en importancia de variables y SHAP.'),
     subtitulo('3.4 Diseño y arquitectura del modelo'),
-    parrafo('La arquitectura implementada sigue fuente -> Bronce -> limpieza/feature engineering -> Plata -> modelo -> Oro -> reporting/trazabilidad. El mismo dataset Plata es consumido por el benchmark sklearn y por la implementación Spark MLlib.'),
+    parrafo('El PoC conserva una ruta histórica fuente -> Bronce -> limpieza/feature engineering -> Plata -> benchmark -> Oro para reproducibilidad y una ruta operacional fuente canónica -> TRAIN/INFERENCE -> champion Spark -> scores. El serving operacional no depende de materializar la fuente spark_sql en pandas o en la Plata legacy.'),
     ...imagenConTitulo(2, 'Diagrama del modelo de datos del PoC', '../outputs/charts/09_diagrama_modelo_datos.png', 610, 360),
     subtitulo('3.5 Reporte de implementación usando Apache Spark MLlib'),
     ...tablaConTitulo(2, 'Implementación Spark MLlib para favoritismo', ['Elemento', 'Evidencia'], [
@@ -221,12 +221,12 @@ const p3 = informeProducto({
     vineta('Implementación y ejecución real de RandomForestClassifier con Spark MLlib.'),
     vineta('Persistencia de rankings, configuración y resumen machine-readable en outputs/.'),
   ],
-  cumplimiento: 'Contenido exigido por el TDR implementado y verificado para el PoC, incluida una ejecución Spark MLlib real en local[*]. La validación de escalabilidad sobre HDFS/YARN institucional queda pendiente de infraestructura CGR.',
+  cumplimiento: 'Contenido exigido por el TDR implementado y verificado para el PoC, con benchmark MLlib local reproducible y contrato operacional Spark-native. La validación de escalabilidad, carga y rendimiento sobre infraestructura institucional queda pendiente de la CGR.',
   dificultades: [
     vineta(`El benchmark contiene solo ${num(fav.positivos_sembrados)} positivos sintéticos; la métrica Spark CV tiene alta varianza y no se interpreta como desempeño productivo.`),
     vineta('La selección final en producción requiere datos internos y ground truth acordado con auditores.'),
   ],
-  conclusiones: 'Random Forest es el candidato técnico preferido del PoC por AUC-PR e interpretabilidad. Spark MLlib ya forma parte de la ruta ejecutable, pero la prueba distribuida y los umbrales productivos requieren el entorno CGR.',
+  conclusiones: 'Random Forest es el candidato técnico preferido del PoC por AUC-PR e interpretabilidad. Spark MLlib forma parte tanto del benchmark histórico como del serving operacional; la validación de carga, rendimiento y umbrales productivos requiere el entorno CGR.',
 });
 
 // -----------------------------------------------------------------------------
