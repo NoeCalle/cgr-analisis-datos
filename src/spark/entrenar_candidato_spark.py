@@ -1,10 +1,9 @@
 """TRAIN operacional Spark MLlib.
 
-La ruta operacional acepta dos fronteras de ingesta:
-- CSV/SQL Server: contrato pandas validado y adaptación explícita a Spark;
-- spark_sql: DataFrame Spark nativo desde la fuente hasta MLlib, sin toPandas.
-
-El resultado es siempre un candidate y nunca promueve automáticamente.
+La ruta operacional acepta CSV/SQL Server mediante adaptador explícito y
+``spark_sql`` de forma Spark-native. Los hiperparámetros se leen únicamente de
+evaluaciones del MISMO pipeline operacional y el resultado siempre queda como
+candidate hasta una promoción explícita.
 """
 
 from __future__ import annotations
@@ -48,6 +47,7 @@ from spark.preprocesamiento_serving_spark import (
 DEFAULT_MANIFEST = Path("outputs/runtime/spark_model_candidates/candidate_manifest.json")
 DEFAULT_NUM_TREES = 100
 DEFAULT_MAX_DEPTH = 3
+DEFAULT_K = 2
 FAVORITISMO_MONTO_OPERACIONAL = "monto_capped"
 
 
@@ -89,13 +89,23 @@ def _fingerprint_spark_dataframe(df) -> str:
 
 
 def _parametros_favoritismo() -> tuple[int, int, str]:
-    resumen = Path("outputs/spark_favoritismo_resumen.json")
+    resumen = Path("outputs/tuning_favoritismo_spark_resumen.json")
     if resumen.exists():
         data = json.loads(resumen.read_text(encoding="utf-8"))
         cfg = data.get("mejor_configuracion", {})
         if "numTrees" in cfg and "maxDepth" in cfg:
-            return int(cfg["numTrees"]), int(cfg["maxDepth"]), "spark_cv_summary"
+            return int(cfg["numTrees"]), int(cfg["maxDepth"]), "spark_operational_holdout"
     return DEFAULT_NUM_TREES, DEFAULT_MAX_DEPTH, "poc_default"
+
+
+def _parametros_fraccionamiento() -> tuple[int, str]:
+    resumen = Path("outputs/tuning_fraccionamiento_spark_resumen.json")
+    if resumen.exists():
+        data = json.loads(resumen.read_text(encoding="utf-8"))
+        k = data.get("mejor_configuracion", {}).get("k")
+        if k is not None:
+            return int(k), "spark_operational_holdout"
+    return DEFAULT_K, "poc_default"
 
 
 def _entrenar_rf_final(df_feat, num_trees: int, max_depth: int):
@@ -147,6 +157,7 @@ def entrenar(
     spark = crear_sesion("cgr-train-spark-mllib-candidate", operational=True)
     spark_mode = spark.sparkContext.master
     spark.sparkContext.setLogLevel("ERROR")
+    spark.sparkContext.addPyFile(str(SRC_DIR / "core" / "objeto_similarity.py"))
     spark.sparkContext.addPyFile(str(SRC_DIR / "umbrales_normativos.py"))
 
     source_type = config["source"]["type"]
@@ -190,18 +201,25 @@ def entrenar(
             label_col="label_favoritismo",
             monto_col=FAVORITISMO_MONTO_OPERACIONAL,
         )
-        num_trees, max_depth, parametros_fuente = _parametros_favoritismo()
+        num_trees, max_depth, fav_selection_source = _parametros_favoritismo()
         fav_model, fav_positives, fav_rows = _entrenar_rf_final(
             fav_features, num_trees, max_depth
         )
         fav_model.write().overwrite().save(str(fav_model_dir))
+        fav_importances = {
+            feature: float(value)
+            for feature, value in zip(FAV_FEATURES, fav_model.featureImportances.toArray())
+        }
 
         frac_features = aplicar_senal_interpretable(
             construir_features_ventana_desde_df(
                 procesado, label_col="label_fraccionamiento"
             )
         )
-        frac_pred, frac_model, frac_scaler = entrenar_modelos_kmeans(frac_features)
+        frac_k, frac_selection_source = _parametros_fraccionamiento()
+        frac_pred, frac_model, frac_scaler = entrenar_modelos_kmeans(
+            frac_features, k=frac_k
+        )
         frac_rows = int(frac_pred.count())
         frac_positives = int(frac_pred.filter(F.col("label") == 1).count())
         frac_model.write().overwrite().save(str(frac_model_dir))
@@ -278,10 +296,10 @@ def entrenar(
             "spark_mode": spark_mode,
             "preprocessing_contract": "corrected_frozen_json_v1",
             "validation_evidence": [
-                "outputs/spark_favoritismo_resumen.json",
-                "outputs/spark_fraccionamiento_resumen.json",
+                "outputs/tuning_favoritismo_spark_resumen.json",
+                "outputs/tuning_fraccionamiento_spark_resumen.json",
                 "outputs/comparacion_modelos_favoritismo.json",
-                "outputs/tuning_fraccionamiento_resumen.json",
+                "outputs/tuning_favoritismo_resumen.json",
             ],
         },
         "models": {
@@ -291,10 +309,11 @@ def entrenar(
                 "features": FAV_FEATURES,
                 "amount_source": FAVORITISMO_MONTO_OPERACIONAL,
                 "label": "label_favoritismo",
+                "feature_importances": fav_importances,
                 "params": {
                     "numTrees": num_trees,
                     "maxDepth": max_depth,
-                    "selection_source": parametros_fuente,
+                    "selection_source": fav_selection_source,
                 },
             },
             "fraccionamiento": {
@@ -303,7 +322,10 @@ def entrenar(
                 "features": FRAC_FEATURES,
                 "amount_source": "monto",
                 "label": "label_fraccionamiento",
-                "params": {"k": int(frac_model.getK())},
+                "params": {
+                    "k": int(frac_model.getK()),
+                    "selection_source": frac_selection_source,
+                },
             },
         },
         "artifacts": artifacts,
@@ -317,7 +339,7 @@ def entrenar(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Entrena candidate Spark MLlib con preprocesamiento corregido; no promueve."
+        description="Entrena candidate Spark MLlib con evaluación operacional alineada; no promueve."
     )
     parser.add_argument("--config", default="config/local-training.yaml")
     parser.add_argument("--manifest", default=str(DEFAULT_MANIFEST))

@@ -92,7 +92,7 @@ def construir_criterios() -> list[dict]:
         criterio_tecnico(
             4, "4.1.5", "Enriquecimiento y generación de características",
             ["data/dataset_favoritismo.csv", "data/dataset_fraccionamiento.csv", "outputs/linaje_datos.csv"],
-            "Features de favoritismo/fraccionamiento y linaje fuente→feature están materializados.",
+            "Features de favoritismo/fraccionamiento y linaje fuente→feature están materializados; fraccionamiento conserva objeto_familia y una única semántica de ventana pandas/Spark.",
         ),
         criterio_parcial(
             5, "6", "Análisis Profundo de Pagos y Modalidades de Contratación",
@@ -109,13 +109,24 @@ def construir_criterios() -> list[dict]:
         ),
         criterio_tecnico(
             6, "4.2.2 / Productos 3-4", "Identificación de proveedores favoritos",
-            ["outputs/comparacion_modelos_favoritismo.json", "outputs/tuning_favoritismo_resumen.json", "outputs/ranking_riesgo_favoritismo_spark.csv"],
-            "Clasificación/riesgo con benchmark, tuning, explicación y ejecución Spark.",
+            [
+                "outputs/comparacion_modelos_favoritismo.json",
+                "outputs/tuning_favoritismo_resumen.json",
+                "outputs/tuning_favoritismo_spark_resumen.json",
+                "outputs/model_registry.json",
+                "outputs/ranking_riesgo_favoritismo_spark.csv",
+            ],
+            "El champion Spark de favoritismo se selecciona y evalúa con el mismo pipeline operacional que TRAIN/INFERENCE (monto_capped), conserva holdout final y Feature Importance ligada al modelo servido.",
         ),
         criterio_tecnico(
-            7, "4.2.3 / Productos 6-7", "Detección de fraccionamiento y compras repetitivas/anómalas",
-            ["outputs/tuning_fraccionamiento_resumen.json", "outputs/ranking_riesgo_fraccionamiento_spark.csv"],
-            "Isolation Forest de referencia + KMeans MLlib + señal interpretable por ventana/cuantía.",
+            7, "4.2.3 / Productos 6-7", "Detección de fraccionamiento, compras repetitivas y objetos/servicios similares",
+            [
+                "src/core/objeto_similarity.py",
+                "outputs/tuning_fraccionamiento_spark_resumen.json",
+                "outputs/tuning_fraccionamiento_resumen.json",
+                "outputs/ranking_riesgo_fraccionamiento_spark.csv",
+            ],
+            "El KMeans Spark activo dispone de evaluación/holdout propios; la señal temporal usa cantidad y monto de la misma ventana de 15 días y agrupa variantes lexicales controladas mediante objeto_familia. Isolation Forest queda como benchmark de compatibilidad.",
         ),
         criterio_parcial(
             8, "4.2.4", "Evaluación de vínculos proveedor-funcionario mediante grafos/redes",
@@ -124,21 +135,27 @@ def construir_criterios() -> list[dict]:
             "GraphFrames se ejecuta sobre escenario sintético; los vínculos y datos personales institucionales requieren fuentes y permisos CGR.",
         ),
         criterio_tecnico(
-            9, "4.2.5", "Entrenamiento, validación cruzada y optimización de hiperparámetros",
-            ["outputs/tuning_favoritismo_resumen.json", "outputs/tuning_fraccionamiento_resumen.json", "outputs/spark_favoritismo_resumen.json"],
-            "Tuning/validación y separación de holdout quedan persistidos.",
+            9, "4.2.5", "Entrenamiento, validación cruzada, holdout y optimización de hiperparámetros",
+            [
+                "outputs/tuning_favoritismo_spark_resumen.json",
+                "outputs/tuning_fraccionamiento_spark_resumen.json",
+                "outputs/tuning_favoritismo_resumen.json",
+                "outputs/tuning_fraccionamiento_resumen.json",
+                "outputs/model_registry.json",
+            ],
+            "El champion Spark consume hiperparámetros seleccionados por evaluaciones del mismo pipeline activo; los benchmarks sklearn quedan identificados como compatibilidad y los holdouts no participan del retuning.",
         ),
         criterio_parcial(
             10, "3.2.a / 4.2.6", "Apache Spark MLlib escalable y pruebas de rendimiento/robustez",
             [
                 "outputs/inference_spark_smoke_summary.json",
-                "outputs/spark_favoritismo_resumen.json",
-                "outputs/spark_fraccionamiento_resumen.json",
+                "outputs/tuning_favoritismo_spark_resumen.json",
+                "outputs/tuning_fraccionamiento_spark_resumen.json",
                 "src/core/schemas_spark.py",
                 "tests/test_spark_native_integration.py",
             ],
             ["CGR-DEP-06", "CGR-DEP-03"],
-            "La ruta operacional spark_sql es Spark-native, evita toPandas y admite master configurable; el clúster, volumen, performance, robustez y aceptación productiva requieren infraestructura/ground truth CGR.",
+            "La ruta operacional spark_sql es Spark-native, evita toPandas y admite master configurable; validaciones metodológicas locales existen, pero clúster, volumen, performance, robustez y aceptación productiva requieren infraestructura/ground truth CGR.",
         ),
         criterio_tecnico(
             11, "4.3.1-4.3.2", "Reportes automáticos con tablas, estadísticas, gráficos y métricas",
@@ -158,8 +175,14 @@ def construir_criterios() -> list[dict]:
         ),
         criterio_tecnico(
             14, "3.2.c / 6", "Autoevaluación y estrategia de actualización/reentrenamiento sostenible",
-            ["src/autoevaluacion.py", "src/registro_modelos.py", "docs/Train_Inference.md"],
-            "El reentrenamiento produce candidate; no existe autopromoción silenciosa.",
+            [
+                "src/autoevaluacion_champion.py",
+                "airflow_home/dags/dag_monitoreo_reentrenamiento.py",
+                "outputs/monitoreo_champion.json",
+                "outputs/log_reentrenamiento_champion.csv",
+                "outputs/model_registry.json",
+            ],
+            "La autoevaluación carga exactamente el champion Spark activo del registry, calcula deriva/recall@K sobre sus features congeladas y solo genera candidates; no existe autopromoción silenciosa.",
         ),
         criterio_tecnico(
             15, "3.2.f / Producto 7", "Separación TRAIN/INFERENCE, persistencia y serving sin reentrenamiento",
@@ -171,12 +194,13 @@ def construir_criterios() -> list[dict]:
             [
                 "docs/Train_Inference.md",
                 "src/monitoreo_modelos.py",
-                "src/autoevaluacion.py",
+                "src/autoevaluacion_champion.py",
                 "airflow_home/dags/dag_monitoreo_reentrenamiento.py",
+                "outputs/monitoreo_champion.json",
                 "outputs/model_registry.json",
             ],
             ["CGR-DEP-04", "CGR-DEP-06"],
-            "Controles de software, autoevaluación y monitoreo de solo lectura existen; identidad, secretos, segregación y operación productiva son institucionales.",
+            "Controles de software y monitoreo del champion activo existen; identidad, secretos, segregación, operación y aceptación productiva son institucionales.",
         ),
         criterio_institucional(
             17, "6 / Producto 7", "Pruebas de integración en ambientes DEV/QA/PROD y puesta a producción",
@@ -191,9 +215,14 @@ def construir_criterios() -> list[dict]:
         ),
         criterio_parcial(
             19, "Anexo 3 / 3.2.e", "Umbrales institucionales y validación productiva de Accuracy/F1/AUC-ROC",
-            ["outputs/comparacion_modelos_favoritismo.json", "outputs/tuning_fraccionamiento_resumen.json"],
+            [
+                "outputs/tuning_favoritismo_spark_resumen.json",
+                "outputs/tuning_fraccionamiento_spark_resumen.json",
+                "outputs/tuning_favoritismo_resumen.json",
+                "outputs/tuning_fraccionamiento_resumen.json",
+            ],
             ["CGR-DEP-03", "CGR-DEP-06"],
-            "El PoC reporta métricas; el TDR público no aporta los mínimos numéricos ni ground truth institucional.",
+            "El PoC reporta métricas CV/holdout de los modelos activos y benchmarks de compatibilidad; el TDR público no aporta mínimos numéricos ni ground truth institucional.",
         ),
         criterio_institucional(
             20, "6 / Producto 7", "Certificación, levantamiento de observaciones/incidencias y marcha blanca",
@@ -269,8 +298,41 @@ def main():
             criterios[14]["estado"] = "🔴"
             criterios[14]["detalle"] = "Serving Spark no cumple el contrato TRAIN/INFERENCE vigente."
 
-    # La garantía Spark-native es una propiedad de arquitectura protegida por pruebas;
-    # no se confunde con la prueba de rendimiento que solo puede ejecutarse en CGR.
+    if existe("outputs/model_registry.json"):
+        registry = leer_json("outputs/model_registry.json")
+        spark_profile = registry.get("serving_profiles", {}).get("spark_mllib", {})
+        fav_model = spark_profile.get("models", {}).get("favoritismo", {})
+        frac_model = spark_profile.get("models", {}).get("fraccionamiento", {})
+        fav_params = fav_model.get("params", {})
+        frac_params = frac_model.get("params", {})
+        feature_importances = fav_model.get("feature_importances", {})
+        if not (
+            registry.get("active_serving_profile") == "spark_mllib"
+            and fav_model.get("amount_source") == "monto_capped"
+            and fav_params.get("selection_source") == "spark_operational_holdout"
+            and frac_params.get("selection_source") == "spark_operational_holdout"
+            and set(feature_importances) == set(fav_model.get("features", []))
+        ):
+            for idx in [5, 6, 8]:
+                criterios[idx]["estado"] = "🔴"
+                criterios[idx]["detalle"] = "Registry Spark no conserva trazabilidad evaluación→TRAIN→champion de la Etapa 2B."
+
+        if existe("outputs/monitoreo_champion.json"):
+            monitor = leer_json("outputs/monitoreo_champion.json")
+            if not (
+                monitor.get("active_profile") == "spark_mllib"
+                and monitor.get("champion_id") == spark_profile.get("champion_id")
+                and monitor.get("automatic_promotion") is False
+                and all(
+                    escenario.get("champion_id") == spark_profile.get("champion_id")
+                    for escenario in monitor.get("scenarios", [])
+                )
+            ):
+                criterios[13]["estado"] = "🔴"
+                criterios[13]["detalle"] = "La autoevaluación no está ligada al champion activo del registry."
+                criterios[15]["estado"] = "🔴"
+                criterios[15]["detalle"] = "El monitor operacional no demuestra lectura del champion activo sin autopromoción."
+
     for rel in [
         "src/connectors/spark_sql.py",
         "src/ingestar_canonico.py",
@@ -286,7 +348,7 @@ def main():
 
     resumen = Counter(c["estado"] for c in criterios)
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "scope": "TDR completo público de mayo de 2026",
         "nature": "auditoría del PoC independiente; no conformidad ni aprobación CGR",
         "total_criterios": len(criterios),

@@ -1,13 +1,9 @@
-"""
-Pipeline de análisis sobre datos REALES de SEACE/OECE.
+"""Pipeline exploratorio sobre datos abiertos REALES de SEACE/OECE.
 
 Los resultados son señales estadísticas para priorización de revisión; no son
-hallazgos ni determinaciones de irregularidad.
-
-Integridad P0: Contract -> Award -> Supplier, clave OCID::contract.id.
-Corrección P1: Contratación Directa y Comparación de Precios se mantienen como
-variables diferentes; no se agrupan bajo una etiqueta binaria de "no
-competitiva".
+hallazgos ni determinaciones de irregularidad. Esta ruta NO valida el champion
+porque la fuente pública carece de ground truth institucional; su propósito es
+probar portabilidad de la metodología sobre datos abiertos reales.
 """
 
 import numpy as np
@@ -15,7 +11,9 @@ import pandas as pd
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 
-from umbrales_normativos import obtener_umbral
+from preprocesamiento import features_fraccionamiento
+
+SENAL_PRIORIZACION = "senal_priorizacion_fraccionamiento"
 
 
 def cargar():
@@ -23,7 +21,7 @@ def cargar():
 
 
 # ---------------------------------------------------------------------------
-# FAVORITISMO (no supervisado, señal de priorización)
+# FAVORITISMO (no supervisado, señal de priorización; NO champion productivo)
 # ---------------------------------------------------------------------------
 def features_favoritismo_real(df):
     df = df.copy()
@@ -64,57 +62,16 @@ def score_favoritismo_real(feats):
 
 
 # ---------------------------------------------------------------------------
-# FRACCIONAMIENTO (señal de priorización, no conclusión jurídica)
+# FRACCIONAMIENTO (mismo feature contract que TRAIN/INFERENCE)
 # ---------------------------------------------------------------------------
 def features_fraccionamiento_real(df):
-    df = df.sort_values("fecha_contrato")
-    grupos = df.groupby(["id_proveedor", "id_entidad", "objeto"])
-
-    filas = []
-    for (prov, ent, obj), g in grupos:
-        if len(g) < 2:
-            continue
-        g = g.sort_values("fecha_contrato")
-        max_n_ventana, max_monto_ventana = 1, g["monto"].iloc[0]
-        for i in range(len(g)):
-            fecha_i = g["fecha_contrato"].iloc[i]
-            ventana = g[
-                (g["fecha_contrato"] >= fecha_i)
-                & (g["fecha_contrato"] <= fecha_i + pd.Timedelta(days=15))
-            ]
-            if len(ventana) > max_n_ventana:
-                max_n_ventana = len(ventana)
-                max_monto_ventana = ventana["monto"].sum()
-
-        if "categoria_principal" in g.columns:
-            umbrales_fila = g.apply(
-                lambda r: obtener_umbral(
-                    r["fecha_contrato"],
-                    objeto=obj,
-                    categoria_principal=r.get("categoria_principal"),
-                ),
-                axis=1,
-            )
-        else:
-            umbrales_fila = g["fecha_contrato"].apply(lambda f: obtener_umbral(f, objeto=obj))
-
-        pct_bajo_umbral = (g["monto"] < umbrales_fila * 0.95).mean()
-        filas.append({
-            "id_proveedor": prov,
-            "id_entidad": ent,
-            "objeto": obj,
-            "n_contratos_grupo": len(g),
-            "max_contratos_ventana_15d": max_n_ventana,
-            "monto_total_ventana_15d": max_monto_ventana,
-            "pct_montos_bajo_umbral": pct_bajo_umbral,
-            "monto_total_grupo": g["monto"].sum(),
-        })
-    return pd.DataFrame(filas)
+    """Reutiliza exactamente la semántica canónica de ventana/objeto_familia."""
+    return features_fraccionamiento(df, label_col=None)
 
 
 def aplicar_regla_fraccionamiento(feats):
     feats = feats.copy()
-    feats["cumple_regla_fraccionamiento"] = (
+    feats[SENAL_PRIORIZACION] = (
         (feats["max_contratos_ventana_15d"] >= 3)
         & (feats["pct_montos_bajo_umbral"] >= 0.7)
     )
@@ -174,8 +131,8 @@ def main():
     frac.sort_values("max_contratos_ventana_15d", ascending=False).to_csv(
         "outputs/ranking_riesgo_fraccionamiento_REAL.csv", index=False
     )
-    print(f"\nGrupos proveedor-entidad-objeto con ≥2 contratos: {len(frac):,}")
-    print(f"Grupos priorizados por señal: {int(frac['cumple_regla_fraccionamiento'].sum()):,}")
+    print(f"\nGrupos proveedor-entidad-familia con ≥2 contratos: {len(frac):,}")
+    print(f"Grupos priorizados por señal: {int(frac[SENAL_PRIORIZACION].sum()):,}")
 
     vinculos = vinculos_organizacionales(df)
     vinculos.to_csv("outputs/ranking_vinculos_organizacionales_REAL.csv", index=False)

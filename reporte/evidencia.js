@@ -32,5 +32,9 @@ module.exports = {
   selFav: e.seleccion_favoritismo,
   tuneFav: e.tuning_favoritismo,
   tuneFrac: e.tuning_fraccionamiento,
+  sparkEval: e.evaluacion_champion_spark,
+  sparkFavEval: e.evaluacion_champion_spark.favoritismo,
+  sparkFracEval: e.evaluacion_champion_spark.fraccionamiento,
+  monitorChampion: e.monitoreo_champion,
   p0: e.validacion_datos_publicos,
 };

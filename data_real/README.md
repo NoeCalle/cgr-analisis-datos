@@ -96,6 +96,12 @@ contiene tienen fechas de firma desde 2018 hasta 2024. Por ello
 `src/umbrales_normativos.py` incluye también los topes históricos 2018-2021 y
 falla explícitamente ante un año no parametrizado en vez de aproximarlo.
 
+En fraccionamiento, `src/modelo_real.py` reutiliza el contrato de features
+canónico del pipeline: `objeto_familia`, la misma semántica de ventana de 15
+días y los mismos umbrales normativos. Esto permite probar **portabilidad de las
+features** sobre datos abiertos reales sin presentar esa corrida como una
+validación del champion.
+
 ## Limitaciones documentadas
 
 - OCDS abierto no incluye funcionarios públicos individuales; el análisis real
@@ -103,8 +109,12 @@ falla explícitamente ante un año no parametrizado en vez de aproximarlo.
 - No existen etiquetas reales de favoritismo/fraccionamiento. Los rankings son
   señales estadísticas de priorización y no permiten estimar precisión real ni
   afirmar la existencia de una irregularidad.
+- Precisamente por faltar ground truth, esta prueba **no valida ni recalibra el
+  champion Spark activo**. La validación supervisada/productiva del champion
+  requiere etiquetas, criterios de aceptación y casos revisados por la CGR.
+- El análisis de favoritismo de este anexo continúa siendo una señal no
+  supervisada independiente destinada a probar portabilidad, no el modelo de
+  serving del registry.
 - Los datos de contacto dependen de la completitud publicada por la fuente.
 - La categoría temática `objeto` se deriva de texto libre para EDA; no sustituye
   `categoria_principal` para decidir `works` frente a `goods/services`.
-- La revisión de la competitividad de cada modalidad y la validación ML más
-  rigurosa forman parte de la fase P1 del plan de cierre de brechas.

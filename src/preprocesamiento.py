@@ -1,24 +1,16 @@
 """
 Preprocesamiento y Feature Engineering — Segundo/Quinto Producto del TDR.
 
-Sprint 2:
-- separa explícitamente FIT (solo TRAIN) de TRANSFORM (TRAIN/INFERENCE);
-- el estado aprendido de imputación se puede persistir junto al modelo;
-- las funciones de features aceptan labels opcionales, por lo que el scoring
-  de contratos actuales no necesita ground truth;
-- Contratación Directa y Comparación de Precios permanecen separadas;
-- fraccionamiento mantiene montos reales/imputados para comparaciones normativas.
+La ruta operacional separa explícitamente FIT (solo TRAIN) de TRANSFORM
+(TRAIN/INFERENCE), congela estadísticas aprendidas y mantiene Contratación
+Directa y Comparación de Precios como variables distintas.
 
-Sprint 4 hace consumible el tratamiento P99 en favoritismo: la función acepta
-``monto_col``. La reconstrucción legacy mantiene ``monto`` para reproducir RC1;
-TRAIN/INFERENCE modernos usan ``monto_capped``. Fraccionamiento continúa usando
-monto sin capar porque compara cuantías contra umbrales normativos.
+Favoritismo operacional usa ``monto_capped`` (P99 aprendido únicamente en
+TRAIN). Fraccionamiento conserva el monto sin capar porque compara cuantías con
+umbrales normativos.
 
-La función `limpiar_e_imputar` conserva deliberadamente la semántica histórica
-usada para reconstruir las métricas del RC1. Esa ruta presentaba un efecto de
-`groupby(..., dropna=True)`: cuando `objeto` era nulo, el `transform` reemplazaba
-incluso montos válidos por NaN antes de la mediana global. El nuevo contrato
-TRAIN/INFERENCE NO replica ese defecto; un monto válido siempre se conserva.
+La ruta ``limpiar_e_imputar`` se conserva exclusivamente para reproducibilidad
+histórica. Los flujos TRAIN/INFERENCE nuevos usan el contrato corregido.
 """
 
 from __future__ import annotations
@@ -27,6 +19,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
+from core.objeto_similarity import firma_objeto
 from umbrales_normativos import obtener_umbral
 
 PREPROCESSOR_SCHEMA_VERSION = 1
@@ -107,11 +100,7 @@ def preparar_para_features_inferencia(df: pd.DataFrame, estado: dict) -> pd.Data
 
 
 def limpiar_e_imputar(df):
-    """Reconstrucción legacy exacta del benchmark anterior a Sprint 2.
-
-    Se mantiene aislada para que `reproducibilidad_poc_1_8_2` pueda regenerar
-    métricas históricas. No debe utilizarse en TRAIN ni en INFERENCE nuevos.
-    """
+    """Reconstrucción legacy exacta del benchmark anterior al TRAIN explícito."""
     out = df.copy()
     n_antes = int(out.isnull().sum().sum())
 
@@ -176,49 +165,77 @@ def features_favoritismo(
     return feats.drop(columns=["fecha_min", "fecha_max"])
 
 
+def _seleccionar_ventana_15d_pandas(g: pd.DataFrame) -> tuple[int, float]:
+    """Elige una sola ventana: máximo número de contratos, empate por inicio más temprano."""
+    g = g.sort_values(["fecha_contrato", "id_contrato"], kind="mergesort")
+    mejor_n = 1
+    mejor_monto = float(g.iloc[0]["monto"])
+    for fecha_i in g["fecha_contrato"]:
+        ventana = g[
+            (g["fecha_contrato"] >= fecha_i)
+            & (g["fecha_contrato"] <= fecha_i + pd.Timedelta(days=15))
+        ]
+        n = int(len(ventana))
+        if n > mejor_n:
+            mejor_n = n
+            mejor_monto = float(ventana["monto"].sum())
+    return mejor_n, mejor_monto
+
+
 def features_fraccionamiento(
     df: pd.DataFrame,
     label_col: str | None = "es_fraccionamiento_real",
     output_label: str | None = None,
 ) -> pd.DataFrame:
-    df = df.sort_values("fecha_contrato")
+    """Construye grupos proveedor-entidad-familia de objeto y ventanas coherentes.
+
+    ``objeto_familia`` es una firma lexical conservadora. Permite que variantes
+    menores/sinónimos controlados se analicen juntas sin ocultar el texto
+    representativo original. La ventana reporta monto y cantidad del MISMO
+    intervalo de 15 días.
+    """
+    base = df.copy()
+    if "categoria_principal" in base.columns:
+        categorias = base["categoria_principal"]
+    else:
+        categorias = pd.Series([None] * len(base), index=base.index)
+    base["objeto_familia"] = [
+        firma_objeto(obj, cat) for obj, cat in zip(base["objeto"], categorias)
+    ]
+    base = base.sort_values(["fecha_contrato", "id_contrato"], kind="mergesort")
+
     filas = []
-    for (prov, ent, obj), g in df.groupby(["id_proveedor", "id_entidad", "objeto"]):
+    for (prov, ent, familia), g in base.groupby(
+        ["id_proveedor", "id_entidad", "objeto_familia"], dropna=False
+    ):
         if len(g) < 2:
             continue
-        g = g.sort_values("fecha_contrato")
+        g = g.sort_values(["fecha_contrato", "id_contrato"], kind="mergesort")
+        max_n_ventana, max_monto_ventana = _seleccionar_ventana_15d_pandas(g)
         fechas = g["fecha_contrato"].tolist()
         montos = g["monto"].to_numpy()
-        max_n_ventana, max_monto_ventana = 1, montos[0]
-        for fecha_i in fechas:
-            ventana = g[
-                (g["fecha_contrato"] >= fecha_i)
-                & (g["fecha_contrato"] <= fecha_i + pd.Timedelta(days=15))
-            ]
-            if len(ventana) > max_n_ventana:
-                max_n_ventana = len(ventana)
-                max_monto_ventana = ventana["monto"].sum()
-
-        categorias = (
+        categorias_g = (
             g["categoria_principal"].tolist()
             if "categoria_principal" in g.columns
             else [None] * len(g)
         )
+        objeto_representativo = str(g["objeto"].mode().iloc[0]) if not g["objeto"].mode().empty else str(g.iloc[0]["objeto"])
         umbrales = np.array([
-            obtener_umbral(f, objeto=obj, categoria_principal=c)
-            for f, c in zip(fechas, categorias)
+            obtener_umbral(f, objeto=o, categoria_principal=c)
+            for f, o, c in zip(fechas, g["objeto"].tolist(), categorias_g)
         ])
-        pct_bajo_umbral = (montos < umbrales * 0.95).mean()
+        pct_bajo_umbral = float((montos < umbrales * 0.95).mean())
 
         fila = {
             "id_proveedor": prov,
             "id_entidad": ent,
-            "objeto": obj,
-            "n_contratos_grupo": len(g),
-            "max_contratos_ventana_15d": max_n_ventana,
-            "monto_total_ventana_15d": max_monto_ventana,
+            "objeto": objeto_representativo,
+            "objeto_familia": familia,
+            "n_contratos_grupo": int(len(g)),
+            "max_contratos_ventana_15d": int(max_n_ventana),
+            "monto_total_ventana_15d": float(max_monto_ventana),
             "pct_montos_bajo_umbral": pct_bajo_umbral,
-            "monto_total_grupo": montos.sum(),
+            "monto_total_grupo": float(montos.sum()),
         }
         if label_col is not None:
             if label_col not in g.columns:
@@ -236,8 +253,8 @@ def _moda_o_error(series: pd.Series, campo: str):
 
 
 def main():
-    # Reproduce los artefactos y métricas legacy del PoC. Los flujos nuevos usan
-    # `preparar_para_features_entrenamiento/inferencia` y no esta ruta.
+    # Reproduce artefactos legacy para trazabilidad histórica; TRAIN/INFERENCE
+    # modernos usan las funciones FIT/TRANSFORM anteriores.
     df = codificar_y_normalizar(limpiar_e_imputar(cargar()))
     df.to_csv("data/contratos_procesados.csv", index=False)
     fav = features_favoritismo(
