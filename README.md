@@ -3,13 +3,13 @@
 > **Prototipo público e independiente basado en el TDR del Proyecto Interno 1.8.2.**  
 > Este repositorio no constituye una implementación oficial, no utiliza accesos internos de la Contraloría General de la República (CGR) y no implica aprobación institucional.
 
-El proyecto implementa una arquitectura reproducible para **integrar datos de contratación, generar señales analíticas de riesgo y priorizar casos para revisión humana**. Incluye análisis de posible favoritismo y fraccionamiento, vínculos proveedor–funcionario, pagos y modalidades de contratación, Spark MLlib, GraphFrames, Airflow, capas Bronce/Plata/Oro, trazabilidad, reporting SSRS y ciclo TRAIN/INFERENCE con promoción explícita de modelos.
+Este proyecto implementa una arquitectura reproducible para **integrar datos de contratación, generar señales analíticas de riesgo y priorizar casos para revisión humana**. Incluye análisis de posible favoritismo y fraccionamiento, vínculos proveedor–funcionario, pagos y modalidades de contratación, Apache Spark MLlib, GraphFrames, Airflow, capas Bronce/Plata/Oro, trazabilidad, reporting SQL Server/SSRS y un ciclo operacional TRAIN/INFERENCE con promoción explícita de modelos.
 
 Las salidas son **señales de priorización**. No constituyen hallazgos de control, imputaciones, decisiones jurídicas ni determinaciones automáticas de irregularidad.
 
 ## Estado del proyecto
 
-La rama `main` contiene el PoC endurecido para facilitar una futura integración institucional. La auditoría integral del TDR público registra actualmente:
+La rama `main` contiene el PoC endurecido para facilitar una futura integración institucional. La auditoría integral del TDR público registra:
 
 | Estado | Criterios | Interpretación |
 |---|---:|---|
@@ -20,29 +20,28 @@ La rama `main` contiene el PoC endurecido para facilitar una futura integración
 
 El checklist específico del Anexo 3 se mantiene en **6 ✅ / 4 🟡 / 1 🔵 / 0 🔴**.
 
-`0 🔴` describe el resultado de esa auditoría y **no significa “cero trabajo de endurecimiento productivo”**. En particular, la integración `spark_sql` pública todavía materializa el contrato canónico en pandas antes del procesamiento MLlib; para volúmenes institucionales masivos debe validarse o sustituirse esa frontera por una ruta Spark-native. El detalle está en [`docs/Integracion_Datos.md`](docs/Integracion_Datos.md).
+`0 🔴` no equivale a certificación productiva. El cierre institucional todavía requiere fuentes reales, ground truth, clúster, seguridad, DEV/QA/PROD, SQL Server/SSRS, usuarios y conformidad CGR. La diferencia es que la ruta `spark_sql` ya conserva un **Spark DataFrame de extremo a extremo** desde la tabla/vista hasta MLlib y la salida distribuida, sin `toPandas()` intermedio.
 
-La versión `v1.0.0-rc.1` permanece como snapshot histórico e inmutable del release candidate original. `main` incorpora mejoras posteriores de integración institucional, separación TRAIN/INFERENCE, serving Spark MLlib, análisis de pagos y auditoría integral del TDR.
+La versión `v1.0.0-rc.1` permanece como snapshot histórico e inmutable del primer release candidate. `main` incorpora mejoras posteriores de integración institucional, separación TRAIN/INFERENCE, serving Spark MLlib, pagos, auditoría integral del TDR y ejecución Spark-native.
 
-## Qué hace la herramienta
+## Capacidades principales
 
 | Componente | Función |
 |---|---|
 | Integración canónica | Desacopla tablas/columnas físicas mediante conectores y mappings YAML |
-| Calidad y preprocesamiento | Valida esquema, trata nulos/outliers y congela el estado de preprocesamiento usado en serving |
-| Favoritismo | Prioriza pares proveedor–entidad mediante benchmark metodológico y champion Spark MLlib |
-| Fraccionamiento | Combina detección no supervisada, KMeans MLlib y una señal interpretable temporal/cuantitativa |
+| Spark-native | `spark_sql` mantiene DataFrames Spark en mapping, validación, preprocesamiento, TRAIN e INFERENCE |
+| Calidad y preprocesamiento | Valida esquema, trata nulos/outliers y congela el estado usado en serving |
+| Favoritismo | Prioriza pares proveedor–entidad con benchmark metodológico y champion Spark MLlib |
+| Fraccionamiento | Combina KMeans MLlib, distancia al centroide y señal interpretable temporal/cuantiativa |
 | Grafos | Analiza vínculos proveedor–funcionario con NetworkX/GraphFrames |
 | Pagos y modalidades | Resume ejecución de pagos, ratios, demoras y contexto de modalidades por régimen |
 | MLOps | Separa TRAIN, candidate, promoción explícita, champion e INFERENCE sin reentrenamiento |
-| Orquestación | DAGs independientes para reproducibilidad, TRAIN, INFERENCE y monitoreo |
-| Reporting | Publica salidas Oro y mantiene contrato T-SQL/RDL para SQL Server/SSRS |
+| Orquestación | DAGs separados para reproducibilidad, TRAIN, INFERENCE y monitoreo |
+| Reporting | Mantiene contrato T-SQL/RDL para SQL Server/SSRS |
 | Trazabilidad | Diccionario, diagrama, linaje, hashes, registry y `run_manifest.json` |
 | Documentación | Genera Productos 1–7 e Informe Final desde evidencia machine-readable |
 
-## Arquitectura
-
-### Ruta operacional
+## Arquitectura operacional
 
 ```text
 Fuentes institucionales
@@ -73,9 +72,11 @@ candidate --------> scores de priorización
       +----------> Oro / SQL Server / SSRS
 ```
 
-**INFERENCE no consume labels, no hace `.fit()`, no ejecuta tuning y no reentrena.** La promoción de un candidate es una operación separada y debe quedar detrás del gate de aprobación definido por la institución.
+Para `source.type: spark_sql`, la ruta es distribuida desde `SparkSession.table(...)` hasta MLlib y la escritura Parquet de rankings. Para `local_csv` y `sqlserver` se conserva un adaptador pandas→Spark por compatibilidad y simplicidad de integración.
 
-### Ruta de reproducibilidad del PoC
+**INFERENCE no consume labels, no hace `.fit()`, no ejecuta tuning y no reentrena.** La promoción de un candidate es una operación separada y debe quedar detrás del gate de aprobación que defina la institución.
+
+## Ruta de reproducibilidad del PoC
 
 ```text
 datos sintéticos / datos públicos agregados
@@ -96,11 +97,11 @@ datos sintéticos / datos públicos agregados
        documentación formal
 ```
 
-Esta ruta reconstruye la evidencia del PoC. No debe confundirse con la ruta operacional para contratos actuales.
+Esta ruta reconstruye la evidencia histórica del PoC y conserva decisiones legacy necesarias para reproducibilidad. No debe confundirse con el serving operacional.
 
 ## Contrato de datos
 
-Los modelos dependen de **nombres canónicos**, no de nombres físicos de SIAF, SEACE, Datamart u otra fuente. El mapping siempre usa la dirección:
+Los modelos dependen de **nombres canónicos**, no de nombres físicos de SIAF, SEACE, Datamart u otra fuente. El mapping usa:
 
 ```yaml
 campo_canonico: COLUMNA_FISICA
@@ -114,7 +115,7 @@ Dominios soportados:
 - `officials`
 - `payments`
 
-Campos mínimos de `contracts` en INFERENCE:
+Campos obligatorios de `contracts` en INFERENCE:
 
 ```text
 id_contrato
@@ -124,18 +125,19 @@ monto
 fecha_contrato
 modalidad
 objeto
+categoria_principal
 ```
 
-TRAIN añade obligatoriamente:
+TRAIN añade:
 
 ```text
 label_favoritismo
 label_fraccionamiento
 ```
 
-Los campos físicos reales se configuran en YAML. No es necesario editar el código de los modelos para cambiar nombres de tablas o columnas compatibles con el contrato canónico.
+`categoria_principal` debe existir porque fraccionamiento la utiliza para resolver el contexto normativo; puede venir nula y utilizar el fallback definido por el proveedor de umbrales.
 
-Referencia completa: [`docs/Integracion_Datos.md`](docs/Integracion_Datos.md).
+Referencia técnica: [`docs/Integracion_Datos.md`](docs/Integracion_Datos.md).
 
 ## Inicio rápido local
 
@@ -144,9 +146,9 @@ Referencia completa: [`docs/Integracion_Datos.md`](docs/Integracion_Datos.md).
 - Python 3.12 recomendado;
 - Java 17 para Spark;
 - Graphviz para artefactos gráficos;
-- LibreOffice solo si se desea regenerar/materializar los DOCX formales;
-- Airflow solo para ejecutar los DAGs;
-- `pyodbc` + driver ODBC institucional únicamente si se usa SQL Server.
+- LibreOffice solo para regenerar/materializar los DOCX formales;
+- Airflow solo si se ejecutarán los DAGs;
+- `pyodbc` + driver ODBC únicamente para SQL Server.
 
 ### Instalación
 
@@ -159,15 +161,15 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 ```
 
-En Windows, sustituir `.venv/bin/python` y `.venv/bin/pip` por los ejecutables equivalentes de `.venv\Scripts\`.
+En Windows, usar los ejecutables equivalentes de `.venv\Scripts\`.
 
-### Verificar el repositorio
+### Pruebas
 
 ```bash
 .venv/bin/pytest -q
 ```
 
-### Validar el contrato de integración sin conectarse
+### Validar una configuración sin conectarse
 
 ```bash
 .venv/bin/python src/ingestar_canonico.py \
@@ -175,7 +177,7 @@ En Windows, sustituir `.venv/bin/python` y `.venv/bin/pip` por los ejecutables e
   --validate-only
 ```
 
-### Ejecutar INFERENCE local con el champion Spark del PoC
+### INFERENCE local con champion Spark
 
 ```bash
 .venv/bin/python src/spark/score_inference_spark.py \
@@ -183,40 +185,58 @@ En Windows, sustituir `.venv/bin/python` y `.venv/bin/pip` por los ejecutables e
   --registry outputs/model_registry.json
 ```
 
-La evidencia agregada del smoke vigente confirma que la ruta Spark puntúa contratos sin consumir labels, training ni tuning.
-
-### Analizar pagos y modalidades con datos sintéticos
+### Pagos y modalidades
 
 ```bash
 .venv/bin/python src/analisis_pagos_modalidades.py \
   --config config/local-tdr.yaml
 ```
 
-Los resultados se generan en `outputs/analisis_pagos_modalidades.json`, `outputs/resumen_pagos_contrato.csv`, `outputs/resumen_modalidades_regimen.csv` y gráficos asociados.
-
 ## Integración institucional
 
-La adaptación principal prevista es **configuración + infraestructura**, no una reescritura del ML. Si el volumen institucional excede lo que puede materializarse de forma segura en el driver, también debe endurecerse la frontera de ingesta a Spark-native antes de producción.
+La adaptación principal prevista es **configuración + infraestructura**, no una reescritura del ML:
 
-Secuencia de aterrizaje:
-
-1. llevar el código a un repositorio institucional privado;
-2. aprobar las vistas/tablas que alimentarán cada dominio canónico;
-3. copiar `config/cgr.example.yaml` a un archivo institucional no versionado;
-4. mapear columnas físicas a campos canónicos;
-5. inyectar credenciales mediante variables de entorno/gestor de secretos;
-6. validar configuración y calidad en DEV;
-7. medir volumen/memoria y decidir si la frontera de ingesta requiere adaptación Spark-native;
-8. preparar dataset histórico con ground truth para TRAIN;
-9. entrenar candidate Spark, evaluar y promover solo mediante aprobación autorizada;
+1. migrar el código a un repositorio institucional privado;
+2. aprobar tablas/vistas y diccionario de datos;
+3. copiar `config/cgr.example.yaml` a configuración privada;
+4. mapear columnas físicas al esquema canónico;
+5. inyectar secretos mediante el mecanismo institucional;
+6. validar en DEV;
+7. preparar ground truth histórico para TRAIN;
+8. entrenar candidate Spark;
+9. evaluar y promover mediante aprobación autorizada;
 10. ejecutar INFERENCE sobre contratos actuales;
-11. conectar las salidas aprobadas a SQL Server/SSRS y operar en QA/PROD.
+11. publicar salidas aprobadas en el almacenamiento/SQL Server/SSRS institucional;
+12. validar QA/PROD, monitoreo, rollback y operación.
 
-El procedimiento detallado, responsabilidades, gates, escala, rollback y checklist de cierre están en:
+Manual completo: **[`docs/Manual_Aterrizaje_Institucional_CGR.md`](docs/Manual_Aterrizaje_Institucional_CGR.md)**.
 
-**[`docs/Manual_Aterrizaje_Institucional_CGR.md`](docs/Manual_Aterrizaje_Institucional_CGR.md)**
+La plantilla `config/cgr.example.yaml` contiene placeholders; **no representa nombres reales de tablas, vistas o columnas de la CGR**.
 
-La plantilla `config/cgr.example.yaml` contiene únicamente placeholders. **No representa nombres reales de tablas, vistas o columnas de la CGR.**
+## Spark operacional y escala
+
+TRAIN e INFERENCE aceptan:
+
+```bash
+export CGR_SPARK_MASTER='<master Spark aprobado>'
+export CGR_SPARK_SHUFFLE_PARTITIONS='<n>'  # opcional
+```
+
+Si `CGR_SPARK_MASTER` no existe, el PoC usa `local[*]` como fallback local. La ruta histórica mantiene `local[*]` deliberadamente para reproducibilidad.
+
+Con `source.type: spark_sql`:
+
+```text
+Spark SQL
+  -> mapping canónico Spark
+  -> validación/casteo Spark
+  -> FIT/TRANSFORM Spark
+  -> feature engineering Spark
+  -> MLlib
+  -> Parquet distribuido
+```
+
+Las medianas por objeto aprendidas durante TRAIN se almacenan como un artefacto Parquet Spark cuando la fuente es distribuida; INFERENCE vuelve a cargarlas sin colectar la dimensión completa al driver.
 
 ## TRAIN, candidate, promoción e INFERENCE
 
@@ -238,7 +258,7 @@ TRAIN genera un **candidate** y no reemplaza el champion.
   --acknowledge-poc-only
 ```
 
-Este comando solo representa promoción técnica dentro del PoC. En una implantación real debe quedar subordinado al proceso institucional de aprobación, segregación de funciones y registry/MLOps que defina la CGR.
+Este comando representa solo promoción técnica dentro del PoC. En una implantación real debe quedar subordinado a la segregación de funciones y al MLOps institucional.
 
 ### INFERENCE Spark
 
@@ -248,22 +268,11 @@ Este comando solo representa promoción técnica dentro del PoC. En una implanta
   --registry outputs/model_registry.json
 ```
 
-El perfil activo del PoC es `spark_mllib`. El perfil sklearn se conserva para benchmark, compatibilidad y regresión.
-
-TRAIN/INFERENCE aceptan un master operacional mediante:
-
-```bash
-export CGR_SPARK_MASTER='<master Spark>'
-export CGR_SPARK_SHUFFLE_PARTITIONS='<n>'  # opcional
-```
-
-Sin `CGR_SPARK_MASTER`, el PoC usa `local[*]` como fallback local. El manifest/resumen registra el master efectivo de `spark.sparkContext.master`.
+El perfil activo del PoC es `spark_mllib`; sklearn permanece como benchmark/compatibilidad.
 
 Más detalle: [`docs/Train_Inference.md`](docs/Train_Inference.md).
 
 ## Airflow
-
-El proyecto mantiene cuatro DAGs con responsabilidades separadas:
 
 | DAG | Propósito |
 |---|---|
@@ -272,7 +281,7 @@ El proyecto mantiene cuatro DAGs con responsabilidades separadas:
 | `inferencia_modelos_1_8_2` | puntuar con champion Spark sin reentrenar |
 | `monitoreo_reentrenamiento_1_8_2` | controles de monitoreo/autoevaluación |
 
-Variables de entorno principales para integración:
+Variables principales:
 
 ```text
 PROYECTO_DIR
@@ -284,8 +293,6 @@ CGR_INFERENCE_OUTPUT_DIR
 CGR_SPARK_MASTER
 CGR_SPARK_SHUFFLE_PARTITIONS
 ```
-
-Airflow debe ejecutarse en su entorno propio; las tareas ML usan el Python del proyecto indicado por `CGR_PROJECT_PYTHON`.
 
 ## Salidas y evidencia
 
@@ -299,123 +306,105 @@ Airflow debe ejecutarse en su entorno propio; las tareas ML usan el Python del p
 | `data/diccionario_datos.csv` | diccionario de datos |
 | `outputs/run_manifest.json` | commit, versiones, hashes, parámetros y artefactos |
 | `outputs/analisis_pagos_modalidades.json` | resumen machine-readable de pagos/modalidades |
-| `ssrs/` | DDL T-SQL y dos RDL de reporting |
+| `ssrs/` | DDL T-SQL y RDL de reporting |
 | `reporte/` | Productos 1–7 e Informe Final |
 
-Los rankings o derivados identificables de fuentes reales no deben publicarse en este repositorio público.
+Para `spark_sql`, los rankings operacionales detallados se escriben como **Parquet distribuido**. Los derivados identificables de fuentes reales no deben publicarse en este repositorio público.
 
 ## Seguridad y gobernanza
 
-- La configuración rechaza secrets inline como `password`, `token`, `secret`, `api_key` o `connection_string`.
-- SQL Server utiliza una referencia `connection_env`; la cadena real vive fuera del YAML.
-- `config/cgr.yaml` y archivos locales equivalentes están excluidos de Git.
-- El conector SQL Server proyecta identificadores configurados y no acepta SQL libre desde el YAML.
-- Para consultas institucionales complejas se recomienda exponer **vistas aprobadas** y mapearlas al contrato canónico.
-- Los datos reales, PII, candidates y salidas operacionales deben permanecer en almacenamiento/repositorios institucionales con controles de acceso.
-- La promoción de modelos no es automática.
-- Toda señal requiere revisión humana y contexto jurídico/técnico antes de cualquier actuación de control.
+- secretos fuera de YAML y Git;
+- `connection_env` para SQL Server;
+- proyección de identificadores configurados, sin SQL libre desde YAML;
+- vistas institucionales aprobadas para joins/reglas complejas;
+- datos reales y PII únicamente en almacenamiento institucional autorizado;
+- promotion gate separado de TRAIN;
+- revisión humana obligatoria de señales;
+- segregación de permisos entre TRAIN, aprobación y PROD.
 
-## Calidad, pruebas y CI
+## Calidad y CI
 
-GitHub Actions ejecuta una cadena end-to-end que incluye:
+GitHub Actions valida, entre otros:
 
-- pruebas de regresión;
-- generación sintética;
-- análisis de pagos/modalidades;
-- benchmark sklearn;
-- Spark MLlib y GraphFrames;
+- regresiones y reproducibilidad legacy;
+- integración canónica pandas y Spark-native;
+- prohibición de `.toPandas()` en `spark_sql`, TRAIN e INFERENCE;
+- mapping/casteo Spark con nombres físicos arbitrarios;
+- FIT distribuido del preprocesador y medianas Parquet;
 - TRAIN candidate aislado;
-- promoción técnica controlada para el smoke;
-- INFERENCE sin labels/reentrenamiento;
-- verificación del contrato de Spark operacional configurable;
-- Oro, linaje, diccionario y manifiesto;
-- generación y QA de los ocho DOCX;
-- auditoría del Anexo 3;
-- auditoría integral del TDR.
-
-Los resultados de auditoría se materializan en `outputs/` y `docs/` y no equivalen a conformidad institucional.
+- promoción explícita y serving Spark;
+- INFERENCE sin labels/training/tuning;
+- escritura Parquet distribuida para `spark_sql`;
+- Spark MLlib, GraphFrames, Oro y trazabilidad;
+- generación, render y QA de los ocho DOCX;
+- auditoría del Anexo 3 y auditoría integral del TDR.
 
 ## Desarrollo y contribuciones
 
-Para mantener reproducibilidad y trazabilidad, cualquier cambio funcional debería:
+Todo cambio funcional debería:
 
-1. evitar incluir datos reales, PII o secretos en Git;
-2. añadir/actualizar pruebas cuando cambie un contrato de datos o comportamiento;
-3. ejecutar `pytest -q` antes de integrar;
+1. evitar datos reales, PII y secretos en Git;
+2. añadir/actualizar pruebas cuando cambie un contrato;
+3. ejecutar `pytest -q`;
 4. mantener separados TRAIN, promoción e INFERENCE;
-5. actualizar documentación, diccionario/linaje o configuración de ejemplo cuando cambie una interfaz pública;
-6. dejar que CI regenere y audite la evidencia derivada en lugar de editar outputs canónicos manualmente.
+5. preservar la ruta Spark-native sin collect implícito;
+6. actualizar documentación, diccionario y linaje cuando cambien interfaces;
+7. dejar que CI regenere evidencia derivada.
 
-Para una adopción institucional se recomienda trabajar mediante ramas/PR y proteger `main` con los checks de CI que defina la CGR.
+Para adopción institucional se recomienda trabajar con ramas/PR y proteger `main` con checks obligatorios.
 
 <!-- RELEASE-CANDIDATE-START -->
 ## Release candidate histórico
 
-Versión declarada del snapshot del PoC independiente: **`v1.0.0-rc.1`**.
+Versión declarada del snapshot original del PoC independiente: **`v1.0.0-rc.1`**.
 
-Este bloque conserva la trazabilidad del release candidate histórico. El estado funcional vigente de la herramienta se documenta en las secciones superiores de este README y puede incluir mejoras posteriores al tag.
+El tag conserva la evidencia del primer release candidate y no se mueve con las mejoras posteriores de `main`. No representa aprobación ni despliegue institucional de la CGR.
 
-Evidencia de cierre del snapshot:
+Evidencia de ese snapshot:
 
-- `RELEASE_NOTES.md` — alcance congelado y límites de la versión;
-- `docs/Checklist_Anexo_03.md` — 11 criterios del Anexo 3;
-- `docs/Dependencias_Institucionales_CGR.md` — fuente única `CGR-DEP-01..08` de pendientes que requieren CGR;
-- `docs/Auditoria_Final_Release.md` — gate de coherencia previo al tag;
-- `outputs/auditoria_release.json` — resultado machine-readable del gate.
-
-El tag histórico no representa aprobación ni despliegue institucional de la CGR.
+- `RELEASE_NOTES.md`;
+- `docs/Checklist_Anexo_03.md`;
+- `docs/Dependencias_Institucionales_CGR.md`;
+- `docs/Auditoria_Final_Release.md`;
+- `outputs/auditoria_release.json`.
 <!-- RELEASE-CANDIDATE-END -->
 
 ## Documentación
 
 | Documento | Uso |
 |---|---|
-| [`docs/Manual_Aterrizaje_Institucional_CGR.md`](docs/Manual_Aterrizaje_Institucional_CGR.md) | guía principal para adaptar el repo a infraestructura CGR |
-| [`docs/Integracion_Datos.md`](docs/Integracion_Datos.md) | contrato canónico, conectores, mappings y límite de escala de ingesta |
-| [`docs/Train_Inference.md`](docs/Train_Inference.md) | lifecycle de modelos y serving |
-| [`docs/Dependencias_Institucionales_CGR.md`](docs/Dependencias_Institucionales_CGR.md) | pendientes que solo puede cerrar la institución |
-| [`docs/Checklist_Anexo_03.md`](docs/Checklist_Anexo_03.md) | auditoría de los 11 criterios del Anexo 3 |
-| [`docs/Auditoria_TDR_Completo.md`](docs/Auditoria_TDR_Completo.md) | lectura integral del TDR público |
-| [`docs/Auditoria_Final_Release.md`](docs/Auditoria_Final_Release.md) | gate técnico del release candidate |
-| [`RELEASE_NOTES.md`](RELEASE_NOTES.md) | alcance del snapshot release candidate |
-
-La documentación contractual generada está en `reporte/productos_formales/` y `reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx`.
+| [`docs/Manual_Aterrizaje_Institucional_CGR.md`](docs/Manual_Aterrizaje_Institucional_CGR.md) | guía de integración institucional |
+| [`docs/Integracion_Datos.md`](docs/Integracion_Datos.md) | esquema canónico y conectores |
+| [`docs/Train_Inference.md`](docs/Train_Inference.md) | ciclo de modelos y serving |
+| [`docs/Dependencias_Institucionales_CGR.md`](docs/Dependencias_Institucionales_CGR.md) | pendientes institucionales |
+| [`docs/Checklist_Anexo_03.md`](docs/Checklist_Anexo_03.md) | auditoría Anexo 3 |
+| [`docs/Auditoria_TDR_Completo.md`](docs/Auditoria_TDR_Completo.md) | auditoría integral del TDR |
+| [`docs/Auditoria_Final_Release.md`](docs/Auditoria_Final_Release.md) | gate técnico del RC histórico |
+| [`RELEASE_NOTES.md`](RELEASE_NOTES.md) | alcance de `v1.0.0-rc.1` |
 
 ## Estructura del repositorio
 
 ```text
-config/                    configuración de integración y perfiles locales
-src/                       pipeline Python, conectores, validación, modelos y MLOps
-src/connectors/            local_csv, SQL Server y Spark SQL
-src/core/                  esquema canónico y validación de configuración
-src/spark/                 MLlib, serving, GraphFrames y utilidades Spark
-airflow_home/dags/         reproducibilidad, TRAIN, INFERENCE y monitoreo
-lakehouse/                 capas Bronce / Plata / Oro del PoC
-ssrs/                      DDL T-SQL + RDL
-reporte/                   generación y documentos formales
-docs/                      manuales, auditorías y dependencias
-outputs/                   evidencia reproducible y registry
-tests/                     regresiones y contratos automatizados
-.github/workflows/         CI, auditorías y release gates
+config/                    perfiles y plantillas de integración
+src/                       pipeline, conectores, modelos y auditorías
+airflow_home/dags/          orquestación
+lakehouse/                  Bronce/Plata/Oro reproducible
+outputs/                    evidencia, registry, métricas y linaje
+ssrs/                       contrato SQL Server/SSRS
+reporte/                    generadores y documentos formales
+tests/                      regresiones funcionales y arquitectónicas
+docs/                       documentación técnica y auditorías
 ```
 
-## Límites del PoC
+## Limitaciones
 
-El repositorio no puede sustituir ni simular como completadas las siguientes responsabilidades institucionales:
-
-- accesos y diccionarios reales SIAF/SEACE/Datamart;
-- ground truth validado por auditores;
-- umbrales productivos de aceptación;
-- HDFS/YARN/clúster Spark y ambientes DEV/QA/PROD CGR;
-- identidad, secretos, Git y segregación de funciones institucional;
-- despliegue real SQL Server/SSRS;
-- certificación, marcha blanca e incidencias reales;
-- transferencia y entrega contractual.
-
-Además, la versión pública tiene una limitación técnica explícita: **`spark_sql` materializa actualmente el contrato canónico en pandas antes de que TRAIN/INFERENCE lo conviertan nuevamente a Spark**. El procesamiento de modelos es MLlib, pero la ingesta no debe presentarse como distribuida end-to-end hasta reemplazar o validar esa frontera para el volumen institucional objetivo.
-
-Estas dependencias y gates se detallan en [`docs/Dependencias_Institucionales_CGR.md`](docs/Dependencias_Institucionales_CGR.md) y en el [`Manual de Aterrizaje Institucional`](docs/Manual_Aterrizaje_Institucional_CGR.md).
+- No contiene datos internos ni credenciales CGR.
+- El ground truth del benchmark es sintético; las métricas no estiman desempeño productivo.
+- La ruta Spark-native está implementada para `spark_sql`, pero su rendimiento real debe probarse en el clúster, catálogo, permisos y volumen institucionales.
+- CSV/SQL Server mantienen un adaptador pandas→Spark; esto es deliberado y no se presenta como procesamiento distribuido.
+- SQL Server/SSRS real, DEV/QA/PROD, certificación, marcha blanca y transferencia requieren CGR.
+- Las señales no reemplazan juicio profesional ni revisión jurídica/técnica.
 
 ## Licencia
 
-El código del repositorio se distribuye bajo licencia [MIT](LICENSE). Los datos públicos externos mantienen sus condiciones/licencias de origen. Una eventual implantación contractual debe revisar propiedad intelectual, confidencialidad, activos previos y obligaciones de entrega conforme al marco institucional aplicable.
+MIT. Ver [`LICENSE`](LICENSE).
