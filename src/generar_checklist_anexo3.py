@@ -106,7 +106,7 @@ def construir():
             "Despliegue, autenticación y MLOps: código versionado en Git institucional",
             "Infraestructura",
             "🔵",
-            [".github/workflows/tests.yml", "airflow_home/dags/modulo_analisis_datos_1_8_2.py", "outputs/run_manifest.json"],
+            [".github/workflows/tests.yml", "airflow_home/dags/dag_modulo_analisis_datos.py", "outputs/run_manifest.json"],
             "El PoC demuestra CI/MLOps local; el cierre literal requiere CGR-DEP-04 y CGR-DEP-06.",
             deps("CGR-DEP-04", "CGR-DEP-06"),
             True,
