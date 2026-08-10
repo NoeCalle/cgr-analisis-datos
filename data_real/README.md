@@ -1,9 +1,11 @@
 # Datos reales de SEACE (OCDS)
 
 Este pipeline corresponde al Anexo A del reporte técnico y a la Sección 10
-del Producto 7 (Informe Final) — una prueba adicional fuera del alcance
-formal del TDR (que usa datos sintéticos), incluida para observar cómo se
-comporta la metodología sobre datos verdaderos.
+del Producto 7 (Informe Final). Es una prueba adicional del PoC público sobre
+datos abiertos reales para observar cómo se comporta la metodología fuera del
+benchmark sintético usado para reproducibilidad. El TDR de referencia no exige
+datos sintéticos: prevé integración de fuentes reales SIAF/SEACE dentro del
+entorno institucional CGR, cuyo acceso no está disponible en este repositorio.
 
 ## Estado de integridad — regenerado 2026-08-07
 
