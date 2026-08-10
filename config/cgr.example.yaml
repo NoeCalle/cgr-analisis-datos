@@ -2,6 +2,12 @@
 # Copiar fuera del repositorio como config/cgr.yaml y reemplazar tablas/columnas
 # por las aprobadas institucionalmente. Las credenciales solo se referencian
 # mediante variables de entorno.
+#
+# Este perfil usa el adaptador SQL Server -> pandas y es apropiado para
+# validación/volúmenes acotados. Para grandes volúmenes, la ruta preferida es
+# spark_sql sobre tablas/vistas accesibles por Spark; un Spark JDBC específico
+# debe definirse recién con driver, particionamiento y estándares CGR reales.
+contract_schema_version: 1
 mode: inference
 
 source:

@@ -1,6 +1,7 @@
 # TRAIN reproducible del PoC. Esta configuración sí incluye ground truth sintético.
 # En una adaptación institucional, los labels deben provenir únicamente de una
 # fuente histórica aprobada; nunca se derivan del mismo modelo que se entrena.
+contract_schema_version: 1
 mode: training
 
 source:
