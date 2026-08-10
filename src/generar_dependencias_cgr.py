@@ -44,9 +44,9 @@ def main():
         "",
         "Una dependencia solo cambia de estado cuando existe la evidencia institucional indicada. La existencia de un stand-in local, datos sintéticos o una configuración placeholder **no sustituye** esa evidencia.",
         "",
-        "## Alcance del release candidate",
+        "## Alcance del cierre técnico externo",
         "",
-        "El release candidate del PoC puede considerarse técnicamente cerrado con estas dependencias abiertas, siempre que la auditoría del Anexo 3 mantenga **0 brechas rojas (🔴)**. Los estados 🟡/🔵 siguen visibles hasta la ejecución dentro de CGR.",
+        "El estado actual de `main` puede considerarse técnicamente cerrado respecto de las brechas resolubles desde el repositorio cuando la auditoría del Anexo 3 mantiene **0 brechas rojas (🔴)**. Los estados 🟡/🔵 continúan abiertos hasta disponer de evidencia institucional CGR. La versión `v1.0.0-rc.1` se conserva únicamente como snapshot histórico del primer release candidate.",
         "",
     ]
     OUT_MD.write_text("\n".join(lineas), encoding="utf-8")
