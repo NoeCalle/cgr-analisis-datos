@@ -1,4 +1,4 @@
-# Auditoría integral del TDR público — Sprint 4
+# Auditoría integral vigente del TDR público
 
 > PoC independiente. Esta matriz distingue evidencia técnica reproducible de dependencias que solo pueden cerrarse con datos, infraestructura, usuarios, permisos o conformidad de la CGR.
 
@@ -47,15 +47,15 @@ Evidencia: `outputs/evidencia_documental.json`, `outputs/charts`
 
 ### 2. Identificación, adquisición, integración y consolidación SIAF/SEACE — 🟡
 
-Existe contrato canónico y conectores; la lectura de fuentes internas reales requiere acceso CGR.
+Existe contrato canónico y conectores pandas/Spark-native; la lectura de fuentes internas reales requiere acceso, diccionario y plataforma CGR.
 
-Evidencia: `docs/Integracion_Datos.md`, `config/cgr.example.yaml`, `src/core/schemas.py`
+Evidencia: `docs/Integracion_Datos.md`, `config/cgr.example.yaml`, `src/core/schemas.py`, `src/core/schemas_spark.py`
 
 ### 3. Limpieza, faltantes, outliers, codificación y normalización/estandarización — ✅
 
-FIT/TRANSFORM están separados; el P99 se congela y el serving de favoritismo consume monto_capped.
+FIT/TRANSFORM están separados; el P99 se congela y existe FIT distribuido para fuentes spark_sql.
 
-Evidencia: `src/preprocesamiento.py`, `outputs/champions_spark/preprocesador_contratos.json`
+Evidencia: `src/preprocesamiento.py`, `src/spark/ajustar_preprocesamiento_spark.py`, `outputs/champions_spark/preprocesador_contratos.json`
 
 ### 4. Enriquecimiento y generación de características — ✅
 
@@ -95,9 +95,9 @@ Evidencia: `outputs/tuning_favoritismo_resumen.json`, `outputs/tuning_fraccionam
 
 ### 10. Apache Spark MLlib escalable y pruebas de rendimiento/robustez — 🟡
 
-Spark MLlib se ejecuta en local[*]; clúster institucional y aceptación de performance requieren CGR.
+La ruta operacional spark_sql es Spark-native, evita toPandas y admite master configurable; el clúster, volumen, performance, robustez y aceptación productiva requieren infraestructura/ground truth CGR.
 
-Evidencia: `outputs/inference_spark_smoke_summary.json`, `outputs/spark_favoritismo_resumen.json`, `outputs/spark_fraccionamiento_resumen.json`
+Evidencia: `outputs/inference_spark_smoke_summary.json`, `outputs/spark_favoritismo_resumen.json`, `outputs/spark_fraccionamiento_resumen.json`, `src/core/schemas_spark.py`, `tests/test_spark_native_integration.py`
 
 ### 11. Reportes automáticos con tablas, estadísticas, gráficos y métricas — ✅
 
@@ -113,7 +113,7 @@ Evidencia: `data/diccionario_datos.csv`, `outputs/charts/09_diagrama_modelo_dato
 
 ### 13. Lakehouse Bronce/Plata/Oro y DAGs de orquestación — 🟡
 
-La arquitectura es funcional localmente; Datamart/HDFS/YARN/Airflow institucional requieren CGR.
+La arquitectura es funcional en el PoC y dispone de frontera Spark-native; Datamart/HDFS/YARN/Airflow institucional y su operación requieren CGR.
 
 Evidencia: `lakehouse/bronce`, `lakehouse/plata`, `lakehouse/oro`, `airflow_home/dags/dag_modulo_analisis_datos.py`
 

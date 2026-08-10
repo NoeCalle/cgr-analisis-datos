@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "version": "1.0.0-rc.1",
-  "git_commit_auditado": "5a20edb31c849b24eafd3b8c442613ccf0755176",
-  "naturaleza": "release candidate del PoC público independiente; no aprobación CGR",
+  "version_declarada": "1.0.0-rc.1",
+  "git_commit_auditado": "9c7c494c929f21a6ccd4969f915c270fe1c2ea38",
+  "naturaleza": "gate de coherencia del estado actual de main; la versión declarada puede corresponder a un snapshot histórico y no implica que el tag se mueva con cambios posteriores",
   "total_checks": 19,
   "checks_ok": 19,
   "checks_fallidos": 0,
   "release_ready": true,
   "checks": [
     {
-      "check": "versión semántica release candidate",
+      "check": "versión semántica release candidate declarada",
       "ok": true,
       "detalle": "1.0.0-rc.1"
     },
@@ -19,7 +19,7 @@
       "detalle": "README distingue el PoC de una implementación oficial sin depender de una frase literal"
     },
     {
-      "check": "release no se presenta como oficial",
+      "check": "release histórico no se presenta como oficial",
       "ok": true,
       "detalle": "RELEASE_NOTES mantiene el alcance independiente"
     },
@@ -91,7 +91,7 @@
     {
       "check": "manifiesto reproducible Spark/GraphFrames",
       "ok": true,
-      "detalle": "commit evidencia=4a66f2942948e813d92a7d416233dba70ab7917b"
+      "detalle": "commit evidencia=9c7c494c929f21a6ccd4969f915c270fe1c2ea38"
     },
     {
       "check": "sin residuos de nomenclatura obsoleta en artefactos canónicos",
@@ -103,5 +103,6 @@
       "ok": true,
       "detalle": "MIT para el código del PoC"
     }
-  ]
+  ],
+  "version": "1.0.0-rc.1"
 }

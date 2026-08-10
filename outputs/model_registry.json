@@ -100,22 +100,22 @@
       "artifacts": {
         "favoritismo_model": {
           "path": "outputs/champions_spark/modelo_favoritismo_rf",
-          "sha256": "b26cb9aa52a6b180ade39b8fabb68cb941f317dd340a3a03d139cc6556070098"
+          "sha256": "07e380149873cb7fdf356d33e6bf7d6739861dc827af6826946cc94a09bbbb71"
         },
         "fraccionamiento_model": {
           "path": "outputs/champions_spark/modelo_fraccionamiento_kmeans",
-          "sha256": "4768530e45d34656afae1f908e470f1ab653e949fb3a47a6ed0a7dcdaa5f3591"
+          "sha256": "5dce83e11564e5d9349106d941631f8cdf42bc00af236c75981df1b7279b2662"
         },
         "fraccionamiento_scaler": {
           "path": "outputs/champions_spark/scaler_fraccionamiento",
-          "sha256": "7299078746e25cf801de2cf9be7e854e8954708075680191fa2ad84971ee2dc4"
+          "sha256": "59cfe5b57421d76ee858be870993a267491db3c1c455748ddab828fcc8cf8bad"
         },
         "preprocessor_json": {
           "path": "outputs/champions_spark/preprocesador_contratos.json",
           "sha256": "8314ed1e6d320aaea9d512f4765317492a667c751e7d73137e9a8c3c45e750fd"
         }
       },
-      "champion_id": "spark-poc-b512686ad432358d",
+      "champion_id": "spark-poc-ee9c0037abe94725",
       "models": {
         "favoritismo": {
           "algorithm": "RandomForestClassificationModel",

@@ -96,7 +96,7 @@
       "estado": "🔵",
       "evidencia_repo": [
         ".github/workflows/tests.yml",
-        "airflow_home/dags/modulo_analisis_datos_1_8_2.py",
+        "airflow_home/dags/dag_modulo_analisis_datos.py",
         "outputs/run_manifest.json"
       ],
       "dependencias_cgr": [

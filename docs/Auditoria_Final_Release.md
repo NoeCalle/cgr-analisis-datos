@@ -1,16 +1,18 @@
-# Auditoría final de release — v1.0.0-rc.1
+# Auditoría de coherencia del estado actual de `main`
 
-> Release candidate del PoC independiente. `release_ready=true` significa coherencia técnica del repositorio, **no conformidad ni aprobación institucional de la CGR**.
+> Versión declarada en `VERSION`: **v1.0.0-rc.1**. Si ese tag ya existe, permanece como snapshot histórico e inmutable; este documento audita el commit actual de `main` y no afirma que el tag contenga cambios posteriores.
 
-- Commit auditado: `5a20edb31c849b24eafd3b8c442613ccf0755176`
+`release_ready=true` significa que los gates técnicos del repositorio están coherentes; **no significa conformidad, aprobación ni despliegue institucional de la CGR**.
+
+- Commit auditado: `9c7c494c929f21a6ccd4969f915c270fe1c2ea38`
 - Checks: **19/19 OK**
-- Resultado: **READY**
+- Resultado del gate: **READY**
 
 | Estado | Verificación | Detalle |
 |:---:|---|---|
-| ✅ | versión semántica release candidate | 1.0.0-rc.1 |
+| ✅ | versión semántica release candidate declarada | 1.0.0-rc.1 |
 | ✅ | disclaimer público explícito | README distingue el PoC de una implementación oficial sin depender de una frase literal |
-| ✅ | release no se presenta como oficial | RELEASE_NOTES mantiene el alcance independiente |
+| ✅ | release histórico no se presenta como oficial | RELEASE_NOTES mantiene el alcance independiente |
 | ✅ | Anexo 3 sin brechas rojas | ✅=6, 🟡=4, 🔵=1, 🔴=0 |
 | ✅ | distribución esperada del checklist | 6 ✅ / 4 🟡 / 1 🔵 |
 | ✅ | checklist enlazado al catálogo CGR | referencias=['CGR-DEP-01', 'CGR-DEP-02', 'CGR-DEP-03', 'CGR-DEP-04', 'CGR-DEP-05', 'CGR-DEP-06'] |
@@ -24,10 +26,10 @@
 | ✅ | Oro sin datasets intermedios | artefactos Oro=9 |
 | ✅ | sin derivados reales identificables versionados | raw/derivados reales identificables permanecen fuera del repositorio |
 | ✅ | documentación formal completa | 8 DOCX (7 productos + informe final) |
-| ✅ | manifiesto reproducible Spark/GraphFrames | commit evidencia=4a66f2942948e813d92a7d416233dba70ab7917b |
+| ✅ | manifiesto reproducible Spark/GraphFrames | commit evidencia=9c7c494c929f21a6ccd4969f915c270fe1c2ea38 |
 | ✅ | sin residuos de nomenclatura obsoleta en artefactos canónicos | nomenclatura y conteos vigentes |
 | ✅ | licencia presente | MIT para el código del PoC |
 
-## Pendientes después del release
+## Dependencias institucionales abiertas
 
-No se trasladan aquí como brechas técnicas. La única fuente canónica es `docs/Dependencias_Institucionales_CGR.md` (`CGR-DEP-01..08`).
+No se trasladan aquí como defectos del repositorio. La fuente canónica es `docs/Dependencias_Institucionales_CGR.md` (`CGR-DEP-01..08`).

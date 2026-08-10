@@ -31,13 +31,14 @@
       "evidencias": [
         "docs/Integracion_Datos.md",
         "config/cgr.example.yaml",
-        "src/core/schemas.py"
+        "src/core/schemas.py",
+        "src/core/schemas_spark.py"
       ],
       "dependencias_cgr": [
         "CGR-DEP-01",
         "CGR-DEP-06"
       ],
-      "detalle": "Existe contrato canónico y conectores; la lectura de fuentes internas reales requiere acceso CGR."
+      "detalle": "Existe contrato canónico y conectores pandas/Spark-native; la lectura de fuentes internas reales requiere acceso, diccionario y plataforma CGR."
     },
     {
       "numero": 3,
@@ -46,10 +47,11 @@
       "estado": "✅",
       "evidencias": [
         "src/preprocesamiento.py",
+        "src/spark/ajustar_preprocesamiento_spark.py",
         "outputs/champions_spark/preprocesador_contratos.json"
       ],
       "dependencias_cgr": [],
-      "detalle": "FIT/TRANSFORM están separados; el P99 se congela y el serving de favoritismo consume monto_capped."
+      "detalle": "FIT/TRANSFORM están separados; el P99 se congela y existe FIT distribuido para fuentes spark_sql."
     },
     {
       "numero": 4,
@@ -142,13 +144,15 @@
       "evidencias": [
         "outputs/inference_spark_smoke_summary.json",
         "outputs/spark_favoritismo_resumen.json",
-        "outputs/spark_fraccionamiento_resumen.json"
+        "outputs/spark_fraccionamiento_resumen.json",
+        "src/core/schemas_spark.py",
+        "tests/test_spark_native_integration.py"
       ],
       "dependencias_cgr": [
         "CGR-DEP-06",
         "CGR-DEP-03"
       ],
-      "detalle": "Spark MLlib se ejecuta en local[*]; clúster institucional y aceptación de performance requieren CGR."
+      "detalle": "La ruta operacional spark_sql es Spark-native, evita toPandas y admite master configurable; el clúster, volumen, performance, robustez y aceptación productiva requieren infraestructura/ground truth CGR."
     },
     {
       "numero": 11,
@@ -192,7 +196,7 @@
         "CGR-DEP-01",
         "CGR-DEP-06"
       ],
-      "detalle": "La arquitectura es funcional localmente; Datamart/HDFS/YARN/Airflow institucional requieren CGR."
+      "detalle": "La arquitectura es funcional en el PoC y dispone de frontera Spark-native; Datamart/HDFS/YARN/Airflow institucional y su operación requieren CGR."
     },
     {
       "numero": 14,
