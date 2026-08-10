@@ -24,7 +24,7 @@ const doc = documento('TÉCNICO', 'Informe Final Técnico Consolidado', 'Informe
   titulo('Resumen Ejecutivo'),
   parrafo(
     'El prototipo independiente del Módulo de Análisis de Datos implementa un pipeline reproducible para preparación de datos, priorización de señales de posible favoritismo y fraccionamiento, análisis de vínculos, Spark MLlib, GraphFrames, Airflow, Lakehouse local, trazabilidad y generación automática de documentación. ' +
-    'La auditoría técnica del repositorio corrigió la integridad OCDS, la semántica de modalidades, el leakage metodológico, la gobernanza de reentrenamiento y la deriva entre código y documentos. Las salidas son señales para revisión humana y no constituyen hallazgos.'
+    'La ruta operacional incorpora separación TRAIN/INFERENCE, promoción explícita de champion y una frontera Spark-native para fuentes spark_sql, sin materialización pandas entre la tabla/vista y MLlib. Las salidas son señales para revisión humana y no constituyen hallazgos.'
   ),
   parrafo(e.naturaleza),
   ...frontMatter({
@@ -47,10 +47,10 @@ const doc = documento('TÉCNICO', 'Informe Final Técnico Consolidado', 'Informe
 
   titulo('1. Introducción'),
   parrafo(
-    'Este Informe Final consolida únicamente evidencia que puede reproducirse desde el repositorio público. Mantiene separados dos ejercicios: un benchmark sintético con ground truth sembrado, destinado a validar el pipeline de extremo a extremo; y una validación con datos públicos OCDS/OECE, destinada a comprobar integridad relacional y escalabilidad del procesamiento sin asumir ground truth de irregularidad.'
+    'Este Informe Final consolida únicamente evidencia que puede reproducirse desde el repositorio público. Mantiene separados el benchmark sintético/histórico, destinado a validar metodología y reproducibilidad, y la ruta operacional preparada para TRAIN/INFERENCE sobre fuentes canónicas. Ninguna métrica sintética se interpreta como ground truth productivo.'
   ),
   parrafo(
-    'La documentación no atribuye al PoC capacidades que dependan de infraestructura o aprobación institucional. Datamart, fuentes internas, HDFS/YARN distribuido, ambientes DEV/QA/PROD, SQL Server/SSRS institucional, certificación funcional, marcha blanca y transferencia efectiva permanecen identificados como dependencias CGR.'
+    'La documentación no atribuye al PoC capacidades que dependan de infraestructura o aprobación institucional. Fuentes internas, clúster/catálogo Spark institucional, ambientes DEV/QA/PROD, SQL Server/SSRS institucional, certificación funcional, marcha blanca y transferencia efectiva permanecen como dependencias CGR.'
   ),
 
   titulo('2. Objetivo de Consultoría'),
@@ -59,15 +59,16 @@ const doc = documento('TÉCNICO', 'Informe Final Técnico Consolidado', 'Informe
   titulo('3. Productos Alcanzados'),
 
   subtitulo('3.1 Arquitectura, datos y trazabilidad'),
-  parrafo('El flujo implementado es fuentes -> Bronce -> limpieza/feature engineering -> Plata -> modelos sklearn/Spark/GraphFrames -> Oro -> diccionario/linaje -> run_manifest.json -> evidencia_documental.json -> documentación formal.'),
+  parrafo('El PoC mantiene una ruta histórica Bronce -> Plata -> benchmark -> Oro para reproducibilidad y una ruta operacional fuente canónica -> TRAIN/INFERENCE -> champion Spark -> scores. El contrato canónico desacopla nombres físicos de tablas/columnas y registra linaje, hashes y versión de modelos.'),
   ...tablaConTitulo(1, 'Estado de componentes del prototipo', ['Componente', 'Estado verificable'], [
-    ['Bronce/Plata/Oro', 'Simulación local funcional; modelos consumen Plata y Oro contiene salidas downstream.'],
-    ['Airflow', 'DAG principal con ramas sklearn, Spark MLlib y GraphFrames; runtime del proyecto separado.'],
+    ['Bronce/Plata/Oro', 'Simulación local reproducible; Oro contiene salidas downstream del PoC.'],
+    ['Airflow', 'DAGs separados para reproducibilidad, TRAIN, INFERENCE y monitoreo.'],
     ['GitHub Actions', 'pytest + smoke end-to-end + generación/validación documental.'],
-    ['Spark MLlib', 'Ejecución real local[*] con Java 17 y PySpark versionado.'],
+    ['Spark MLlib', 'Benchmark histórico ejecutado en local[*]; TRAIN/INFERENCE operacionales admiten master configurable y spark_sql Spark-native.'],
+    ['Integración spark_sql', 'Spark DataFrame desde tabla/vista hasta MLlib; mapping/validación/FIT en Spark y rankings Parquet distribuidos, sin toPandas.'],
     ['GraphFrames', 'Ejecución real sobre datos de contacto sintéticos publicados en Plata.'],
-    ['Linaje', 'outputs/linaje_datos.csv: fuente -> transformación -> Plata -> feature -> implementación -> Oro.'],
-    ['MLOps', 'run_manifest.json con commit, versiones, hashes, parámetros y artefactos; promoción humana de candidatos.'],
+    ['Linaje', 'outputs/linaje_datos.csv: fuente -> transformación -> feature -> implementación -> salida.'],
+    ['MLOps', 'Registry, hashes, candidate/champion y promoción explícita; sin autopromoción en TRAIN.'],
   ], [2800, 6000]),
   ...imagenConTitulo(1, 'Diagrama del modelo de datos', '../outputs/charts/09_diagrama_modelo_datos.png', 610, 360),
 
@@ -113,12 +114,13 @@ const doc = documento('TÉCNICO', 'Informe Final Técnico Consolidado', 'Informe
 
   subtitulo('3.5 Implementación Spark MLlib y GraphFrames'),
   ...tablaConTitulo(5, 'Evidencia Spark y GraphFrames', ['Componente', 'Evidencia reproducible'], [
-    ['Favoritismo Spark', `${sparkFav.algoritmo || 'RandomForestClassifier'}; ${sparkFav.cv || 'CV'}; modo ${sparkFav.modo || 'local[*]'}; AUC-PR CV del sanity check ${sparkFav.auc_pr_cv === undefined ? 'N/D' : Number(sparkFav.auc_pr_cv).toFixed(3)}.`],
-    ['Fraccionamiento Spark', `${sparkFrac.algoritmo || 'KMeans + distancia al centroide'}; k=${sparkFrac.k ?? 'N/D'}; modo ${sparkFrac.modo || 'local[*]'}.`],
+    ['Favoritismo Spark benchmark', `${sparkFav.algoritmo || 'RandomForestClassifier'}; ${sparkFav.cv || 'CV'}; modo histórico ${sparkFav.modo || 'local[*]'}; AUC-PR CV sanity ${sparkFav.auc_pr_cv === undefined ? 'N/D' : Number(sparkFav.auc_pr_cv).toFixed(3)}.`],
+    ['Fraccionamiento Spark benchmark', `${sparkFrac.algoritmo || 'KMeans + distancia al centroide'}; k=${sparkFrac.k ?? 'N/D'}; modo histórico ${sparkFrac.modo || 'local[*]'}.`],
+    ['Serving operacional', 'TRAIN/INFERENCE MLlib con master configurable; spark_sql mantiene DataFrame Spark, medianas distribuidas y salida Parquet sin toPandas.'],
     ['GraphFrames', `${graphframes.n_vertices ?? 'N/D'} vértices, ${graphframes.n_aristas ?? 'N/D'} aristas y ${graphframes.n_senales_vinculo_sinteticas ?? 'N/D'} señales sintéticas.`],
     ['Versiones', `PySpark ${manifest.entorno?.pyspark || 'N/D'}; GraphFrames ${manifest.entorno?.['graphframes-py'] || 'N/D'}; Java 17 en CI.`],
   ], [2800, 6000]),
-  parrafo('La métrica Spark de favoritismo no se utiliza como estimación productiva porque el benchmark solo tiene seis positivos. La función de esta evidencia es demostrar que la arquitectura exigida por el TDR se ejecuta realmente con Spark MLlib en el PoC.'),
+  parrafo('Las métricas Spark del benchmark sintético no se utilizan como estimación productiva. La evidencia demuestra ejecución MLlib y el contrato distribuido; rendimiento, robustez y aceptación sobre el clúster/datos CGR requieren pruebas institucionales.'),
   ...imagenConTitulo(4, 'Red proveedor-funcionario sintética', '../outputs/charts/10_grafo_vinculos.png', 610, 420),
 
   subtitulo('3.6 Validación de integridad con datos públicos OCDS/OECE'),
@@ -155,9 +157,10 @@ const doc = documento('TÉCNICO', 'Informe Final Técnico Consolidado', 'Informe
     ['EDA, limpieza y feature engineering', 'Implementado y reproducible.'],
     ['Favoritismo supervisado', 'Benchmark OOF/tuning/SHAP + Spark MLlib ejecutado.'],
     ['Fraccionamiento no supervisado', 'Isolation Forest con holdout + KMeans Spark + señal interpretable.'],
+    ['Integración Spark', 'spark_sql Spark-native sin pandas intermedio; prueba de carga en clúster CGR pendiente.'],
     ['Grafos', 'NetworkX + GraphFrames ejecutado con escenario sintético.'],
-    ['Airflow/Lakehouse local', 'Implementado; HDFS/YARN/Datamart CGR pendiente.'],
-    ['Autoevaluación', 'Candidato + gate humano; gobierno productivo CGR pendiente.'],
+    ['Airflow/Lakehouse', 'Orquestación/contrato implementados; infraestructura institucional CGR pendiente.'],
+    ['Autoevaluación', 'Candidate + gate humano; gobierno productivo CGR pendiente.'],
     ['SSRS', 'T-SQL + RDL preparados; servidor SQL/SSRS CGR pendiente.'],
     ['DEV/QA/PROD y certificación', 'Dependencia institucional CGR.'],
     ['Marcha blanca y transferencia efectiva', 'Dependencia contractual/institucional CGR.'],
@@ -166,8 +169,8 @@ const doc = documento('TÉCNICO', 'Informe Final Técnico Consolidado', 'Informe
 
   titulo('4. Conclusiones y Recomendaciones'),
   parrafo('El prototipo demuestra viabilidad técnica y reproducibilidad sin ocultar sus límites. Random Forest es el candidato principal del benchmark de favoritismo por AUC-PR e interpretabilidad. En fraccionamiento, la baja AUC-PR del holdout impide presentar el detector como clasificador de irregularidades y refuerza la necesidad de revisión humana.'),
-  parrafo('La arquitectura Spark ya está ejecutada y validada en CI local[*]; lo pendiente en esta área es rendimiento distribuido sobre infraestructura CGR. La reconstrucción OCDS Contract -> Award -> Supplier y la separación de modalidades corrigen las brechas de integridad más importantes detectadas en versiones previas.'),
-  parrafo('Para una fase institucional se recomienda: obtener ground truth real etiquetado; validar reglas con auditores y especialistas normativos; desplegar primero en DEV/QA; medir AUC-PR/recall y tiempos con datos internos; calibrar capacidad de revisión; habilitar controles de acceso y linaje; y ejecutar certificación, marcha blanca y transferencia formal.'),
+  parrafo('La arquitectura distingue el benchmark histórico local de la ruta operacional: TRAIN/INFERENCE admiten master Spark configurable y, con spark_sql, mantienen el procesamiento distribuido sin toPandas hasta la escritura Parquet. Lo pendiente es validar esta arquitectura con volumen, seguridad, rendimiento y robustez sobre infraestructura CGR.'),
+  parrafo('Para una fase institucional se recomienda: obtener ground truth real; validar reglas con auditores/especialistas normativos; desplegar primero en DEV/QA; probar particionamiento y tiempos con datos internos; calibrar capacidad de revisión; habilitar controles de acceso/linaje; y ejecutar certificación, marcha blanca y transferencia formal.'),
 
   titulo('5. Anexos'),
   vineta(`Commit utilizado por la evidencia: ${e.git_commit || 'no disponible en el entorno de generación'}.`),
@@ -176,7 +179,8 @@ const doc = documento('TÉCNICO', 'Informe Final Técnico Consolidado', 'Informe
   vineta('outputs/linaje_datos.csv - linaje de campos y features.'),
   vineta('data/diccionario_datos.csv - diccionario de datos.'),
   vineta('outputs/validacion_p0_datos_reales.json - integridad y conteos OCDS/OECE.'),
-  vineta('outputs/spark_favoritismo_resumen.json y outputs/spark_fraccionamiento_resumen.json - evidencia Spark MLlib.'),
+  vineta('outputs/spark_favoritismo_resumen.json y outputs/spark_fraccionamiento_resumen.json - benchmark Spark MLlib.'),
+  vineta('tests/test_spark_native_integration.py - regresión de integración Spark-native.'),
   vineta('outputs/graphframes_resumen.json - evidencia GraphFrames.'),
   vineta('Directorio ssrs/ - artefactos T-SQL y RDL del PoC.'),
   ...referencias(),
