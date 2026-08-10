@@ -5,6 +5,9 @@ distancia al centroide y una señal temporal interpretable. La semántica de las
 features se mantiene alineada con pandas: cantidad y monto pertenecen a la
 misma ventana de 15 días y pequeñas variantes lexicales del objeto se agrupan
 mediante una firma reproducible y auditable.
+
+La firma ``objeto_familia`` se construye con expresiones Spark SQL nativas; no
+usa un UDF Python ni requiere importar módulos del proyecto en cada worker.
 """
 
 from __future__ import annotations
@@ -22,7 +25,6 @@ from pyspark.ml.feature import StandardScaler, VectorAssembler
 from pyspark.sql import SparkSession, Window
 from pyspark.sql import functions as F
 
-from core.objeto_similarity import firma_objeto
 from umbrales_normativos import obtener_umbral
 
 SEGUNDOS_15_DIAS = 15 * 86400
@@ -41,6 +43,29 @@ SCALER_DIR = Path(os.environ.get(
     "CGR_SPARK_FRACCIONAMIENTO_SCALER_DIR",
     "outputs/runtime/modelo_fraccionamiento_spark_scaler",
 ))
+
+STOPWORDS_OBJETO = [
+    "de", "del", "la", "las", "el", "los", "y", "e", "para", "por", "con",
+    "en", "a", "un", "una", "unos", "unas", "servicio", "servicios",
+    "adquisicion", "adquisiciones", "contratacion", "contrataciones",
+    "compra", "compras", "obra", "obras", "publica", "publico",
+    "preventivo", "preventiva", "preventivos", "preventivas",
+    "correctivo", "correctiva", "correctivos", "correctivas",
+]
+SYNONYMS_OBJETO = {
+    "conservacion": "mantenimiento",
+    "conservar": "mantenimiento",
+    "mantenimientos": "mantenimiento",
+    "vias": "via",
+    "vial": "via",
+    "viales": "via",
+    "carretera": "via",
+    "carreteras": "via",
+    "equipos": "equipo",
+    "informaticos": "informatico",
+    "informaticas": "informatico",
+    "materiales": "material",
+}
 
 
 def crear_sesion(app_name: str = "cgr-fraccionamiento-poc"):
@@ -63,6 +88,36 @@ def k_seleccionado(default: int = 2) -> tuple[int, str]:
     return int(k), "spark_holdout_summary"
 
 
+def _normalizar_texto_spark(columna):
+    texto = F.lower(columna.cast("string"))
+    texto = F.translate(texto, "áéíóúüñ", "aeiouun")
+    return F.trim(F.regexp_replace(texto, "[^a-z0-9]+", " "))
+
+
+def _firma_objeto_spark(objeto_col, categoria_col):
+    """Equivalente Spark-native de ``core.objeto_similarity.firma_objeto``."""
+    stopwords = F.array(*[F.lit(x) for x in STOPWORDS_OBJETO])
+    synonym_pairs = []
+    for key, value in SYNONYMS_OBJETO.items():
+        synonym_pairs.extend([F.lit(key), F.lit(value)])
+    synonym_map = F.create_map(*synonym_pairs)
+
+    tokens = F.split(_normalizar_texto_spark(objeto_col), " ")
+    tokens = F.filter(
+        tokens,
+        lambda x: (F.length(x) > 0) & (~F.array_contains(stopwords, x)),
+    )
+    tokens = F.transform(tokens, lambda x: F.coalesce(F.element_at(synonym_map, x), x))
+    tokens = F.filter(tokens, lambda x: ~F.array_contains(stopwords, x))
+    tokens = F.array_sort(F.array_distinct(tokens))
+
+    categoria = F.coalesce(_normalizar_texto_spark(categoria_col), F.lit("sin_categoria"))
+    return F.when(
+        F.size(tokens) > 0,
+        F.concat(categoria, F.lit("::"), F.concat_ws("|", tokens)),
+    ).otherwise(F.concat(categoria, F.lit("::__SIN_OBJETO__")))
+
+
 def construir_features_ventana_desde_df(
     df,
     label_col: str | None = "es_fraccionamiento_real",
@@ -78,7 +133,6 @@ def construir_features_ventana_desde_df(
         raise ValueError(f"Datos Spark no contienen columnas requeridas: {sorted(faltantes)}")
 
     categoria_expr = F.col("categoria_principal") if "categoria_principal" in df.columns else F.lit(None)
-    firma_udf = F.udf(lambda obj, cat: firma_objeto(obj, cat), "string")
     obtener_umbral_udf = F.udf(
         lambda fecha, objeto, categoria: float(
             obtener_umbral(fecha, objeto=objeto, categoria_principal=categoria)
@@ -87,7 +141,10 @@ def construir_features_ventana_desde_df(
     )
 
     base = (
-        df.withColumn("objeto_familia", firma_udf(F.col("objeto"), categoria_expr))
+        df.withColumn(
+            "objeto_familia",
+            _firma_objeto_spark(F.col("objeto"), categoria_expr),
+        )
         .withColumn("ts", F.col("fecha_contrato").cast("timestamp").cast("long"))
     )
     grupo_cols = ["id_proveedor", "id_entidad", "objeto_familia"]
@@ -222,7 +279,7 @@ def guardar_resumen(modelo, sanity, duracion_s, selection_source):
         "selection_source": selection_source,
         "features": FEATURES,
         "window_semantics": "cantidad y monto de la misma ventana de 15 días; empate por inicio más temprano",
-        "object_grouping": "firma lexical reproducible objeto_familia",
+        "object_grouping": "firma lexical reproducible objeto_familia (Spark SQL nativo)",
         "sanity_sintetico": sanity,
         "ranking": str(OUTPUT_RANKING),
         "modelo_runtime": str(MODEL_DIR),
@@ -242,9 +299,6 @@ def main():
     t0 = time.time()
     spark = crear_sesion()
     spark.sparkContext.setLogLevel("ERROR")
-    spark.sparkContext.addPyFile(
-        os.path.join(os.path.dirname(__file__), "..", "core", "objeto_similarity.py")
-    )
     spark.sparkContext.addPyFile(
         os.path.join(os.path.dirname(__file__), "..", "umbrales_normativos.py")
     )
