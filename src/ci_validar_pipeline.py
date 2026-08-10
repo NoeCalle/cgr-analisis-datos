@@ -1,15 +1,127 @@
-"""Checks de integración reproducible sin depender de conteos históricos rígidos."""
+"""Checks de integración reproducible sin depender de conteos históricos rígidos.
+
+En GitHub Actions, las promociones usadas por el smoke test son deliberadamente
+efímeras: al terminar la validación se restaura el registry/champion versionado
+en el commit de la rama y se regenera la evidencia de serving contra ese estado.
+Así, un push exitoso no puede cambiar silenciosamente el champion persistido.
+"""
 
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
+import subprocess
+import sys
 
 import pandas as pd
 
 
+SERVING_TRACKED_PATHS = [
+    "outputs/model_registry.json",
+    "outputs/champions",
+    "outputs/champions_spark",
+]
+
+
 def load_json(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def _run_ci_command(args: list[str]) -> None:
+    env = os.environ.copy()
+    env.setdefault("PYSPARK_PYTHON", sys.executable)
+    env.setdefault("PYSPARK_DRIVER_PYTHON", sys.executable)
+    subprocess.run(args, check=True, env=env)
+
+
+def restaurar_serving_persistido_en_ci() -> None:
+    """Revierte promociones de humo y deja evidencia coherente con el commit.
+
+    ``tests.yml`` ejercita una promoción sklearn y otra Spark para verificar que
+    el mecanismo funciona. Esas promociones viven únicamente en el workspace
+    efímero de Actions. Antes de que el workflow llegue a su paso de persistencia
+    restauramos el estado de serving versionado en ``HEAD`` y regeneramos los
+    resúmenes que dependen del champion.
+
+    Fuera de GitHub Actions esta función no hace nada para que ejecutar
+    ``python src/ci_validar_pipeline.py`` localmente siga siendo solo lectura.
+    """
+    if os.environ.get("GITHUB_ACTIONS", "").lower() != "true":
+        return
+
+    subprocess.run(
+        ["git", "checkout", "--", *SERVING_TRACKED_PATHS],
+        check=True,
+    )
+    # Elimina únicamente residuos no versionados que una promoción de prueba
+    # pudiera haber creado dentro de los directorios de champion.
+    subprocess.run(
+        ["git", "clean", "-fd", "--", "outputs/champions", "outputs/champions_spark"],
+        check=True,
+    )
+
+    registry = load_json("outputs/model_registry.json")
+    if "sklearn" in registry.get("serving_profiles", {}):
+        _run_ci_command([
+            sys.executable,
+            "src/score_inference.py",
+            "--config",
+            "config/local.yaml",
+            "--registry",
+            "outputs/model_registry.json",
+            "--output-dir",
+            "outputs/runtime/inference/ci-persisted",
+            "--summary",
+            "outputs/inference_smoke_summary.json",
+        ])
+
+    _run_ci_command([
+        sys.executable,
+        "src/spark/score_inference_spark.py",
+        "--config",
+        "config/local.yaml",
+        "--registry",
+        "outputs/model_registry.json",
+        "--output-dir",
+        "outputs/runtime/inference_spark/ci-persisted",
+        "--summary",
+        "outputs/inference_spark_smoke_summary.json",
+    ])
+    _run_ci_command([
+        sys.executable,
+        "src/autoevaluacion_champion.py",
+        "--registry",
+        "outputs/model_registry.json",
+        "--config",
+        "config/local-training.yaml",
+        "--output",
+        "outputs/monitoreo_champion.json",
+        "--log",
+        "outputs/log_reentrenamiento_champion.csv",
+    ])
+
+    # run_manifest/evidencia se habían construido contra el champion efímero;
+    # se regeneran para que la documentación posterior vea el estado persistido.
+    _run_ci_command([sys.executable, "src/generar_run_manifest.py"])
+    _run_ci_command([sys.executable, "src/generar_evidencia_documental.py"])
+
+    subprocess.run(
+        ["git", "diff", "--exit-code", "--", *SERVING_TRACKED_PATHS],
+        check=True,
+    )
+
+    registry = load_json("outputs/model_registry.json")
+    spark_profile = registry["serving_profiles"]["spark_mllib"]
+    spark_summary = load_json("outputs/inference_spark_smoke_summary.json")
+    monitor = load_json("outputs/monitoreo_champion.json")
+    assert spark_summary["champion_id"] == spark_profile["champion_id"]
+    assert monitor["champion_id"] == spark_profile["champion_id"]
+    assert monitor["automatic_promotion"] is False
+    print(
+        "CI 3B OK | promoción de smoke efímera; "
+        f"champion persistido={spark_profile['champion_id']}"
+    )
 
 
 def main():
@@ -112,6 +224,8 @@ def main():
         f"frac+={int(frac['label_fraccionamiento_real'].sum())} "
         f"champion={spark_profile['champion_id']}"
     )
+
+    restaurar_serving_persistido_en_ci()
 
 
 if __name__ == "__main__":
