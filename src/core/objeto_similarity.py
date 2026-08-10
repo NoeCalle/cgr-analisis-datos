@@ -18,6 +18,9 @@ STOPWORDS = {
     "de", "del", "la", "las", "el", "los", "y", "e", "para", "por", "con",
     "en", "a", "un", "una", "unos", "unas", "servicio", "servicios",
     "adquisicion", "adquisiciones", "contratacion", "contrataciones",
+    "compra", "compras", "obra", "obras", "publica", "publico",
+    "preventivo", "preventiva", "preventivos", "preventivas",
+    "correctivo", "correctiva", "correctivos", "correctivas",
 }
 
 # Equivalencias deliberadamente pequeñas. Solo colapsan vocablos cercanos en
@@ -27,15 +30,14 @@ SYNONYMS = {
     "conservacion": "mantenimiento",
     "conservar": "mantenimiento",
     "mantenimientos": "mantenimiento",
-    "preventiva": "preventivo",
-    "preventivas": "preventivo",
-    "preventivos": "preventivo",
-    "correctiva": "correctivo",
-    "correctivas": "correctivo",
-    "correctivos": "correctivo",
     "vias": "via",
-    "carreteras": "carretera",
+    "vial": "via",
+    "viales": "via",
+    "carretera": "via",
+    "carreteras": "via",
     "equipos": "equipo",
+    "informaticos": "informatico",
+    "informaticas": "informatico",
     "materiales": "material",
 }
 
@@ -57,6 +59,8 @@ def tokens_objeto(valor) -> tuple[str, ...]:
         if token in STOPWORDS:
             continue
         token = SYNONYMS.get(token, token)
+        if token in STOPWORDS:
+            continue
         tokens.append(token)
     return tuple(tokens)
 
@@ -65,8 +69,9 @@ def firma_objeto(valor, categoria_principal=None) -> str:
     """Devuelve una firma lexical estable y auditable.
 
     La firma usa el conjunto ordenado de tokens significativos, de modo que
-    cambios menores de orden o vocablos genéricos no separen objetos. Una
-    equivalencia semántica más sofisticada debe calibrarse con datos CGR.
+    cambios menores de orden, vocablos genéricos y un conjunto pequeño de
+    sinónimos controlados no separen objetos. Una equivalencia semántica más
+    sofisticada debe calibrarse con datos CGR.
     """
     tokens = sorted(set(tokens_objeto(valor)))
     categoria = normalizar_texto_objeto(categoria_principal) or "sin_categoria"
