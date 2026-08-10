@@ -1,14 +1,12 @@
-"""Añade el análisis Sprint 4 a los DOCX formales antes de actualizar índices.
+"""Enriquece los DOCX formales con pagos/modalidades y arquitectura operacional vigente.
 
-El contenido se deriva exclusivamente de ``outputs/analisis_pagos_modalidades.json``.
-No modifica la evidencia histórica del RC1 ni usa datos SIAF reales. El anexo se
-inserta antes de ``Referencias Bibliográficas`` para conservar las referencias al
-final del documento, conforme a la estructura documental existente.
+El bloque de pagos se deriva de ``outputs/analisis_pagos_modalidades.json`` y
+mantiene explícitamente su naturaleza sintética. El mismo anexo documenta el
+contrato Spark-native vigente para evitar que los Productos formales queden
+anclados únicamente a la evidencia histórica ``local[*]``.
 
 Los DOCX base son generados por la librería JS ``docx``. Para evitar depender de
-que python-docx pueda resolver nombres de estilos como ``Heading 1`` o
-``Table Grid``, este postprocesador aplica el estilo de encabezado y los bordes de
-tabla directamente en OOXML.
+nombres de estilos de python-docx, los headings y bordes se aplican en OOXML.
 """
 
 from __future__ import annotations
@@ -33,7 +31,7 @@ DESTINOS = [
     ROOT / "reporte/productos_formales/Producto_01_Plan_de_Trabajo.docx",
 ]
 
-MARCADOR = "ANEXO TÉCNICO SPRINT 4 — ANÁLISIS DE PAGOS Y MODALIDADES"
+MARCADOR = "ANEXO TÉCNICO — PAGOS, MODALIDADES Y ARQUITECTURA OPERACIONAL"
 REFERENCIAS = "Referencias Bibliográficas"
 
 
@@ -47,7 +45,6 @@ def _formatear_parrafo(parrafo, negrita=False):
 
 
 def _asignar_estilo_heading_ooxml(parrafo, nivel: int) -> None:
-    """Marca el párrafo como Heading1/Heading2 sin consultar styles.xml."""
     p_pr = parrafo._p.get_or_add_pPr()
     p_style = p_pr.find(qn("w:pStyle"))
     if p_style is None:
@@ -110,14 +107,8 @@ def _agregar_tabla(doc, pagos: dict, modalidades: dict):
         ("Contratos pendientes sin pago", estados.get("pendiente_sin_pago", 0)),
         ("Señales de sobrepago a revisar", estados.get("sobrepago_senal_revisar", 0)),
         ("Demora P90 devengado→pagado (días)", pagos.get("dias_devengado_a_pagado_p90")),
-        (
-            "Modalidades especiales no inferibles solo por cuantía",
-            clasif.get("especial_no_inferible_por_cuantia", 0),
-        ),
-        (
-            "Modalidades que requieren revisión de contexto",
-            clasif.get("requiere_revision_contexto", 0),
-        ),
+        ("Modalidades especiales no inferibles solo por cuantía", clasif.get("especial_no_inferible_por_cuantia", 0)),
+        ("Modalidades que requieren revisión de contexto", clasif.get("requiere_revision_contexto", 0)),
     ]
     table = doc.add_table(rows=1, cols=2)
     _aplicar_bordes_tabla(table)
@@ -148,10 +139,8 @@ def _mover_bloque_antes_de_referencias(doc, marcador_parrafo) -> None:
     while elem is not None and not elem.tag.endswith("}sectPr"):
         nuevos.append(elem)
         elem = elem.getnext()
-
     if not nuevos:
-        raise ValueError("No se detectó el bloque Sprint 4 recién creado.")
-
+        raise ValueError("No se detectó el bloque técnico recién creado.")
     for nuevo in nuevos:
         referencia._p.addprevious(nuevo)
 
@@ -170,13 +159,13 @@ def enriquecer(ruta: Path, evidencia: dict):
     marcador = _agregar_heading(doc, MARCADOR, 1)
     _agregar_texto(
         doc,
-        "Este anexo cubre la actividad del TDR referida al análisis estadístico y exploratorio de patrones de pagos, montos contractuales y modalidades de contratación. La evidencia del PoC usa pagos sintéticos vinculados a contratos sintéticos; no representa información SIAF real ni determina la legalidad de una modalidad.",
+        "Este anexo cubre el análisis estadístico/exploratorio de pagos, montos contractuales y modalidades y actualiza la descripción de la arquitectura operacional. La evidencia de pagos usa datos sintéticos vinculados a contratos sintéticos; no representa información SIAF real ni determina la legalidad de una modalidad.",
     )
-    _agregar_heading(doc, "Resultados reproducibles", 2)
+    _agregar_heading(doc, "Resultados reproducibles de pagos y modalidades", 2)
     _agregar_tabla(doc, pagos, modalidades)
     _agregar_texto(
         doc,
-        "La clasificación de modalidades frente a cuantía es únicamente referencial. Contratación Directa, Comparación de Precios, Subasta Inversa, acuerdos marco y otros supuestos pueden depender de condiciones jurídicas o de mercado que no se deducen del monto por sí solo. Por ello, 'requiere revisión de contexto' no equivale a irregularidad.",
+        "La comparación de modalidades frente a cuantía es únicamente referencial. Contratación Directa, Comparación de Precios, Subasta Inversa, acuerdos marco y otros supuestos pueden depender de condiciones que no se deducen del monto por sí solo; 'requiere revisión de contexto' no equivale a irregularidad.",
     )
 
     if CHART_RATIO.exists():
@@ -192,10 +181,20 @@ def enriquecer(ruta: Path, evidencia: dict):
         p.add_run().add_picture(str(CHART_MODALIDADES), width=Inches(6.1))
         _formatear_parrafo(p)
 
+    _agregar_heading(doc, "Arquitectura operacional Spark-native", 2)
+    _agregar_texto(
+        doc,
+        "La evidencia histórica de modelado Spark se conserva en modo local[*] para reproducibilidad. En paralelo, la ruta operacional TRAIN/INFERENCE admite un master Spark configurable. Cuando source.type=spark_sql, el conector devuelve un Spark DataFrame y el mapping, validación, preprocesamiento, feature engineering y MLlib permanecen en Spark sin toPandas(). Las medianas por objeto aprendidas en TRAIN se persisten como Parquet distribuido y los rankings de INFERENCE se escriben también como Parquet distribuido.",
+    )
+    _agregar_texto(
+        doc,
+        "Esta capacidad elimina el cuello de botella pandas del adaptador Spark anterior, pero no sustituye las pruebas de carga, particionamiento, seguridad, rendimiento y robustez que deben ejecutarse con el clúster y volumen institucionales reales.",
+    )
+
     _agregar_heading(doc, "Limitación institucional", 2)
     _agregar_texto(
         doc,
-        "El cierre literal con pagos SIAF/SEACE institucionales, diccionarios reales, validación jurídica/funcional y permisos de consulta depende de la CGR y se mantiene registrado en el catálogo de dependencias institucionales.",
+        "El cierre literal con pagos SIAF/SEACE, tablas/vistas reales, ground truth, permisos, clúster, DEV/QA/PROD, SQL Server/SSRS, certificación y conformidad depende de la CGR y permanece registrado en el catálogo de dependencias institucionales.",
     )
 
     _mover_bloque_antes_de_referencias(doc, marcador)
@@ -211,8 +210,8 @@ def main():
             modificados += 1
             print(f"Enriquecido: {ruta.relative_to(ROOT)}")
         else:
-            print(f"Ya contenía anexo Sprint 4: {ruta.relative_to(ROOT)}")
-    print(f"DOCX enriquecidos Sprint 4: {modificados}/{len(DESTINOS)}")
+            print(f"Ya contenía anexo técnico: {ruta.relative_to(ROOT)}")
+    print(f"DOCX enriquecidos: {modificados}/{len(DESTINOS)}")
 
 
 if __name__ == "__main__":
