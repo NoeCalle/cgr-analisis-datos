@@ -16,7 +16,11 @@ import json
 from pathlib import Path
 
 from connectors import crear_connector
-from core.config import cargar_config
+from core.config import cargar_config, obtener_version_contrato
+from core.data_quality import (
+    validar_calidad_integrada_pandas,
+    validar_calidad_integrada_spark,
+)
 from core.schemas import aplicar_mapping, validar_dataframe
 
 
@@ -32,7 +36,7 @@ def integrar_dominio(config, connector, domain):
 
 
 def integrar(config, output_dir=None):
-    """Integración pandas para CSV/SQL Server."""
+    """Integración pandas para CSV/SQL Server con quality gates relacionales."""
     if config["source"]["type"] == "spark_sql":
         raise ValueError(
             "source.type=spark_sql usa la ruta Spark-native. Llame integrar_spark(config, spark=...)."
@@ -51,6 +55,9 @@ def integrar(config, output_dir=None):
                 "columns": list(df.columns),
             }
 
+    quality = validar_calidad_integrada_pandas(results)
+    summary["quality"] = quality
+
     if output_dir is not None:
         out = Path(output_dir)
         out.mkdir(parents=True, exist_ok=True)
@@ -64,8 +71,9 @@ def integrar(config, output_dir=None):
 def integrar_spark(config, *, spark, output_dir=None):
     """Integración canónica Spark-native para ``source.type=spark_sql``.
 
-    Mantiene DataFrames Spark durante lectura, mapping, casteo y validación. Solo
-    colecta una fila de métricas de calidad por dominio; nunca colecta el dataset.
+    Mantiene DataFrames Spark durante lectura, mapping, casteo y validación.
+    Los quality gates realizan agregaciones/anti-joins distribuidos y solo
+    colectan métricas escalares; nunca colectan el dataset contractual.
     """
     if config["source"]["type"] != "spark_sql":
         raise ValueError("integrar_spark() está reservado a source.type=spark_sql.")
@@ -85,13 +93,19 @@ def integrar_spark(config, *, spark, output_dir=None):
             canonical = validar_dataframe_spark(
                 canonical, domain, config.get("mode", "inference")
             )
-            # count() es una agregación distribuida; no materializa filas en el driver.
-            n_rows = int(canonical.count())
             results[domain] = canonical
             summary["domains"][domain] = {
-                "rows": n_rows,
+                # El conteo se obtiene junto con la validación de unicidad para
+                # evitar el count() completo que antes se ejecutaba aquí.
+                "rows": None,
                 "columns": list(canonical.columns),
             }
+
+    quality = validar_calidad_integrada_spark(results)
+    summary["quality"] = quality
+    for domain, domain_quality in quality["domains"].items():
+        if domain in summary["domains"]:
+            summary["domains"][domain]["rows"] = int(domain_quality["rows"])
 
     if output_dir is not None:
         out = Path(output_dir)
@@ -106,7 +120,8 @@ def integrar_spark(config, *, spark, output_dir=None):
 
 def _summary_base(config, *, native_engine: str):
     return {
-        "schema_version": 2,
+        "schema_version": 3,
+        "contract_schema_version": obtener_version_contrato(config),
         "mode": config.get("mode", "inference"),
         "source_type": config["source"]["type"],
         "native_engine": native_engine,
@@ -157,7 +172,8 @@ def main():
     config = cargar_config(args.config)
     if args.validate_only:
         print(
-            f"CONFIG OK | mode={config.get('mode', 'inference')} | "
+            f"CONFIG OK | contract_schema=v{obtener_version_contrato(config)} | "
+            f"mode={config.get('mode', 'inference')} | "
             f"source={config['source']['type']} | domains={sorted(config['mapping'])}"
         )
         return
