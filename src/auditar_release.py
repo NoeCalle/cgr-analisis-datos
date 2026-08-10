@@ -1,4 +1,4 @@
-"""Auditoría de coherencia previa al release candidate del PoC independiente."""
+"""Auditoría de coherencia del estado actual de main y del release candidate declarado."""
 
 from __future__ import annotations
 
@@ -42,7 +42,7 @@ def main():
 
     version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
     check(
-        "versión semántica release candidate",
+        "versión semántica release candidate declarada",
         bool(re.fullmatch(r"\d+\.\d+\.\d+-rc\.\d+", version)),
         version,
     )
@@ -60,7 +60,7 @@ def main():
         "README distingue el PoC de una implementación oficial sin depender de una frase literal",
     )
     check(
-        "release no se presenta como oficial",
+        "release histórico no se presenta como oficial",
         "No es una versión oficial de la CGR" in release_notes,
         "RELEASE_NOTES mantiene el alcance independiente",
     )
@@ -203,27 +203,35 @@ def main():
     fallos = [c for c in checks if not c["ok"]]
     payload = {
         "schema_version": 1,
-        "version": version,
+        "version_declarada": version,
         "git_commit_auditado": git_head(),
-        "naturaleza": "release candidate del PoC público independiente; no aprobación CGR",
+        "naturaleza": (
+            "gate de coherencia del estado actual de main; la versión declarada puede corresponder "
+            "a un snapshot histórico y no implica que el tag se mueva con cambios posteriores"
+        ),
         "total_checks": len(checks),
         "checks_ok": len(checks) - len(fallos),
         "checks_fallidos": len(fallos),
         "release_ready": not fallos,
         "checks": checks,
     }
+    # Compatibilidad con consumers previos del JSON.
+    payload["version"] = version
+
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
     OUT_MD.parent.mkdir(parents=True, exist_ok=True)
     OUT_JSON.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     lineas = [
-        f"# Auditoría final de release — v{version}",
+        "# Auditoría de coherencia del estado actual de `main`",
         "",
-        "> Release candidate del PoC independiente. `release_ready=true` significa coherencia técnica del repositorio, **no conformidad ni aprobación institucional de la CGR**.",
+        f"> Versión declarada en `VERSION`: **v{version}**. Si ese tag ya existe, permanece como snapshot histórico e inmutable; este documento audita el commit actual de `main` y no afirma que el tag contenga cambios posteriores.",
+        "",
+        "`release_ready=true` significa que los gates técnicos del repositorio están coherentes; **no significa conformidad, aprobación ni despliegue institucional de la CGR**.",
         "",
         f"- Commit auditado: `{payload['git_commit_auditado']}`",
         f"- Checks: **{payload['checks_ok']}/{payload['total_checks']} OK**",
-        f"- Resultado: **{'READY' if payload['release_ready'] else 'NO READY'}**",
+        f"- Resultado del gate: **{'READY' if payload['release_ready'] else 'NO READY'}**",
         "",
         "| Estado | Verificación | Detalle |",
         "|:---:|---|---|",
@@ -232,17 +240,17 @@ def main():
         lineas.append(f"| {'✅' if c['ok'] else '🔴'} | {c['check']} | {c['detalle']} |")
     lineas += [
         "",
-        "## Pendientes después del release",
+        "## Dependencias institucionales abiertas",
         "",
-        "No se trasladan aquí como brechas técnicas. La única fuente canónica es `docs/Dependencias_Institucionales_CGR.md` (`CGR-DEP-01..08`).",
+        "No se trasladan aquí como defectos del repositorio. La fuente canónica es `docs/Dependencias_Institucionales_CGR.md` (`CGR-DEP-01..08`).",
         "",
     ]
     OUT_MD.write_text("\n".join(lineas), encoding="utf-8")
 
     if fallos:
         nombres = ", ".join(c["check"] for c in fallos)
-        raise SystemExit(f"Release NO READY. Fallos: {nombres}")
-    print(f"Release READY: {len(checks)}/{len(checks)} checks OK para v{version}")
+        raise SystemExit(f"Gate de coherencia NO READY. Fallos: {nombres}")
+    print(f"Gate de coherencia READY: {len(checks)}/{len(checks)} checks OK; VERSION=v{version}")
 
 
 if __name__ == "__main__":
