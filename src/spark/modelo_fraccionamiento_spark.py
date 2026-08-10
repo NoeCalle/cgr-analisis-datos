@@ -1,10 +1,10 @@
-"""
-Modelo de posible Fraccionamiento con Apache Spark MLlib.
+"""Modelo de posible fraccionamiento con Apache Spark MLlib.
 
-MLlib no incluye Isolation Forest nativo; la ruta objetivo usa KMeans + distancia
-al centroide y una señal temporal interpretable. Sprint 3 separa FIT de scoring:
-StandardScalerModel y KMeansModel se ajustan únicamente en TRAIN, se persisten
-por separado y luego pueden cargarse para INFERENCE sin labels.
+MLlib no incluye Isolation Forest nativo; la ruta objetivo usa KMeans +
+distancia al centroide y una señal temporal interpretable. La semántica de las
+features se mantiene alineada con pandas: cantidad y monto pertenecen a la
+misma ventana de 15 días y pequeñas variantes lexicales del objeto se agrupan
+mediante una firma reproducible y auditable.
 """
 
 from __future__ import annotations
@@ -22,6 +22,7 @@ from pyspark.ml.feature import StandardScaler, VectorAssembler
 from pyspark.sql import SparkSession, Window
 from pyspark.sql import functions as F
 
+from core.objeto_similarity import firma_objeto
 from umbrales_normativos import obtener_umbral
 
 SEGUNDOS_15_DIAS = 15 * 86400
@@ -31,6 +32,7 @@ FEATURES = [
 ]
 OUTPUT_RANKING = Path("outputs/ranking_riesgo_fraccionamiento_spark.csv")
 OUTPUT_RESUMEN = Path("outputs/spark_fraccionamiento_resumen.json")
+TUNING_PATH = Path("outputs/tuning_fraccionamiento_spark_resumen.json")
 MODEL_DIR = Path(os.environ.get(
     "CGR_SPARK_FRACCIONAMIENTO_MODEL_DIR",
     "outputs/runtime/modelo_fraccionamiento_spark_kmeans",
@@ -51,12 +53,22 @@ def crear_sesion(app_name: str = "cgr-fraccionamiento-poc"):
     )
 
 
+def k_seleccionado(default: int = 2) -> tuple[int, str]:
+    if not TUNING_PATH.exists():
+        return int(default), "poc_default"
+    data = json.loads(TUNING_PATH.read_text(encoding="utf-8"))
+    k = data.get("mejor_configuracion", {}).get("k")
+    if k is None:
+        raise ValueError(f"Resumen Spark de fraccionamiento incompleto: {TUNING_PATH}")
+    return int(k), "spark_holdout_summary"
+
+
 def construir_features_ventana_desde_df(
     df,
     label_col: str | None = "es_fraccionamiento_real",
 ):
     requeridas = {
-        "id_proveedor", "id_entidad", "objeto", "categoria_principal", "fecha_contrato",
+        "id_proveedor", "id_entidad", "objeto", "fecha_contrato",
         "monto", "id_contrato",
     }
     if label_col is not None:
@@ -65,41 +77,68 @@ def construir_features_ventana_desde_df(
     if faltantes:
         raise ValueError(f"Datos Spark no contienen columnas requeridas: {sorted(faltantes)}")
 
-    df = df.withColumn("ts", F.col("fecha_contrato").cast("timestamp").cast("long"))
-    w = (
-        Window.partitionBy("id_proveedor", "id_entidad", "objeto")
-        .orderBy("ts")
-        .rangeBetween(0, SEGUNDOS_15_DIAS)
-    )
-    df = df.withColumn("contratos_ventana_15d", F.count("id_contrato").over(w))
-    df = df.withColumn("monto_ventana_15d", F.sum("monto").over(w))
-
+    categoria_expr = F.col("categoria_principal") if "categoria_principal" in df.columns else F.lit(None)
+    firma_udf = F.udf(lambda obj, cat: firma_objeto(obj, cat), "string")
     obtener_umbral_udf = F.udf(
         lambda fecha, objeto, categoria: float(
             obtener_umbral(fecha, objeto=objeto, categoria_principal=categoria)
         ),
         "double",
     )
-    df = df.withColumn(
-        "umbral_aplicable",
-        obtener_umbral_udf(F.col("fecha_contrato"), F.col("objeto"), F.col("categoria_principal")),
+
+    base = (
+        df.withColumn("objeto_familia", firma_udf(F.col("objeto"), categoria_expr))
+        .withColumn("ts", F.col("fecha_contrato").cast("timestamp").cast("long"))
     )
-    df = df.withColumn(
-        "bajo_umbral", (F.col("monto") < F.col("umbral_aplicable") * 0.95).cast("int")
+    grupo_cols = ["id_proveedor", "id_entidad", "objeto_familia"]
+    w15 = (
+        Window.partitionBy(*grupo_cols)
+        .orderBy("ts")
+        .rangeBetween(0, SEGUNDOS_15_DIAS)
+    )
+    base = (
+        base.withColumn("contratos_ventana_15d", F.count("id_contrato").over(w15))
+        .withColumn("monto_ventana_15d", F.sum("monto").over(w15))
+        .withColumn(
+            "umbral_aplicable",
+            obtener_umbral_udf(F.col("fecha_contrato"), F.col("objeto"), categoria_expr),
+        )
+        .withColumn(
+            "bajo_umbral",
+            (F.col("monto") < F.col("umbral_aplicable") * 0.95).cast("int"),
+        )
+    )
+
+    # Misma regla que pandas: elegir UNA ventana por máximo número de contratos
+    # y, en empate, el inicio cronológicamente más temprano. El monto publicado
+    # pertenece exactamente a esa ventana.
+    w_pick = Window.partitionBy(*grupo_cols).orderBy(
+        F.desc("contratos_ventana_15d"), F.asc("ts"), F.asc("id_contrato")
+    )
+    mejor_ventana = (
+        base.withColumn("_rn_ventana", F.row_number().over(w_pick))
+        .filter(F.col("_rn_ventana") == 1)
+        .select(
+            *grupo_cols,
+            F.col("contratos_ventana_15d").alias("max_contratos_ventana_15d"),
+            F.col("monto_ventana_15d").alias("monto_total_ventana_15d"),
+        )
     )
 
     expresiones = [
         F.count("id_contrato").alias("n_contratos_grupo"),
-        F.max("contratos_ventana_15d").alias("max_contratos_ventana_15d"),
-        F.max("monto_ventana_15d").alias("monto_total_ventana_15d"),
         F.avg("bajo_umbral").alias("pct_montos_bajo_umbral"),
         F.sum("monto").alias("monto_total_grupo"),
+        F.first("objeto", ignorenulls=True).alias("objeto"),
     ]
     if label_col is not None:
         expresiones.append(F.max(F.col(label_col).cast("int")).alias("label"))
 
-    grupos = df.groupBy("id_proveedor", "id_entidad", "objeto").agg(*expresiones)
-    return grupos.filter(F.col("n_contratos_grupo") >= 2)
+    grupos = base.groupBy(*grupo_cols).agg(*expresiones)
+    return (
+        grupos.join(mejor_ventana, grupo_cols, "inner")
+        .filter(F.col("n_contratos_grupo") >= 2)
+    )
 
 
 def construir_features_ventana(spark):
@@ -136,7 +175,7 @@ def entrenar_modelos_kmeans(df, k=2):
         inputCol="features_raw", outputCol="features", withMean=True, withStd=True
     ).fit(df_vec)
     df_scaled = scaler_model.transform(df_vec)
-    modelo = KMeans(featuresCol="features", predictionCol="cluster", k=k, seed=42).fit(df_scaled)
+    modelo = KMeans(featuresCol="features", predictionCol="cluster", k=int(k), seed=42).fit(df_scaled)
     return _agregar_score_distancia(modelo.transform(df_scaled), modelo), modelo, scaler_model
 
 
@@ -149,7 +188,6 @@ def puntuar_con_modelos(df, modelo, scaler_model):
 
 
 def detectar_anomalias_kmeans(df, k=2):
-    """Alias de compatibilidad para la corrida reproducible."""
     return entrenar_modelos_kmeans(df, k=k)
 
 
@@ -158,16 +196,12 @@ def validar_sanity(df_pred):
     n_pos = df_pred.filter(F.col("label") == 1).count()
     top_aciertos = None
     if n_pos:
-        top = df_pred.orderBy(F.desc("score_anomalia")).limit(n_pos).toPandas()
-        top_aciertos = int(top["label"].sum())
+        top = df_pred.orderBy(F.desc("score_anomalia")).limit(n_pos).select("label").collect()
+        top_aciertos = int(sum(int(row["label"]) for row in top))
         print(f"Sanity KMeans top-{n_pos}: {top_aciertos}/{n_pos} casos sembrados.")
     marcados = df_pred.filter(F.col("senal_priorizacion_fraccionamiento"))
     n_marcados = marcados.count()
     n_marcados_pos = marcados.filter(F.col("label") == 1).count()
-    print(
-        f"Sanity señal interpretable: {n_marcados} grupos marcados; "
-        f"{n_marcados_pos} sembrados."
-    )
     return {
         "n_grupos": int(n_total),
         "positivos_sinteticos": int(n_pos),
@@ -177,7 +211,7 @@ def validar_sanity(df_pred):
     }
 
 
-def guardar_resumen(modelo, sanity, duracion_s):
+def guardar_resumen(modelo, sanity, duracion_s, selection_source):
     resumen = {
         "motor": "Apache Spark MLlib",
         "modo": "local[*]",
@@ -185,15 +219,18 @@ def guardar_resumen(modelo, sanity, duracion_s):
         "dataset": "lakehouse/plata/contratos_procesados.csv",
         "algoritmo": "StandardScaler + KMeans + distancia al centroide",
         "k": int(modelo.getK()),
+        "selection_source": selection_source,
         "features": FEATURES,
+        "window_semantics": "cantidad y monto de la misma ventana de 15 días; empate por inicio más temprano",
+        "object_grouping": "firma lexical reproducible objeto_familia",
         "sanity_sintetico": sanity,
         "ranking": str(OUTPUT_RANKING),
         "modelo_runtime": str(MODEL_DIR),
         "scaler_runtime": str(SCALER_DIR),
         "duracion_s": round(float(duracion_s), 3),
         "advertencia": (
-            "Sanity check sobre benchmark sintético; no estima desempeño productivo. "
-            "Ejecución Spark real local; clúster CGR pendiente."
+            "Sanity check sobre benchmark sintético; la evidencia out-of-sample del KMeans "
+            "se publica en tuning_fraccionamiento_spark_resumen.json. No estima desempeño productivo."
         ),
     }
     OUTPUT_RESUMEN.parent.mkdir(parents=True, exist_ok=True)
@@ -206,15 +243,20 @@ def main():
     spark = crear_sesion()
     spark.sparkContext.setLogLevel("ERROR")
     spark.sparkContext.addPyFile(
+        os.path.join(os.path.dirname(__file__), "..", "core", "objeto_similarity.py")
+    )
+    spark.sparkContext.addPyFile(
         os.path.join(os.path.dirname(__file__), "..", "umbrales_normativos.py")
     )
     try:
         features = aplicar_senal_interpretable(construir_features_ventana(spark))
-        pred, modelo, scaler_model = entrenar_modelos_kmeans(features)
+        k, source = k_seleccionado()
+        pred, modelo, scaler_model = entrenar_modelos_kmeans(features, k=k)
         sanity = validar_sanity(pred)
 
         ranking = pred.select(
-            "id_proveedor", "id_entidad", "objeto", "max_contratos_ventana_15d",
+            "id_proveedor", "id_entidad", "objeto", "objeto_familia",
+            "max_contratos_ventana_15d", "monto_total_ventana_15d",
             "pct_montos_bajo_umbral", "score_anomalia",
             "senal_priorizacion_fraccionamiento", "label",
         ).orderBy(F.desc("score_anomalia"))
@@ -223,8 +265,7 @@ def main():
         MODEL_DIR.parent.mkdir(parents=True, exist_ok=True)
         modelo.write().overwrite().save(str(MODEL_DIR))
         scaler_model.write().overwrite().save(str(SCALER_DIR))
-        guardar_resumen(modelo, sanity, time.time() - t0)
-        print(f"Spark MLlib verificado en entorno local en {time.time()-t0:.1f}s; clúster CGR pendiente.")
+        guardar_resumen(modelo, sanity, time.time() - t0, source)
     finally:
         spark.stop()
 
