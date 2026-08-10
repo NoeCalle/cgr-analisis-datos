@@ -103,6 +103,22 @@ def _crear_config_retraining(base_config: dict, contracts_path: Path, target: Pa
     cfg["source"]["type"] = "local_csv"
     cfg["source"].pop("tables", None)
     cfg["source"]["datasets"] = {"contracts": contracts_path.as_posix()}
+    # El CSV combinado ya está en contrato canónico porque proviene de
+    # ``integrar()`` + el lote nuevo renombrado. Por tanto las columnas físicas
+    # y canónicas coinciden y no deben heredarse los nombres del CSV fuente.
+    cfg["mapping"]["contracts"] = {
+        "id_contrato": "id_contrato",
+        "id_proveedor": "id_proveedor",
+        "id_entidad": "id_entidad",
+        "id_funcionario": "id_funcionario",
+        "monto": "monto",
+        "fecha_contrato": "fecha_contrato",
+        "modalidad": "modalidad",
+        "objeto": "objeto",
+        "categoria_principal": "categoria_principal",
+        "label_favoritismo": "label_favoritismo",
+        "label_fraccionamiento": "label_fraccionamiento",
+    }
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(yaml.safe_dump(cfg, sort_keys=False, allow_unicode=True), encoding="utf-8")
 
@@ -134,7 +150,6 @@ def ejecutar(
         for escenario in ["normal", "con_drift"]:
             path = Path(f"data/lote_nuevo_{escenario}.csv")
             raw = pd.read_csv(path, parse_dates=["fecha_contrato"])
-            # adaptar nombres del CSV sintético al contrato canónico esperado por el feature builder
             raw = raw.rename(columns={
                 "es_favoritismo_real": "label_favoritismo",
                 "es_fraccionamiento_real": "label_fraccionamiento",
@@ -146,8 +161,6 @@ def ejecutar(
     finally:
         spark.stop()
 
-    # El candidate se genera DESPUÉS de cerrar la sesión usada para puntuar el
-    # champion, evitando mezclar el proceso de evaluación con un FIT nuevo.
     base_config = config
     for resultado in resultados:
         resultado["active_profile"] = SPARK_PROFILE
