@@ -1,10 +1,9 @@
-"""
-Generador de datos sintéticos de contrataciones públicas.
+"""Generador de datos sintéticos de contrataciones públicas.
 
-El ground truth es sintético y sirve para validación funcional/metodológica.
-P1 añade hard negatives, modalidades separadas y una `categoria_principal`
-estructurada (`goods/services/works`) para no inferir el tipo contractual a
-partir de palabras ambiguas como "construcción" en materiales de construcción.
+El ground truth es exclusivamente sintético y sirve para validación funcional y
+metodológica. El benchmark incluye positivos variados, hard negatives de alta
+concentración y repeticiones legítimas, además de variantes lexicales del mismo
+objeto para probar la agrupación de objetos similares.
 """
 
 from datetime import datetime, timedelta
@@ -19,7 +18,10 @@ N_CONTRATOS_NORMALES = 3500
 N_PROVEEDORES = 220
 N_ENTIDADES = 18
 N_FUNCIONARIOS = 60
-N_CASOS_LIMITE_LEGITIMOS = 12
+N_CASOS_LIMITE_LEGITIMOS = 30
+N_CASOS_REPETICION_LEGITIMA = 24
+N_CASOS_FAVORITISMO = 30
+N_CASOS_FRACCIONAMIENTO = 24
 
 MODALIDADES = [
     "Licitación Pública", "Concurso Público", "Adjudicación Simplificada",
@@ -40,6 +42,29 @@ OBJETOS = [
     "Suministro de combustible",
 ]
 
+VARIANTES_OBJETO = {
+    "Servicio de mantenimiento de infraestructura": [
+        "Mantenimiento preventivo de infraestructura",
+        "Servicio de conservación preventiva de infraestructura",
+    ],
+    "Obra de rehabilitación vial": [
+        "Rehabilitación de vía pública",
+        "Obra de rehabilitación de carretera",
+    ],
+    "Adquisición de equipos informáticos": [
+        "Adquisición de equipo informático",
+        "Compra de equipos informáticos",
+    ],
+    "Adquisición de materiales de construcción": [
+        "Adquisición de material de construcción",
+        "Compra de materiales de construcción",
+    ],
+    "Servicio de transporte": [
+        "Servicios de transporte",
+        "Contratación de servicio de transporte",
+    ],
+}
+
 CATEGORIA_POR_OBJETO = {
     "Adquisición de bienes de oficina": "goods",
     "Servicio de mantenimiento de infraestructura": "services",
@@ -52,10 +77,20 @@ CATEGORIA_POR_OBJETO = {
     "Servicio de transporte": "services",
     "Suministro de combustible": "goods",
 }
+for _base, _variantes in VARIANTES_OBJETO.items():
+    for _variante in _variantes:
+        CATEGORIA_POR_OBJETO[_variante] = CATEGORIA_POR_OBJETO[_base]
 
 
 def categoria_principal(objeto):
     return CATEGORIA_POR_OBJETO.get(objeto, "services")
+
+
+def _variante_objeto(base, prob=0.45):
+    variantes = VARIANTES_OBJETO.get(base, [])
+    if variantes and RNG.random() < prob:
+        return RNG.choice(variantes)
+    return base
 
 
 def _fecha_aleatoria(inicio, fin):
@@ -129,7 +164,7 @@ def generar_contratos_normales(proveedores, entidades, funcionarios, n=N_CONTRAT
 
 
 def generar_casos_limite_legitimos(proveedores, entidades, funcionarios, n_casos=N_CASOS_LIMITE_LEGITIMOS):
-    """Hard negatives: alta concentración sin etiqueta de favoritismo."""
+    """Hard negatives de favoritismo: alta concentración sin etiqueta positiva."""
     inicio, fin = datetime(2024, 1, 1), datetime(2026, 6, 30)
     filas, idx = [], 700000
     for _ in range(n_casos):
@@ -137,7 +172,7 @@ def generar_casos_limite_legitimos(proveedores, entidades, funcionarios, n_casos
         entidad = RNG.choice(entidades["id_entidad"])
         objeto_fijo = RNG.choice(OBJETOS)
         for _ in range(int(RNG.integers(6, 13))):
-            objeto = objeto_fijo if RNG.random() < 0.90 else RNG.choice(OBJETOS)
+            objeto = _variante_objeto(objeto_fijo, prob=0.20) if RNG.random() < 0.90 else RNG.choice(OBJETOS)
             filas.append(fila_contrato(
                 idx, proveedor, entidad, _funcionario_de_entidad(funcionarios, entidad),
                 RNG.choice(
@@ -151,7 +186,44 @@ def generar_casos_limite_legitimos(proveedores, entidades, funcionarios, n_casos
     return pd.DataFrame(filas)
 
 
-def sembrar_favoritismo(proveedores, entidades, funcionarios, n_casos=6, contratos_por_caso=(8, 15)):
+def generar_repeticiones_legitimas(proveedores, entidades, funcionarios, n_casos=N_CASOS_REPETICION_LEGITIMA):
+    """Hard negatives de fraccionamiento: compras repetidas cercanas pero legítimas.
+
+    Fuerzan a que la regla temporal por sí sola tenga falsos positivos y, por
+    tanto, no pueda confundirse con ground truth.
+    """
+    inicio, fin = datetime(2024, 1, 1), datetime(2026, 5, 1)
+    filas, idx = [], 750000
+    for _ in range(n_casos):
+        proveedor = RNG.choice(proveedores["id_proveedor"])
+        entidad = RNG.choice(entidades["id_entidad"])
+        base_objeto = RNG.choice(OBJETOS)
+        categoria = categoria_principal(base_objeto)
+        fecha_base = _fecha_aleatoria(inicio, fin)
+        umbral = obtener_umbral(fecha_base, objeto=base_objeto, categoria_principal=categoria)
+        n = int(RNG.integers(3, 6))
+        # Casos deliberadamente bajo el umbral y próximos en el tiempo, pero
+        # etiquetados como legítimos para desafiar la regla heurística.
+        for _ in range(n):
+            objeto = _variante_objeto(base_objeto, prob=0.65)
+            filas.append(fila_contrato(
+                idx,
+                proveedor,
+                entidad,
+                _funcionario_de_entidad(funcionarios, entidad),
+                RNG.choice(["Licitación Pública", "Concurso Público", "Adjudicación Simplificada"]),
+                objeto,
+                RNG.uniform(0.10 * umbral, 0.45 * umbral),
+                fecha_base + timedelta(days=int(RNG.integers(0, 10))),
+                False,
+                False,
+                "hard_negative_repeticion_legitima",
+            ))
+            idx += 1
+    return pd.DataFrame(filas)
+
+
+def sembrar_favoritismo(proveedores, entidades, funcionarios, n_casos=N_CASOS_FAVORITISMO, contratos_por_caso=(7, 14)):
     """Siembra señales combinadas con ruido; no una modalidad aislada."""
     inicio, fin = datetime(2024, 1, 1), datetime(2026, 6, 30)
     filas, idx = [], 900000
@@ -164,36 +236,37 @@ def sembrar_favoritismo(proveedores, entidades, funcionarios, n_casos=6, contrat
         funcionarios_caso = RNG.choice(candidatos, size=min(2, len(candidatos)), replace=False)
         objeto_fijo = RNG.choice(OBJETOS)
         for _ in range(int(RNG.integers(*contratos_por_caso))):
-            objeto = objeto_fijo if RNG.random() < 0.85 else RNG.choice(OBJETOS)
+            objeto = _variante_objeto(objeto_fijo, prob=0.25) if RNG.random() < 0.82 else RNG.choice(OBJETOS)
             filas.append(fila_contrato(
                 idx, proveedor, entidad, RNG.choice(funcionarios_caso),
                 RNG.choice(
                     ["Contratación Directa", "Comparación de Precios", "Adjudicación Simplificada"],
-                    p=[0.65, 0.15, 0.20],
+                    p=[0.58, 0.17, 0.25],
                 ),
-                objeto, RNG.uniform(50_000, 500_000), _fecha_aleatoria(inicio, fin),
+                objeto, RNG.uniform(50_000, 650_000), _fecha_aleatoria(inicio, fin),
                 True, False, "favoritismo_sembrado",
             ))
             idx += 1
     return pd.DataFrame(filas)
 
 
-def sembrar_fraccionamiento(proveedores, entidades, funcionarios, n_casos=8, partes_por_caso=(3, 6)):
-    """Siembra compras divididas usando cuantía por fecha y categoría."""
+def sembrar_fraccionamiento(proveedores, entidades, funcionarios, n_casos=N_CASOS_FRACCIONAMIENTO, partes_por_caso=(3, 7)):
+    """Siembra compras divididas con variantes lexicales del mismo objeto."""
     inicio, fin = datetime(2024, 1, 1), datetime(2026, 5, 1)
     filas, idx = [], 800000
     for _ in range(n_casos):
         proveedor = RNG.choice(proveedores["id_proveedor"])
         entidad = RNG.choice(entidades["id_entidad"])
-        objeto = RNG.choice(OBJETOS)
-        categoria = categoria_principal(objeto)
+        base_objeto = RNG.choice(OBJETOS)
+        categoria = categoria_principal(base_objeto)
         n_partes = int(RNG.integers(*partes_por_caso))
         fecha_base = _fecha_aleatoria(inicio, fin)
-        umbral = obtener_umbral(fecha_base, objeto=objeto, categoria_principal=categoria)
+        umbral = obtener_umbral(fecha_base, objeto=base_objeto, categoria_principal=categoria)
         monto_total = float(RNG.uniform(1.10 * umbral, 2.20 * umbral))
         montos = np.abs(RNG.normal(monto_total / n_partes, monto_total * 0.04, n_partes))
 
         for monto in montos:
+            objeto = _variante_objeto(base_objeto, prob=0.70)
             modalidad = (
                 "Adjudicación Simplificada"
                 if fecha_base < datetime(2025, 4, 22)
@@ -221,12 +294,13 @@ def main():
     entidades = generar_entidades()
     funcionarios = generar_funcionarios(entidades=entidades)
     normales = generar_contratos_normales(proveedores, entidades, funcionarios)
-    hard_negatives = generar_casos_limite_legitimos(proveedores, entidades, funcionarios)
+    hard_fav = generar_casos_limite_legitimos(proveedores, entidades, funcionarios)
+    hard_frac = generar_repeticiones_legitimas(proveedores, entidades, funcionarios)
     favoritismo = sembrar_favoritismo(proveedores, entidades, funcionarios)
     fraccionamiento = sembrar_fraccionamiento(proveedores, entidades, funcionarios)
 
     contratos = pd.concat(
-        [normales, hard_negatives, favoritismo, fraccionamiento], ignore_index=True
+        [normales, hard_fav, hard_frac, favoritismo, fraccionamiento], ignore_index=True
     ).sample(frac=1, random_state=42).reset_index(drop=True)
     contratos = introducir_valores_faltantes(contratos)
 
@@ -237,7 +311,8 @@ def main():
 
     print(f"Contratos generados: {len(contratos)}")
     print(f"  normales: {len(normales)}")
-    print(f"  hard negatives legítimos: {len(hard_negatives)}")
+    print(f"  hard negatives concentración: {len(hard_fav)}")
+    print(f"  hard negatives repetición: {len(hard_frac)}")
     print(f"  favoritismo sembrado: {len(favoritismo)}")
     print(f"  fraccionamiento sembrado: {len(fraccionamiento)}")
 
