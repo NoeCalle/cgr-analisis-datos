@@ -41,36 +41,17 @@ jobs:
                   raise SystemExit(f'No se encontró patrón esperado en tests.yml: {old}')
               text = text.replace(old, new)
 
-          audit_old = """      - name: Audit complete public TDR
-        run: python src/auditar_tdr_completo.py
-"""
-          audit_new = """      - name: Regenerate documentation audits
-        run: |
-          python src/generar_dependencias_cgr.py
-          python src/generar_checklist_anexo3.py
-          python src/auditar_tdr_completo.py
-          python src/auditar_release.py
-"""
+          audit_old = "      - name: Audit complete public TDR\n        run: python src/auditar_tdr_completo.py\n"
+          audit_new = "      - name: Regenerate documentation audits\n        run: |\n          python src/generar_dependencias_cgr.py\n          python src/generar_checklist_anexo3.py\n          python src/auditar_tdr_completo.py\n          python src/auditar_release.py\n"
           if audit_old not in text:
               raise SystemExit('No se encontró el bloque de auditoría TDR esperado')
           text = text.replace(audit_old, audit_new)
 
-          upload_anchor = """            outputs/auditoria_tdr_completo.json
-            docs/Auditoria_TDR_Completo.md
-"""
-          upload_extra = """            outputs/auditoria_tdr_completo.json
-            docs/Auditoria_TDR_Completo.md
-            outputs/checklist_anexo3.json
-            docs/Checklist_Anexo_03.md
-            outputs/dependencias_cgr.json
-            docs/Dependencias_Institucionales_CGR.md
-            outputs/auditoria_release.json
-            docs/Auditoria_Final_Release.md
-"""
+          upload_anchor = "            outputs/auditoria_tdr_completo.json\n            docs/Auditoria_TDR_Completo.md\n"
+          upload_extra = upload_anchor + "            outputs/checklist_anexo3.json\n            docs/Checklist_Anexo_03.md\n            outputs/dependencias_cgr.json\n            docs/Dependencias_Institucionales_CGR.md\n            outputs/auditoria_release.json\n            docs/Auditoria_Final_Release.md\n"
           if text.count(upload_anchor) != 2:
               raise SystemExit(f'Se esperaban 2 anchors de auditoría, encontrados: {text.count(upload_anchor)}')
           text = text.replace(upload_anchor, upload_extra)
-
           workflow.write_text(text, encoding='utf-8')
 
           productos = Path('reporte/generar_productos_formales.js')
