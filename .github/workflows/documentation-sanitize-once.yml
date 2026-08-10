@@ -49,10 +49,28 @@ jobs:
 
           upload_anchor = "            outputs/auditoria_tdr_completo.json\n            docs/Auditoria_TDR_Completo.md\n"
           upload_extra = upload_anchor + "            outputs/checklist_anexo3.json\n            docs/Checklist_Anexo_03.md\n            outputs/dependencias_cgr.json\n            docs/Dependencias_Institucionales_CGR.md\n            outputs/auditoria_release.json\n            docs/Auditoria_Final_Release.md\n"
-          if text.count(upload_anchor) != 2:
-              raise SystemExit(f'Se esperaban 2 anchors de auditoría, encontrados: {text.count(upload_anchor)}')
+          if text.count(upload_anchor) != 1:
+              raise SystemExit(f'Se esperaba 1 anchor en upload de auditoría, encontrados: {text.count(upload_anchor)}')
           text = text.replace(upload_anchor, upload_extra)
-          workflow.write_text(text, encoding='utf-8')
+
+          lines = text.splitlines()
+          out = []
+          persist_inserted = False
+          for line in lines:
+              out.append(line)
+              if line.strip() == 'docs/Auditoria_TDR_Completo.md \\':
+                  out.extend([
+                      '            outputs/checklist_anexo3.json \\',
+                      '            docs/Checklist_Anexo_03.md \\',
+                      '            outputs/dependencias_cgr.json \\',
+                      '            docs/Dependencias_Institucionales_CGR.md \\',
+                      '            outputs/auditoria_release.json \\',
+                      '            docs/Auditoria_Final_Release.md \\',
+                  ])
+                  persist_inserted = True
+          if not persist_inserted:
+              raise SystemExit('No se encontró el punto de inserción en git add')
+          workflow.write_text('\n'.join(out) + '\n', encoding='utf-8')
 
           productos = Path('reporte/generar_productos_formales.js')
           ptext = productos.read_text(encoding='utf-8')
