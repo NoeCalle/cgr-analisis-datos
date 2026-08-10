@@ -1,5 +1,6 @@
 # Configuración reproducible del PoC actual usando archivos locales.
 # Conserva el comportamiento existente y sirve como referencia ejecutable.
+contract_schema_version: 1
 mode: inference
 
 source:
