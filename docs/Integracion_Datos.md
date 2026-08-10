@@ -1,20 +1,20 @@
 # Integración de datos — referencia técnica
 
-Este documento describe la capa de integración configurable del PoC. Su objetivo es desacoplar los modelos de los nombres físicos de tablas y columnas de cualquier fuente externa o institucional.
+Este documento describe la capa configurable que desacopla los modelos de los nombres físicos de tablas y columnas de cualquier fuente externa o institucional.
 
-> El repositorio sigue siendo un prototipo independiente. Los nombres de tablas/columnas de `config/cgr.example.yaml` son marcadores de posición y no representan el esquema real de la CGR.
+> El repositorio sigue siendo un prototipo público e independiente. Los nombres de `config/cgr.example.yaml` son marcadores de posición y no representan el esquema real de la CGR.
 
-Para el procedimiento completo de aterrizaje en infraestructura institucional, consultar [`Manual_Aterrizaje_Institucional_CGR.md`](Manual_Aterrizaje_Institucional_CGR.md).
+Para el procedimiento completo de aterrizaje institucional, consultar [`Manual_Aterrizaje_Institucional_CGR.md`](Manual_Aterrizaje_Institucional_CGR.md).
 
 ## Principio
 
-El código de ML trabaja contra un **esquema canónico**. Cada fuente se adapta mediante configuración:
+El código analítico trabaja contra un **esquema canónico**:
 
 ```text
 fuente física -> connector -> mapping YAML -> esquema canónico -> preprocesamiento/modelos
 ```
 
-La dirección del mapping es siempre:
+La dirección del mapping es:
 
 ```text
 campo_canónico: columna_física
@@ -32,15 +32,16 @@ mapping:
     fecha_contrato: FEC_SUSC
     modalidad: TIP_PROC
     objeto: DESC_OBJ
+    categoria_principal: CAT_PRINC
 ```
 
-Con este mapping, los modelos no necesitan conocer `COD_PROV`, `IMP_ADJ` ni ningún otro nombre institucional.
+Los modelos no necesitan conocer nombres físicos como `COD_PROV` o `IMP_ADJ`.
 
 ## Modos
 
 ### inference
 
-Es el modo para contratos actuales. No exige ground truth. Campos mínimos de `contracts`:
+Se usa para contratos actuales. No exige ground truth. Campos obligatorios de `contracts`:
 
 - `id_contrato`
 - `id_proveedor`
@@ -49,10 +50,13 @@ Es el modo para contratos actuales. No exige ground truth. Campos mínimos de `c
 - `fecha_contrato`
 - `modalidad`
 - `objeto`
+- `categoria_principal`
 
-Que una columna sea obligatoria significa que **debe existir en la fuente/mapping**. Se permiten nulos en campos que el quality gate/preprocesamiento trata explícitamente (`monto`, `modalidad`, `objeto`). Las claves estructurales (`id_contrato`, `id_proveedor`, `id_entidad`) y `fecha_contrato` no pueden llegar nulas porque no existe una recuperación genérica segura.
+Que una columna sea obligatoria significa que **debe existir en la fuente/mapping**. `monto`, `modalidad`, `objeto` y `categoria_principal` pueden contener nulos porque existe tratamiento/fallback explícito. Las claves estructurales y `fecha_contrato` no pueden llegar nulas.
 
-Los labels no forman parte del contrato obligatorio de inferencia.
+`categoria_principal` es estructuralmente necesaria para el análisis de fraccionamiento porque permite resolver el contexto normativo; un valor nulo puede utilizar el fallback del proveedor de umbrales, pero la columna no debe desaparecer del contrato.
+
+Los labels no forman parte del contrato de INFERENCE.
 
 ### training
 
@@ -61,7 +65,7 @@ Extiende el contrato anterior y exige:
 - `label_favoritismo`
 - `label_fraccionamiento`
 
-Estos nombres son canónicos y no pueden ser nulos en entrenamiento. Una fuente histórica puede mapear cualquier columna de ground truth institucionalmente aprobada a esos campos.
+Estos nombres son canónicos, no pueden ser nulos en TRAIN y deben provenir de un ground truth institucionalmente aprobado cuando la solución se implante con datos reales.
 
 ## Dominios canónicos
 
@@ -73,19 +77,23 @@ La integración define contratos para:
 - `officials`
 - `payments`
 
-`payments` ya forma parte del análisis funcional de pagos, montos contractuales y modalidades. Su uso requiere `contracts + payments` y se ejecuta mediante `src/analisis_pagos_modalidades.py`.
+`payments` forma parte del análisis de pagos, montos contractuales y modalidades mediante `src/analisis_pagos_modalidades.py`.
 
-El esquema exacto y las reglas de nulabilidad están en `src/core/schemas.py`.
+Las reglas canónicas están en `src/core/schemas.py`; la implementación equivalente para DataFrames Spark está en `src/core/schemas_spark.py`.
 
 ## Fuentes soportadas
 
-### local_csv
+### `local_csv`
 
-Mantiene la reproducción del PoC y permite fixtures/control de integración. Configuración ejecutable: `config/local.yaml`.
+Mantiene la reproducción local y fixtures de integración. El conector lee inicialmente como texto para preservar identificadores con ceros a la izquierda; el esquema canónico convierte después montos, fechas y booleanos.
 
-El conector lee inicialmente como texto para conservar identificadores con ceros a la izquierda; el esquema canónico convierte después montos, fechas y booleanos.
+Ruta de ejecución:
 
-### sqlserver
+```text
+CSV -> pandas -> mapping/validación canónica -> adaptador pandas→Spark cuando entra al ML operacional
+```
+
+### `sqlserver`
 
 Usa `src/connectors/sqlserver.py`.
 
@@ -105,36 +113,107 @@ El conector construye únicamente una proyección de identificadores configurado
 SELECT columnas_configuradas FROM tabla_o_vista_configurada
 ```
 
-No recibe SQL libre desde el YAML. Para joins, filtros o consolidaciones complejas, se recomienda publicar **vistas institucionales aprobadas** y mapearlas al esquema canónico.
+No recibe SQL libre desde YAML. Para joins, filtros o consolidaciones complejas se recomienda publicar **vistas institucionales aprobadas** y mapearlas al esquema canónico.
 
-### spark_sql
+Ruta operacional:
 
-Usa `src/connectors/spark_sql.py` y tablas/vistas accesibles mediante `SparkSession.table`.
+```text
+SQL Server -> pandas -> mapping/validación canónica -> adaptador pandas→Spark -> MLlib
+```
 
-El conector no fija el master al crear su propia sesión y selecciona columnas mediante la API DataFrame. Sin embargo, la implementación pública actual termina materializando el resultado canónico con `toPandas()` porque `ingestar_canonico.py` comparte el mismo contrato pandas con `local_csv` y `sqlserver`.
+Este adapter es deliberado: no se presenta como procesamiento distribuido de la extracción SQL Server.
 
-Por tanto:
+### `spark_sql`
 
-- el **entrenamiento y scoring de los modelos sí se ejecutan con Apache Spark MLlib**;
-- el adaptador canónico público **no es todavía Spark-native end-to-end para volúmenes masivos**;
-- `spark_sql` es adecuado para validación de integración y volúmenes que puedan materializarse de forma segura en el driver;
-- una implantación institucional de gran volumen debe sustituir/extender esta frontera por un adaptador canónico Spark nativo o materializar previamente vistas/tablas canónicas dentro del Lakehouse institucional.
+Usa `src/connectors/spark_sql.py` y tablas/vistas accesibles mediante `SparkSession.table(...)`.
 
-Ese endurecimiento no cambia las features ni los modelos: cambia únicamente cómo se materializa el contrato canónico antes del pipeline MLlib. Su diseño final debe validarse contra la topología, seguridad y tamaño real de los datos CGR.
+Esta ruta es **Spark-native end-to-end**:
+
+```text
+Spark SQL / Lakehouse
+        -> Spark DataFrame
+        -> mapping canónico Spark
+        -> casteo y validación Spark
+        -> FIT/TRANSFORM Spark
+        -> feature engineering Spark
+        -> MLlib
+        -> Parquet distribuido
+```
+
+El conector devuelve un DataFrame Spark y no llama `toPandas()`. `src/ingestar_canonico.py` separa explícitamente `integrar()` (pandas) de `integrar_spark()`; intentar enviar `spark_sql` por la ruta pandas falla de forma explícita para evitar un collect accidental.
+
+`src/core/schemas_spark.py` aplica mapping, tipos, conversiones inválidas y reglas de nulabilidad mediante expresiones/agregaciones Spark. Solo se colectan al driver resultados escalares de validación, no el dataset contractual.
+
+## Preprocesamiento distribuido
+
+Para `spark_sql`, TRAIN utiliza `src/spark/ajustar_preprocesamiento_spark.py`.
+
+El FIT calcula de forma distribuida:
+
+- mediana de monto por objeto;
+- mediana global;
+- moda de modalidad;
+- moda de objeto;
+- P99 de monto.
+
+La dimensión `objeto -> mediana` puede ser grande, por lo que en la ruta operacional se persiste como **Parquet Spark** en vez de convertirla a un diccionario pandas/Python. El JSON del preprocesador conserva los escalares y marca que las medianas por objeto son externas. La promoción del candidate incorpora ambos artefactos al champion.
+
+INFERENCE vuelve a leer ese Parquet con Spark y aplica el estado congelado sin `.fit()`.
+
+## Salida distribuida
+
+Cuando la fuente es `spark_sql`, los rankings detallados de INFERENCE se escriben como directorios Parquet distribuidos:
+
+```text
+ranking_riesgo_favoritismo_spark.parquet/
+ranking_riesgo_fraccionamiento_spark.parquet/
+```
+
+Para fuentes pandas (`local_csv`/`sqlserver`), el PoC conserva CSV de archivo único por compatibilidad local.
+
+La evidencia de serving registra, entre otros:
+
+```text
+input_engine
+spark_native_ingestion
+pandas_materialization
+spark_mode
+detail_outputs.format
+```
+
+En una corrida `spark_sql` válida se espera:
+
+```text
+input_engine = spark_native
+spark_native_ingestion = true
+pandas_materialization = false
+detail_outputs.format = parquet_distributed
+```
+
+## Spark master y recursos
+
+TRAIN/INFERENCE operacionales admiten:
+
+```text
+CGR_SPARK_MASTER
+CGR_SPARK_SHUFFLE_PARTITIONS
+```
+
+Si `CGR_SPARK_MASTER` no se define, el PoC usa `local[*]` como fallback local. La ruta histórica de reproducibilidad conserva `local[*]` deliberadamente.
+
+En un entorno institucional el master, memoria, cores, dynamic allocation, catálogo, autenticación y demás opciones deben definirse por los mecanismos de la plataforma adoptada. La evidencia registra el `spark.sparkContext.master` efectivo.
 
 ## Configuración
 
-La plantilla institucional es `config/cgr.example.yaml`.
+Plantilla: `config/cgr.example.yaml`.
 
-Se recomienda copiarla a una ubicación/configuración privada:
+Copiarla a una ubicación privada/no versionada:
 
 ```bash
 cp config/cgr.example.yaml config/cgr.yaml
 ```
 
-`config/cgr.yaml` y `config/*.local.yaml` están ignorados por Git.
-
-La estructura general es:
+Ejemplo abreviado:
 
 ```yaml
 mode: inference
@@ -155,9 +234,10 @@ mapping:
     fecha_contrato: FECHA_CONTRATO_FUENTE
     modalidad: MODALIDAD_FUENTE
     objeto: OBJETO_CONTRATO_FUENTE
+    categoria_principal: CATEGORIA_PRINCIPAL_FUENTE
 ```
 
-Los nombres de objetos del ejemplo no representan objetos reales de CGR.
+Los nombres son placeholders y no representan objetos reales CGR.
 
 ## Validación sin conectarse
 
@@ -167,29 +247,21 @@ python src/ingestar_canonico.py \
   --validate-only
 ```
 
-Esto comprueba:
+Valida:
 
 - estructura YAML;
-- `source.type` válido (`local_csv`, `sqlserver`, `spark_sql`);
-- modo válido (`training`, `inference`);
+- `source.type` (`local_csv`, `sqlserver`, `spark_sql`);
+- modo (`training`/`inference`);
 - dominios conocidos;
 - campos canónicos;
-- campos obligatorios de contracts;
+- campos obligatorios;
 - mappings duplicados;
-- mappings con fuente configurada;
+- correspondencia mapping ↔ fuente;
 - ausencia de secrets inline.
 
 No abre conexión ni escribe datasets.
 
-## Preview end-to-end
-
-Ejemplo local:
-
-```bash
-python src/ingestar_canonico.py --config config/local.yaml
-```
-
-Ejemplo institucional DEV, usando un directorio seguro fuera del repo:
+## Preview de integración
 
 ```bash
 python src/ingestar_canonico.py \
@@ -197,11 +269,13 @@ python src/ingestar_canonico.py \
   --output-dir /ruta/segura/integracion_preview
 ```
 
-El manifest contiene modo, tipo de fuente, dominios, filas y columnas. El preview no debe versionarse cuando contenga información institucional.
+Para fuentes pandas el preview se materializa como CSV. Para `spark_sql`, `integrar_spark()` escribe directorios CSV distribuidos de preview y un manifest; no colecta el dataset al driver.
+
+Cualquier preview con datos institucionales debe mantenerse fuera del repositorio público.
 
 ## Seguridad de configuración
 
-El cargador rechaza claves de credenciales inline como:
+El cargador rechaza secretos inline como:
 
 - `password`
 - `passwd`
@@ -211,13 +285,9 @@ El cargador rechaza claves de credenciales inline como:
 - `api_key`
 - `connection_string`
 
-Las configuraciones versionables deben usar referencias `*_env`/`connection_env`.
-
-El rechazo de secretos en YAML es una defensa del PoC, no sustituye el gestor de secretos, IAM ni las políticas institucionales.
+Las configuraciones versionables deben usar referencias `*_env`/`connection_env`. Esto no sustituye IAM, gestor de secretos ni políticas institucionales.
 
 ## TRAIN e INFERENCE
-
-La integración canónica alimenta las rutas operacionales separadas:
 
 ```text
 TRAIN -> FIT preprocesamiento -> candidate -> promoción explícita -> champion
@@ -225,16 +295,7 @@ TRAIN -> FIT preprocesamiento -> candidate -> promoción explícita -> champion
 INFERENCE -> TRANSFORM congelado -> champion -> scores
 ```
 
-TRAIN exige labels; INFERENCE no. INFERENCE no debe ejecutar `.fit()`, tuning ni reentrenamiento.
-
-La sesión Spark operacional admite:
-
-```text
-CGR_SPARK_MASTER
-CGR_SPARK_SHUFFLE_PARTITIONS
-```
-
-Si `CGR_SPARK_MASTER` no se define, el PoC usa `local[*]` como fallback para ejecución local. En un despliegue institucional debe definirse el master aprobado (`yarn`, Kubernetes u otro valor válido para la plataforma adoptada). La corrida registra el master efectivo obtenido de `spark.sparkContext.master`.
+TRAIN exige labels; INFERENCE no. INFERENCE no ejecuta `.fit()`, tuning ni reentrenamiento.
 
 Referencia: [`Train_Inference.md`](Train_Inference.md).
 
@@ -246,24 +307,38 @@ Cuando la configuración contiene `contracts + payments`:
 python src/analisis_pagos_modalidades.py --config config/cgr.yaml
 ```
 
-El análisis genera ratios de pago, demoras, estados analíticos y agregaciones de modalidades/régimen. La comparación de modalidad frente a cuantía es **referencial** y no determina legalidad ni irregularidad.
+El módulo genera ratios de pago, demoras, estados analíticos y agregaciones de modalidades/régimen. La comparación de modalidad frente a cuantía es **referencial** y no determina legalidad ni irregularidad.
 
 La configuración local reproducible usa `config/local-tdr.yaml`.
 
+## Garantías de regresión
+
+`tests/test_spark_native_integration.py` protege la frontera distribuida. Entre otras cosas verifica que:
+
+- `spark_sql` devuelve `pyspark.sql.DataFrame`;
+- mapping y validación no convierten a pandas;
+- labels se tipan correctamente en TRAIN;
+- valores físicos no convertibles fallan;
+- medianas por objeto se persisten como Parquet;
+- rankings spark-native se escriben como Parquet distribuido;
+- `spark_sql.py`, TRAIN e INFERENCE no contengan `.toPandas()`;
+- la ruta pandas rechace `spark_sql` para impedir collects implícitos.
+
 ## Alcance y límites
 
-La capa de integración resuelve el **contrato de software** para desacoplar fuentes y modelos. No puede decidir desde este repositorio:
+La capa de integración resuelve el **contrato de software** y ya ofrece una frontera Spark-native para Lakehouse/Spark SQL. Aun así, este repositorio no puede decidir o validar por sí solo:
 
 - nombres/joins reales de tablas CGR;
 - credenciales y permisos;
 - diccionario/linaje institucional aprobado;
 - ground truth;
-- infraestructura Spark/HDFS/YARN;
+- clúster y catálogo Spark institucional;
+- particionamiento, performance y robustez al volumen real;
 - política de secretos/identidad;
 - umbrales productivos;
 - SQL Server/SSRS real;
 - DEV/QA/PROD, certificación o marcha blanca.
 
-Además, la versión pública mantiene la frontera `Spark SQL -> pandas -> Spark MLlib` descrita arriba. Antes de afirmar escalabilidad distribuida end-to-end con datos institucionales debe validarse o reemplazarse esa frontera en el entorno CGR.
+La existencia de una ruta distribuida elimina el cuello de botella pandas que tenía el adaptador anterior, pero **no sustituye las pruebas de carga y operación sobre la infraestructura institucional real**.
 
-Esas responsabilidades permanecen documentadas en [`Dependencias_Institucionales_CGR.md`](Dependencias_Institucionales_CGR.md).
+Estas responsabilidades permanecen en [`Dependencias_Institucionales_CGR.md`](Dependencias_Institucionales_CGR.md).
