@@ -1,4 +1,4 @@
-"""Auditoría integral del TDR público — Sprint 4.
+"""Auditoría integral vigente del TDR público.
 
 Amplía el checklist del Anexo 3 hacia el cuerpo completo del TDR. La auditoría
 no convierte dependencias institucionales en defectos del repositorio:
@@ -80,14 +80,14 @@ def construir_criterios() -> list[dict]:
         ),
         criterio_parcial(
             2, "4.1.2-4.1.3 / 6", "Identificación, adquisición, integración y consolidación SIAF/SEACE",
-            ["docs/Integracion_Datos.md", "config/cgr.example.yaml", "src/core/schemas.py"],
+            ["docs/Integracion_Datos.md", "config/cgr.example.yaml", "src/core/schemas.py", "src/core/schemas_spark.py"],
             ["CGR-DEP-01", "CGR-DEP-06"],
-            "Existe contrato canónico y conectores; la lectura de fuentes internas reales requiere acceso CGR.",
+            "Existe contrato canónico y conectores pandas/Spark-native; la lectura de fuentes internas reales requiere acceso, diccionario y plataforma CGR.",
         ),
         criterio_tecnico(
             3, "4.1.4 / Productos 2 y 5", "Limpieza, faltantes, outliers, codificación y normalización/estandarización",
-            ["src/preprocesamiento.py", "outputs/champions_spark/preprocesador_contratos.json"],
-            "FIT/TRANSFORM están separados; el P99 se congela y el serving de favoritismo consume monto_capped.",
+            ["src/preprocesamiento.py", "src/spark/ajustar_preprocesamiento_spark.py", "outputs/champions_spark/preprocesador_contratos.json"],
+            "FIT/TRANSFORM están separados; el P99 se congela y existe FIT distribuido para fuentes spark_sql.",
         ),
         criterio_tecnico(
             4, "4.1.5", "Enriquecimiento y generación de características",
@@ -130,9 +130,15 @@ def construir_criterios() -> list[dict]:
         ),
         criterio_parcial(
             10, "3.2.a / 4.2.6", "Apache Spark MLlib escalable y pruebas de rendimiento/robustez",
-            ["outputs/inference_spark_smoke_summary.json", "outputs/spark_favoritismo_resumen.json", "outputs/spark_fraccionamiento_resumen.json"],
+            [
+                "outputs/inference_spark_smoke_summary.json",
+                "outputs/spark_favoritismo_resumen.json",
+                "outputs/spark_fraccionamiento_resumen.json",
+                "src/core/schemas_spark.py",
+                "tests/test_spark_native_integration.py",
+            ],
             ["CGR-DEP-06", "CGR-DEP-03"],
-            "Spark MLlib se ejecuta en local[*]; clúster institucional y aceptación de performance requieren CGR.",
+            "La ruta operacional spark_sql es Spark-native, evita toPandas y admite master configurable; el clúster, volumen, performance, robustez y aceptación productiva requieren infraestructura/ground truth CGR.",
         ),
         criterio_tecnico(
             11, "4.3.1-4.3.2", "Reportes automáticos con tablas, estadísticas, gráficos y métricas",
@@ -148,7 +154,7 @@ def construir_criterios() -> list[dict]:
             13, "Anexo 2 / 6", "Lakehouse Bronce/Plata/Oro y DAGs de orquestación",
             ["lakehouse/bronce", "lakehouse/plata", "lakehouse/oro", "airflow_home/dags/dag_modulo_analisis_datos.py"],
             ["CGR-DEP-01", "CGR-DEP-06"],
-            "La arquitectura es funcional localmente; Datamart/HDFS/YARN/Airflow institucional requieren CGR.",
+            "La arquitectura es funcional en el PoC y dispone de frontera Spark-native; Datamart/HDFS/YARN/Airflow institucional y su operación requieren CGR.",
         ),
         criterio_tecnico(
             14, "3.2.c / 6", "Autoevaluación y estrategia de actualización/reentrenamiento sostenible",
@@ -238,7 +244,6 @@ def main():
             f"Auditoría TDR con dependencias inválidas={deps_invalidas}, parciales_sin_dep={parciales_sin_dep}"
         )
 
-    # Gates semánticos adicionales para evitar falsos positivos por mera existencia.
     if existe("outputs/analisis_pagos_modalidades.json"):
         pagos = leer_json("outputs/analisis_pagos_modalidades.json")
         if pagos.get("payments", {}).get("orphan_payments") != 0:
@@ -262,7 +267,22 @@ def main():
             and serving.get("fraccionamiento_amount_source") == "monto"
         ):
             criterios[14]["estado"] = "🔴"
-            criterios[14]["detalle"] = "Serving Spark no cumple el contrato TRAIN/INFERENCE de Sprint 4."
+            criterios[14]["detalle"] = "Serving Spark no cumple el contrato TRAIN/INFERENCE vigente."
+
+    # La garantía Spark-native es una propiedad de arquitectura protegida por pruebas;
+    # no se confunde con la prueba de rendimiento que solo puede ejecutarse en CGR.
+    for rel in [
+        "src/connectors/spark_sql.py",
+        "src/ingestar_canonico.py",
+        "src/core/schemas_spark.py",
+        "src/spark/ajustar_preprocesamiento_spark.py",
+        "src/spark/entrenar_candidato_spark.py",
+        "src/spark/score_inference_spark.py",
+        "tests/test_spark_native_integration.py",
+    ]:
+        if not existe(rel):
+            criterios[9]["estado"] = "🔴"
+            criterios[9]["detalle"] = f"Falta evidencia de arquitectura Spark-native: {rel}."
 
     resumen = Counter(c["estado"] for c in criterios)
     payload = {
@@ -279,7 +299,7 @@ def main():
     OUT_JSON.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     lineas = [
-        "# Auditoría integral del TDR público — Sprint 4",
+        "# Auditoría integral vigente del TDR público",
         "",
         "> PoC independiente. Esta matriz distingue evidencia técnica reproducible de dependencias que solo pueden cerrarse con datos, infraestructura, usuarios, permisos o conformidad de la CGR.",
         "",
