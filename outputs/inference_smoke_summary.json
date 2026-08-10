@@ -1,17 +1,17 @@
 {
   "active_serving_profile": "spark_mllib",
-  "champion_id": "poc-f4db62d69c71d044",
+  "champion_id": "poc-d93bb27f2afab5bc",
   "champion_integrity_verified": true,
-  "contracts_rows": 3709,
+  "contracts_rows": 4296,
   "detail_outputs": {
     "favoritismo": "outputs/runtime/inference/ci/ranking_riesgo_favoritismo.csv",
     "fraccionamiento": "outputs/runtime/inference/ci/ranking_riesgo_fraccionamiento.csv"
   },
   "engine": "scikit-learn",
   "favoritismo_amount_source": "monto_capped",
-  "favoritismo_scored_rows": 2328,
+  "favoritismo_scored_rows": 2362,
   "fraccionamiento_amount_source": "monto",
-  "fraccionamiento_scored_rows": 180,
+  "fraccionamiento_scored_rows": 265,
   "id_funcionario_missing_input_rows": 0,
   "id_funcionario_source_column_present": true,
   "institutional_approval": false,

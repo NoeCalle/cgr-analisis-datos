@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "algorithm": "StandardScalerModel + KMeansModel + distancia al centroide",
+  "pipeline": "spark_operational_features",
+  "features": [
+    "n_contratos_grupo",
+    "max_contratos_ventana_15d",
+    "monto_total_ventana_15d",
+    "pct_montos_bajo_umbral",
+    "monto_total_grupo"
+  ],
+  "design": "holdout final por proveedor-entidad-familia reservado antes del FIT del preprocesador; validación repetida solo en desarrollo",
+  "selection_metric": "AUC-PR media de ranking",
+  "k_values": [
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "n_desarrollo": 193,
+  "positivos_desarrollo": 19,
+  "n_holdout": 71,
+  "positivos_holdout": 6,
+  "mejor_configuracion": {
+    "k": 2,
+    "auc_pr_validacion_medio": 0.36495831285385033,
+    "recall_at_k_validacion_medio": 0.27777777777777773
+  },
+  "metricas_holdout_final": {
+    "accuracy": 0.9436619718309859,
+    "auc_roc": 0.9358974358974359,
+    "auc_pr": 0.7065656565656565,
+    "precision": 0.6666666666666666,
+    "recall": 0.6666666666666666,
+    "f1": 0.6666666666666666,
+    "recall_at_k": 0.6666666666666666
+  },
+  "preprocessor_fit_scope": "development_only",
+  "labels_used_for_fit": false,
+  "advertencia": "benchmark sintético; el holdout no se usa para seleccionar k"
+}

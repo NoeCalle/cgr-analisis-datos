@@ -9,24 +9,24 @@
   "institutional_dependency": "El reemplazo de pagos sintéticos por pagos SIAF reales, y la validación jurídica/funcional de modalidades, requiere fuentes, diccionarios y especialistas CGR.",
   "modalidades": {
     "clasificacion_modalidad": {
-      "compatible_referencial_por_cuantia": 847,
-      "especial_no_inferible_por_cuantia": 1422,
-      "requiere_revision_contexto": 1314,
-      "sin_cuantia_para_comparar": 35,
+      "compatible_referencial_por_cuantia": 985,
+      "especial_no_inferible_por_cuantia": 1601,
+      "requiere_revision_contexto": 1565,
+      "sin_cuantia_para_comparar": 54,
       "sin_informacion": 91
     },
     "contratos_por_regimen": {
-      "Ley 30225": 2436,
-      "Ley 32069": 1273
+      "Ley 30225": 2762,
+      "Ley 32069": 1534
     },
     "modalidades_observadas": {
-      "Adjudicación Simplificada": 1274,
-      "Comparación de Precios": 1039,
-      "Concurso Público": 354,
-      "Concurso Público Abreviado": 11,
-      "Contratación Directa": 383,
-      "Licitación Pública": 548,
-      "Licitación Pública Abreviada": 9,
+      "Adjudicación Simplificada": 1475,
+      "Comparación de Precios": 1073,
+      "Concurso Público": 437,
+      "Concurso Público Abreviado": 9,
+      "Contratación Directa": 528,
+      "Licitación Pública": 661,
+      "Licitación Pública Abreviada": 22,
       "SIN_DATO": 91
     },
     "nota_interpretacion": "La comparación por cuantía es referencial. 'requiere_revision_contexto' no significa ilegalidad; exige revisar el supuesto jurídico, objeto, causal y demás antecedentes."
@@ -56,25 +56,25 @@
     }
   },
   "payments": {
-    "contract_amount_missing_rows": 69,
-    "contracts_rows": 3709,
-    "contracts_with_payments": 3709,
+    "contract_amount_missing_rows": 92,
+    "contracts_rows": 4296,
+    "contracts_with_payments": 4296,
     "dias_devengado_a_pagado_p50": 16.0,
     "dias_devengado_a_pagado_p90": 28.0,
-    "dias_devengado_a_pagado_p95": 77.0,
+    "dias_devengado_a_pagado_p95": 78.0,
     "estado_pago_contratos": {
-      "pagado_aproximadamente_completo": 2894,
-      "pago_parcial": 452,
-      "pendiente_sin_pago": 218,
-      "sin_pago_o_sin_cuantia": 69,
-      "sobrepago_senal_revisar": 76
+      "pagado_aproximadamente_completo": 3335,
+      "pago_parcial": 515,
+      "pendiente_sin_pago": 261,
+      "sin_pago_o_sin_cuantia": 92,
+      "sobrepago_senal_revisar": 93
     },
-    "monto_contractual_total_valido": 409900334.85999995,
-    "monto_devengado_total": 388348328.18,
-    "monto_pagado_total": 374259575.66999996,
+    "monto_contractual_total_valido": 639324978.5400001,
+    "monto_devengado_total": 608457875.5200001,
+    "monto_pagado_total": 586728228.0,
     "orphan_payments": 0,
-    "payments_rows": 6726,
-    "ratio_pagado_global_sobre_monto_valido": 0.9130501827909632,
+    "payments_rows": 7790,
+    "ratio_pagado_global_sobre_monto_valido": 0.9177308062323591,
     "ratio_pagado_p50": 1.0,
     "ratio_pagado_p90": 1.0
   },

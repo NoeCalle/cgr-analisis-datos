@@ -1,5 +1,10 @@
 {
-  "diseno": "predicciones out-of-fold, StratifiedKFold 3-fold, mismas particiones para todos",
+  "schema_version": 2,
+  "pipeline": "operational_frozen_preprocessor",
+  "amount_source": "monto_capped",
+  "split": "holdout final por par proveedor-entidad reservado antes del FIT del preprocesador",
+  "preprocessor_fit_scope": "development_only",
+  "cv": "StratifiedKFold(n_splits=5, shuffle=True, random_state=42)",
   "features": [
     "n_contratos",
     "monto_total",
@@ -13,46 +18,47 @@
     "contratos_por_mes",
     "monto_por_funcionario"
   ],
-  "n_registros": 2328,
-  "positivos": 6,
-  "criterio_primario": "AUC-PR por desbalance severo",
-  "metricas_reportadas": [
-    "accuracy",
-    "auc_pr",
-    "auc_roc",
-    "precision",
-    "recall",
-    "f1"
-  ],
+  "n_contracts_total": 4296,
+  "n_dev": 1771,
+  "positivos_dev": 22,
+  "n_holdout": 591,
+  "positivos_holdout": 8,
+  "criterio_primario": "AUC-PR por desbalance",
   "resultados": [
     {
       "modelo": "RandomForest",
-      "accuracy": 0.997852233676976,
-      "auc_pr": 0.6714285714285714,
-      "auc_roc": 0.9986362331323572,
-      "precision": 0.6666666666666666,
-      "recall": 0.3333333333333333,
-      "f1": 0.4444444444444444
-    },
-    {
-      "modelo": "RegresionLogistica",
-      "accuracy": 0.9957044673539519,
-      "auc_pr": 0.6211419753086419,
-      "auc_roc": 0.99519092736147,
-      "precision": 0.3333333333333333,
-      "recall": 0.6666666666666666,
-      "f1": 0.4444444444444444
+      "accuracy": 0.9988706945228685,
+      "auc_pr": 0.990592885375494,
+      "auc_roc": 0.9998700556161964,
+      "precision": 1.0,
+      "recall": 0.9090909090909091,
+      "f1": 0.9523809523809523,
+      "recall_at_k": 0.9090909090909091,
+      "threshold": 0.5
     },
     {
       "modelo": "GradientBoosting",
-      "accuracy": 0.9969931271477663,
-      "auc_pr": 0.41795532646048106,
-      "auc_roc": 0.7492463393626184,
-      "precision": 0.42857142857142855,
-      "recall": 0.5,
-      "f1": 0.46153846153846156
+      "accuracy": 0.9988706945228685,
+      "auc_pr": 0.9105468274266229,
+      "auc_roc": 0.9454493476791933,
+      "precision": 1.0,
+      "recall": 0.9090909090909091,
+      "f1": 0.9523809523809523,
+      "recall_at_k": 0.9090909090909091,
+      "threshold": 0.5
+    },
+    {
+      "modelo": "RegresionLogistica",
+      "accuracy": 0.9898362507058159,
+      "auc_pr": 0.7508199652806978,
+      "auc_roc": 0.9968553459119497,
+      "precision": 0.5526315789473685,
+      "recall": 0.9545454545454546,
+      "f1": 0.7,
+      "recall_at_k": 0.6363636363636364,
+      "threshold": 0.5
     }
   ],
   "mejor_candidato": "RandomForest",
-  "advertencia": "comparación sobre benchmark sintético; Accuracy se reporta por el Anexo 3 pero no se usa como criterio primario"
+  "advertencia": "benchmark sintético; no estima desempeño productivo"
 }

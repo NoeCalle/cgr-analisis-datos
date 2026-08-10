@@ -1,6 +1,7 @@
 {
-  "diseno": "holdout final separado antes del tuning; validaciones repetidas solo en desarrollo",
-  "metrica_seleccion": "AUC-PR media en validaciones repetidas",
+  "schema_version": 2,
+  "diseno": "holdout final separado antes del tuning; ranking y umbral calibrados solo en desarrollo",
+  "metrica_seleccion": "AUC-PR media para ranking; F1 medio para contamination/umbral binario",
   "metricas_reportadas_holdout": [
     "accuracy",
     "auc_roc",
@@ -10,28 +11,34 @@
     "f1",
     "recall_at_k"
   ],
-  "n_total": 180,
-  "positivos_total": 8,
-  "n_desarrollo": 112,
-  "positivos_desarrollo": 5,
+  "n_total": 265,
+  "positivos_total": 24,
+  "n_desarrollo": 185,
+  "positivos_desarrollo": 17,
   "mejor_configuracion": {
     "n_estimators": 100,
-    "max_samples": 0.5,
-    "contamination": "auto",
-    "auc_pr_validacion_medio": 0.4019047619047619,
-    "recall_at_k_validacion_medio": 0.2
+    "max_samples": 0.8,
+    "contamination": 0.05,
+    "auc_pr_validacion_medio": 0.5336974105372947,
+    "recall_at_k_validacion_medio": 0.4,
+    "f1_umbral_validacion_medio": 0.45
+  },
+  "selection_protocol": {
+    "ranking_params": "n_estimators/max_samples seleccionados por AUC-PR y recall@K",
+    "binary_threshold": "contamination seleccionada después por F1 de validación",
+    "holdout_used_for_selection": false
   },
   "metricas_holdout_final": {
     "recall_at_k": 0.0,
-    "accuracy": 0.7941176470588235,
-    "auc_roc": 0.8564102564102564,
-    "auc_pr": 0.17086247086247086,
-    "precision": 0.17647058823529413,
-    "recall": 1.0,
-    "f1": 0.3,
-    "n_test": 68,
-    "positivos_test": 3,
-    "anomalias_predichas": 17
+    "accuracy": 0.8875,
+    "auc_roc": 0.6594911937377692,
+    "auc_pr": 0.13328228236454687,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "n_test": 80,
+    "positivos_test": 7,
+    "anomalias_predichas": 2
   },
-  "advertencia": "benchmark sintético con pocos positivos; Accuracy se reporta por el Anexo 3 pero no se usa como criterio primario"
+  "advertencia": "benchmark sintético de compatibilidad; el champion Spark KMeans tiene evaluación independiente"
 }

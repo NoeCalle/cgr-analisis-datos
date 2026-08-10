@@ -17,9 +17,9 @@
 | 4 | 4.1.5 | ✅ | Enriquecimiento y generación de características | — |
 | 5 | 6 | 🟡 | Análisis Profundo de Pagos y Modalidades de Contratación | CGR-DEP-01 |
 | 6 | 4.2.2 / Productos 3-4 | ✅ | Identificación de proveedores favoritos | — |
-| 7 | 4.2.3 / Productos 6-7 | ✅ | Detección de fraccionamiento y compras repetitivas/anómalas | — |
+| 7 | 4.2.3 / Productos 6-7 | ✅ | Detección de fraccionamiento, compras repetitivas y objetos/servicios similares | — |
 | 8 | 4.2.4 | 🟡 | Evaluación de vínculos proveedor-funcionario mediante grafos/redes | CGR-DEP-01 |
-| 9 | 4.2.5 | ✅ | Entrenamiento, validación cruzada y optimización de hiperparámetros | — |
+| 9 | 4.2.5 | ✅ | Entrenamiento, validación cruzada, holdout y optimización de hiperparámetros | — |
 | 10 | 3.2.a / 4.2.6 | 🟡 | Apache Spark MLlib escalable y pruebas de rendimiento/robustez | CGR-DEP-06, CGR-DEP-03 |
 | 11 | 4.3.1-4.3.2 | ✅ | Reportes automáticos con tablas, estadísticas, gráficos y métricas | — |
 | 12 | 4.4 | ✅ | Documentación técnica completa, código fuente, diccionario y diagrama | — |
@@ -59,7 +59,7 @@ Evidencia: `src/preprocesamiento.py`, `src/spark/ajustar_preprocesamiento_spark.
 
 ### 4. Enriquecimiento y generación de características — ✅
 
-Features de favoritismo/fraccionamiento y linaje fuente→feature están materializados.
+Features de favoritismo/fraccionamiento y linaje fuente→feature están materializados; fraccionamiento conserva objeto_familia y una única semántica de ventana pandas/Spark.
 
 Evidencia: `data/dataset_favoritismo.csv`, `data/dataset_fraccionamiento.csv`, `outputs/linaje_datos.csv`
 
@@ -71,15 +71,15 @@ Evidencia: `data/pagos_siaf_sintetico.csv`, `outputs/analisis_pagos_modalidades.
 
 ### 6. Identificación de proveedores favoritos — ✅
 
-Clasificación/riesgo con benchmark, tuning, explicación y ejecución Spark.
+El champion Spark de favoritismo se selecciona y evalúa con el mismo pipeline operacional que TRAIN/INFERENCE (monto_capped), conserva holdout final y Feature Importance ligada al modelo servido.
 
-Evidencia: `outputs/comparacion_modelos_favoritismo.json`, `outputs/tuning_favoritismo_resumen.json`, `outputs/ranking_riesgo_favoritismo_spark.csv`
+Evidencia: `outputs/comparacion_modelos_favoritismo.json`, `outputs/tuning_favoritismo_resumen.json`, `outputs/tuning_favoritismo_spark_resumen.json`, `outputs/model_registry.json`, `outputs/ranking_riesgo_favoritismo_spark.csv`
 
-### 7. Detección de fraccionamiento y compras repetitivas/anómalas — ✅
+### 7. Detección de fraccionamiento, compras repetitivas y objetos/servicios similares — ✅
 
-Isolation Forest de referencia + KMeans MLlib + señal interpretable por ventana/cuantía.
+El KMeans Spark activo dispone de evaluación/holdout propios; la señal temporal usa cantidad y monto de la misma ventana de 15 días y agrupa variantes lexicales controladas mediante objeto_familia. Isolation Forest queda como benchmark de compatibilidad.
 
-Evidencia: `outputs/tuning_fraccionamiento_resumen.json`, `outputs/ranking_riesgo_fraccionamiento_spark.csv`
+Evidencia: `src/core/objeto_similarity.py`, `outputs/tuning_fraccionamiento_spark_resumen.json`, `outputs/tuning_fraccionamiento_resumen.json`, `outputs/ranking_riesgo_fraccionamiento_spark.csv`
 
 ### 8. Evaluación de vínculos proveedor-funcionario mediante grafos/redes — 🟡
 
@@ -87,17 +87,17 @@ GraphFrames se ejecuta sobre escenario sintético; los vínculos y datos persona
 
 Evidencia: `outputs/graphframes_resumen.json`, `outputs/vinculos_graphframes_sospechosos.csv`
 
-### 9. Entrenamiento, validación cruzada y optimización de hiperparámetros — ✅
+### 9. Entrenamiento, validación cruzada, holdout y optimización de hiperparámetros — ✅
 
-Tuning/validación y separación de holdout quedan persistidos.
+El champion Spark consume hiperparámetros seleccionados por evaluaciones del mismo pipeline activo; los benchmarks sklearn quedan identificados como compatibilidad y los holdouts no participan del retuning.
 
-Evidencia: `outputs/tuning_favoritismo_resumen.json`, `outputs/tuning_fraccionamiento_resumen.json`, `outputs/spark_favoritismo_resumen.json`
+Evidencia: `outputs/tuning_favoritismo_spark_resumen.json`, `outputs/tuning_fraccionamiento_spark_resumen.json`, `outputs/tuning_favoritismo_resumen.json`, `outputs/tuning_fraccionamiento_resumen.json`, `outputs/model_registry.json`
 
 ### 10. Apache Spark MLlib escalable y pruebas de rendimiento/robustez — 🟡
 
-La ruta operacional spark_sql es Spark-native, evita toPandas y admite master configurable; el clúster, volumen, performance, robustez y aceptación productiva requieren infraestructura/ground truth CGR.
+La ruta operacional spark_sql es Spark-native, evita toPandas y admite master configurable; validaciones metodológicas locales existen, pero clúster, volumen, performance, robustez y aceptación productiva requieren infraestructura/ground truth CGR.
 
-Evidencia: `outputs/inference_spark_smoke_summary.json`, `outputs/spark_favoritismo_resumen.json`, `outputs/spark_fraccionamiento_resumen.json`, `src/core/schemas_spark.py`, `tests/test_spark_native_integration.py`
+Evidencia: `outputs/inference_spark_smoke_summary.json`, `outputs/tuning_favoritismo_spark_resumen.json`, `outputs/tuning_fraccionamiento_spark_resumen.json`, `src/core/schemas_spark.py`, `tests/test_spark_native_integration.py`
 
 ### 11. Reportes automáticos con tablas, estadísticas, gráficos y métricas — ✅
 
@@ -119,9 +119,9 @@ Evidencia: `lakehouse/bronce`, `lakehouse/plata`, `lakehouse/oro`, `airflow_home
 
 ### 14. Autoevaluación y estrategia de actualización/reentrenamiento sostenible — ✅
 
-El reentrenamiento produce candidate; no existe autopromoción silenciosa.
+La autoevaluación carga exactamente el champion Spark activo del registry, calcula deriva/recall@K sobre sus features congeladas y solo genera candidates; no existe autopromoción silenciosa.
 
-Evidencia: `src/autoevaluacion.py`, `src/registro_modelos.py`, `docs/Train_Inference.md`
+Evidencia: `src/autoevaluacion_champion.py`, `airflow_home/dags/dag_monitoreo_reentrenamiento.py`, `outputs/monitoreo_champion.json`, `outputs/log_reentrenamiento_champion.csv`, `outputs/model_registry.json`
 
 ### 15. Separación TRAIN/INFERENCE, persistencia y serving sin reentrenamiento — ✅
 
@@ -131,9 +131,9 @@ Evidencia: `outputs/model_registry.json`, `outputs/inference_spark_smoke_summary
 
 ### 16. Despliegue, seguridad, mantenimiento y monitorización operacional — 🟡
 
-Controles de software, autoevaluación y monitoreo de solo lectura existen; identidad, secretos, segregación y operación productiva son institucionales.
+Controles de software y monitoreo del champion activo existen; identidad, secretos, segregación, operación y aceptación productiva son institucionales.
 
-Evidencia: `docs/Train_Inference.md`, `src/monitoreo_modelos.py`, `src/autoevaluacion.py`, `airflow_home/dags/dag_monitoreo_reentrenamiento.py`, `outputs/model_registry.json`
+Evidencia: `docs/Train_Inference.md`, `src/monitoreo_modelos.py`, `src/autoevaluacion_champion.py`, `airflow_home/dags/dag_monitoreo_reentrenamiento.py`, `outputs/monitoreo_champion.json`, `outputs/model_registry.json`
 
 ### 17. Pruebas de integración en ambientes DEV/QA/PROD y puesta a producción — 🔵
 
@@ -149,9 +149,9 @@ Evidencia: `ssrs/schema_sql_server.sql`, `ssrs/ReporteRiesgoFavoritismo.rdl`, `s
 
 ### 19. Umbrales institucionales y validación productiva de Accuracy/F1/AUC-ROC — 🟡
 
-El PoC reporta métricas; el TDR público no aporta los mínimos numéricos ni ground truth institucional.
+El PoC reporta métricas CV/holdout de los modelos activos y benchmarks de compatibilidad; el TDR público no aporta mínimos numéricos ni ground truth institucional.
 
-Evidencia: `outputs/comparacion_modelos_favoritismo.json`, `outputs/tuning_fraccionamiento_resumen.json`
+Evidencia: `outputs/tuning_favoritismo_spark_resumen.json`, `outputs/tuning_fraccionamiento_spark_resumen.json`, `outputs/tuning_favoritismo_resumen.json`, `outputs/tuning_fraccionamiento_resumen.json`
 
 ### 20. Certificación, levantamiento de observaciones/incidencias y marcha blanca — 🔵
 

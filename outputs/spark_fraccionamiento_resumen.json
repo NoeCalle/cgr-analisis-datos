@@ -5,6 +5,7 @@
   "dataset": "lakehouse/plata/contratos_procesados.csv",
   "algoritmo": "StandardScaler + KMeans + distancia al centroide",
   "k": 2,
+  "selection_source": "spark_holdout_summary",
   "features": [
     "n_contratos_grupo",
     "max_contratos_ventana_15d",
@@ -12,16 +13,18 @@
     "pct_montos_bajo_umbral",
     "monto_total_grupo"
   ],
+  "window_semantics": "cantidad y monto de la misma ventana de 15 días; empate por inicio más temprano",
+  "object_grouping": "firma lexical reproducible objeto_familia (Spark SQL nativo)",
   "sanity_sintetico": {
-    "n_grupos": 180,
-    "positivos_sinteticos": 8,
-    "top_k_aciertos": 4,
-    "senal_interpretable_marcados": 9,
-    "senal_interpretable_positivos": 8
+    "n_grupos": 265,
+    "positivos_sinteticos": 24,
+    "top_k_aciertos": 14,
+    "senal_interpretable_marcados": 49,
+    "senal_interpretable_positivos": 24
   },
   "ranking": "outputs/ranking_riesgo_fraccionamiento_spark.csv",
   "modelo_runtime": "outputs/runtime/modelo_fraccionamiento_spark_kmeans",
   "scaler_runtime": "outputs/runtime/modelo_fraccionamiento_spark_scaler",
-  "duracion_s": 21.377,
-  "advertencia": "Sanity check sobre benchmark sintético; no estima desempeño productivo. Ejecución Spark real local; clúster CGR pendiente."
+  "duracion_s": 26.054,
+  "advertencia": "Sanity check sobre benchmark sintético; la evidencia out-of-sample del KMeans se publica en tuning_fraccionamiento_spark_resumen.json. No estima desempeño productivo."
 }

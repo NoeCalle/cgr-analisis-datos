@@ -1,8 +1,8 @@
 {
   "active_serving_profile": "spark_mllib",
-  "champion_id": "spark-poc-2abc0f054908c60e",
+  "champion_id": "spark-poc-81b28cf92909acb2",
   "champion_integrity_verified": true,
-  "contracts_rows": 3709,
+  "contracts_rows": 4296,
   "detail_outputs": {
     "favoritismo": "outputs/runtime/inference_spark/ci/ranking_riesgo_favoritismo_spark.csv",
     "format": "csv_single_file_compatibility",
@@ -10,9 +10,9 @@
   },
   "engine": "Apache Spark MLlib",
   "favoritismo_amount_source": "monto_capped",
-  "favoritismo_scored_rows": 2328,
+  "favoritismo_scored_rows": 2362,
   "fraccionamiento_amount_source": "monto",
-  "fraccionamiento_scored_rows": 180,
+  "fraccionamiento_scored_rows": 265,
   "input_engine": "pandas_adapter",
   "institutional_approval": false,
   "labels_consumed": false,

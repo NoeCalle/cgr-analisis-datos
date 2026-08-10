@@ -66,7 +66,8 @@
       "categoria": "Analítica Avanzada",
       "estado": "🟡",
       "evidencia_repo": [
-        "outputs/comparacion_modelos_favoritismo.json",
+        "outputs/tuning_favoritismo_spark_resumen.json",
+        "outputs/tuning_fraccionamiento_spark_resumen.json",
         "outputs/tuning_favoritismo_resumen.json",
         "outputs/tuning_fraccionamiento_resumen.json"
       ],
@@ -74,7 +75,7 @@
         "CGR-DEP-03",
         "CGR-DEP-06"
       ],
-      "residual": "El TDR público exige umbrales mínimos pero no consigna sus valores; la conformidad productiva requiere CGR-DEP-03 y CGR-DEP-06."
+      "residual": "El PoC reporta holdouts del pipeline operacional Spark y benchmarks de compatibilidad; el TDR público exige umbrales mínimos sin publicar sus valores. La conformidad productiva requiere CGR-DEP-03 y CGR-DEP-06."
     },
     {
       "numero": 5,
@@ -82,12 +83,13 @@
       "categoria": "Valor de Negocio",
       "estado": "✅",
       "evidencia_repo": [
-        "outputs/charts/05_importancia_favoritismo.png",
+        "outputs/model_registry.json",
+        "outputs/tuning_favoritismo_spark_resumen.json",
         "outputs/charts/07_shap_summary_favoritismo.png",
         "outputs/charts/08_shap_waterfall_caso.png"
       ],
       "dependencias_cgr": [],
-      "residual": "Los artefactos están disponibles en el PoC; su interpretación final deberá contextualizarse con casos institucionales."
+      "residual": "El champion Spark activo registra Feature Importance por variable en el registry; SHAP se conserva como evidencia complementaria del benchmark sklearn. La interpretación institucional final requiere casos CGR."
     },
     {
       "numero": 6,
@@ -141,13 +143,14 @@
       "categoria": "Analítica Avanzada",
       "estado": "✅",
       "evidencia_repo": [
+        "outputs/tuning_favoritismo_spark_resumen.json",
+        "outputs/tuning_fraccionamiento_spark_resumen.json",
+        "outputs/model_registry.json",
         "outputs/tuning_favoritismo_resumen.json",
-        "outputs/tuning_fraccionamiento_resumen.json",
-        "outputs/spark_favoritismo_resumen.json",
-        "outputs/spark_fraccionamiento_resumen.json"
+        "outputs/tuning_fraccionamiento_resumen.json"
       ],
       "dependencias_cgr": [],
-      "residual": "Documentados y versionados para el PoC; deberán recalibrarse con datos institucionales antes de producción."
+      "residual": "Los hiperparámetros del champion Spark proceden de evaluaciones del mismo pipeline operacional; los benchmarks sklearn permanecen identificados como compatibilidad. Deben recalibrarse con datos institucionales."
     },
     {
       "numero": 10,
@@ -155,12 +158,14 @@
       "categoria": "Analítica Avanzada",
       "estado": "✅",
       "evidencia_repo": [
+        "outputs/tuning_favoritismo_spark_resumen.json",
+        "outputs/tuning_fraccionamiento_spark_resumen.json",
         "outputs/comparacion_modelos_favoritismo.json",
         "outputs/tuning_fraccionamiento_resumen.json",
         "reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx"
       ],
       "dependencias_cgr": [],
-      "residual": "Métricas del benchmark reproducible cubiertas; no se presentan como desempeño productivo."
+      "residual": "Métricas CV/holdout del champion Spark y benchmarks de compatibilidad están versionadas; no se presentan como desempeño productivo."
     },
     {
       "numero": 11,

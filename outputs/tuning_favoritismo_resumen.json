@@ -1,4 +1,7 @@
 {
+  "schema_version": 2,
+  "pipeline": "operational_frozen_preprocessor",
+  "amount_source": "monto_capped",
   "features": [
     "n_contratos",
     "monto_total",
@@ -12,14 +15,34 @@
     "contratos_por_mes",
     "monto_por_funcionario"
   ],
-  "metrica_seleccion": "average_precision (AUC-PR)",
-  "cv": "StratifiedKFold(n_splits=3, shuffle=True, random_state=42)",
+  "metrica_seleccion": "average_precision (AUC-PR) en desarrollo",
+  "cv": "StratifiedKFold(n_splits=5, shuffle=True, random_state=42)",
+  "holdout_final": "reservado antes de tuning y antes del FIT del preprocesador",
+  "n_total": 2362,
+  "n_desarrollo": 1771,
+  "positivos_desarrollo": 22,
+  "n_holdout": 591,
+  "positivos_holdout": 8,
   "mejor_configuracion": {
-    "max_depth": 3,
+    "max_depth": 4,
     "min_samples_leaf": 1,
     "n_estimators": 100
   },
-  "mejor_auc_pr_cv": 0.8444444444444444,
-  "baseline_300_6_auc_pr_cv": 0.8444444444444444,
-  "advertencia": "resultado sobre ground truth sintético; no estima desempeño productivo"
+  "mejor_auc_pr_cv": 1.0,
+  "metricas_holdout_final": {
+    "accuracy": 1.0,
+    "auc_pr": 1.0,
+    "auc_roc": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "recall_at_k": 1.0,
+    "threshold": 0.5
+  },
+  "preprocessor": {
+    "schema_version": 1,
+    "fit_scope": "development_only",
+    "monto_p99": 898292.0427999999
+  },
+  "advertencia": "benchmark sintético; el holdout no debe reutilizarse para retuning"
 }

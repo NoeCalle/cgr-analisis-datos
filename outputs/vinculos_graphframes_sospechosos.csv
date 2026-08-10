@@ -1,6 +1,6 @@
 dst,src,n_contratos,monto_total,tel_prov,dir_prov,tel_func,dir_func,senal_vinculo
-F048,P0164,2,467596.05,944286633,"Av. Javier Prado 535, Barranco",944286633,"Av. Arequipa 455, Magdalena",True
-F003,P0032,2,324771.26,955850256,"Av. Arequipa 709, Surco",927599425,"Av. Arequipa 709, Surco",True
-F000,P0021,2,96175.94,939174930,"Calle Los Pinos 950, Pueblo Libre",939174930,"Calle Los Pinos 872, Pueblo Libre",True
-F035,P0205,3,411810.97,993059156,"Jr. Cusco 474, Surco",993059156,"Jr. Las Begonias 571, Pueblo Libre",True
-F000,P0132,3,260660.31,939174930,"Av. La Marina 859, La Molina",939174930,"Calle Los Pinos 872, Pueblo Libre",True
+F047,P0213,2,400899.8,982012532,"Jr. Cusco 962, San Isidro",982012532,"Av. Javier Prado 658, Pueblo Libre",True
+F053,P0156,4,1482992.48,935276802,"Jr. Las Begonias 675, La Molina",996614792,"Jr. Las Begonias 675, La Molina",True
+F000,P0198,5,520381.58999999997,939174930,"Av. Los Álamos 353, Jesús María",939174930,"Calle Los Pinos 872, Pueblo Libre",True
+F027,P0084,2,50457.87,947541945,"Jr. Cusco 292, Miraflores",947541945,"Av. Javier Prado 150, Miraflores",True
+F035,P0209,2,170035.15,993059156,"Av. Los Álamos 689, Barranco",993059156,"Jr. Las Begonias 571, Pueblo Libre",True

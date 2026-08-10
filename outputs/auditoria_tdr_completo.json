@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "scope": "TDR completo público de mayo de 2026",
   "nature": "auditoría del PoC independiente; no conformidad ni aprobación CGR",
   "total_criterios": 25,
@@ -64,7 +64,7 @@
         "outputs/linaje_datos.csv"
       ],
       "dependencias_cgr": [],
-      "detalle": "Features de favoritismo/fraccionamiento y linaje fuente→feature están materializados."
+      "detalle": "Features de favoritismo/fraccionamiento y linaje fuente→feature están materializados; fraccionamiento conserva objeto_familia y una única semántica de ventana pandas/Spark."
     },
     {
       "numero": 5,
@@ -92,22 +92,26 @@
       "evidencias": [
         "outputs/comparacion_modelos_favoritismo.json",
         "outputs/tuning_favoritismo_resumen.json",
+        "outputs/tuning_favoritismo_spark_resumen.json",
+        "outputs/model_registry.json",
         "outputs/ranking_riesgo_favoritismo_spark.csv"
       ],
       "dependencias_cgr": [],
-      "detalle": "Clasificación/riesgo con benchmark, tuning, explicación y ejecución Spark."
+      "detalle": "El champion Spark de favoritismo se selecciona y evalúa con el mismo pipeline operacional que TRAIN/INFERENCE (monto_capped), conserva holdout final y Feature Importance ligada al modelo servido."
     },
     {
       "numero": 7,
       "seccion_tdr": "4.2.3 / Productos 6-7",
-      "requisito": "Detección de fraccionamiento y compras repetitivas/anómalas",
+      "requisito": "Detección de fraccionamiento, compras repetitivas y objetos/servicios similares",
       "estado": "✅",
       "evidencias": [
+        "src/core/objeto_similarity.py",
+        "outputs/tuning_fraccionamiento_spark_resumen.json",
         "outputs/tuning_fraccionamiento_resumen.json",
         "outputs/ranking_riesgo_fraccionamiento_spark.csv"
       ],
       "dependencias_cgr": [],
-      "detalle": "Isolation Forest de referencia + KMeans MLlib + señal interpretable por ventana/cuantía."
+      "detalle": "El KMeans Spark activo dispone de evaluación/holdout propios; la señal temporal usa cantidad y monto de la misma ventana de 15 días y agrupa variantes lexicales controladas mediante objeto_familia. Isolation Forest queda como benchmark de compatibilidad."
     },
     {
       "numero": 8,
@@ -126,15 +130,17 @@
     {
       "numero": 9,
       "seccion_tdr": "4.2.5",
-      "requisito": "Entrenamiento, validación cruzada y optimización de hiperparámetros",
+      "requisito": "Entrenamiento, validación cruzada, holdout y optimización de hiperparámetros",
       "estado": "✅",
       "evidencias": [
+        "outputs/tuning_favoritismo_spark_resumen.json",
+        "outputs/tuning_fraccionamiento_spark_resumen.json",
         "outputs/tuning_favoritismo_resumen.json",
         "outputs/tuning_fraccionamiento_resumen.json",
-        "outputs/spark_favoritismo_resumen.json"
+        "outputs/model_registry.json"
       ],
       "dependencias_cgr": [],
-      "detalle": "Tuning/validación y separación de holdout quedan persistidos."
+      "detalle": "El champion Spark consume hiperparámetros seleccionados por evaluaciones del mismo pipeline activo; los benchmarks sklearn quedan identificados como compatibilidad y los holdouts no participan del retuning."
     },
     {
       "numero": 10,
@@ -143,8 +149,8 @@
       "estado": "🟡",
       "evidencias": [
         "outputs/inference_spark_smoke_summary.json",
-        "outputs/spark_favoritismo_resumen.json",
-        "outputs/spark_fraccionamiento_resumen.json",
+        "outputs/tuning_favoritismo_spark_resumen.json",
+        "outputs/tuning_fraccionamiento_spark_resumen.json",
         "src/core/schemas_spark.py",
         "tests/test_spark_native_integration.py"
       ],
@@ -152,7 +158,7 @@
         "CGR-DEP-06",
         "CGR-DEP-03"
       ],
-      "detalle": "La ruta operacional spark_sql es Spark-native, evita toPandas y admite master configurable; el clúster, volumen, performance, robustez y aceptación productiva requieren infraestructura/ground truth CGR."
+      "detalle": "La ruta operacional spark_sql es Spark-native, evita toPandas y admite master configurable; validaciones metodológicas locales existen, pero clúster, volumen, performance, robustez y aceptación productiva requieren infraestructura/ground truth CGR."
     },
     {
       "numero": 11,
@@ -204,12 +210,14 @@
       "requisito": "Autoevaluación y estrategia de actualización/reentrenamiento sostenible",
       "estado": "✅",
       "evidencias": [
-        "src/autoevaluacion.py",
-        "src/registro_modelos.py",
-        "docs/Train_Inference.md"
+        "src/autoevaluacion_champion.py",
+        "airflow_home/dags/dag_monitoreo_reentrenamiento.py",
+        "outputs/monitoreo_champion.json",
+        "outputs/log_reentrenamiento_champion.csv",
+        "outputs/model_registry.json"
       ],
       "dependencias_cgr": [],
-      "detalle": "El reentrenamiento produce candidate; no existe autopromoción silenciosa."
+      "detalle": "La autoevaluación carga exactamente el champion Spark activo del registry, calcula deriva/recall@K sobre sus features congeladas y solo genera candidates; no existe autopromoción silenciosa."
     },
     {
       "numero": 15,
@@ -232,15 +240,16 @@
       "evidencias": [
         "docs/Train_Inference.md",
         "src/monitoreo_modelos.py",
-        "src/autoevaluacion.py",
+        "src/autoevaluacion_champion.py",
         "airflow_home/dags/dag_monitoreo_reentrenamiento.py",
+        "outputs/monitoreo_champion.json",
         "outputs/model_registry.json"
       ],
       "dependencias_cgr": [
         "CGR-DEP-04",
         "CGR-DEP-06"
       ],
-      "detalle": "Controles de software, autoevaluación y monitoreo de solo lectura existen; identidad, secretos, segregación y operación productiva son institucionales."
+      "detalle": "Controles de software y monitoreo del champion activo existen; identidad, secretos, segregación, operación y aceptación productiva son institucionales."
     },
     {
       "numero": 17,
@@ -277,14 +286,16 @@
       "requisito": "Umbrales institucionales y validación productiva de Accuracy/F1/AUC-ROC",
       "estado": "🟡",
       "evidencias": [
-        "outputs/comparacion_modelos_favoritismo.json",
+        "outputs/tuning_favoritismo_spark_resumen.json",
+        "outputs/tuning_fraccionamiento_spark_resumen.json",
+        "outputs/tuning_favoritismo_resumen.json",
         "outputs/tuning_fraccionamiento_resumen.json"
       ],
       "dependencias_cgr": [
         "CGR-DEP-03",
         "CGR-DEP-06"
       ],
-      "detalle": "El PoC reporta métricas; el TDR público no aporta los mínimos numéricos ni ground truth institucional."
+      "detalle": "El PoC reporta métricas CV/holdout de los modelos activos y benchmarks de compatibilidad; el TDR público no aporta mínimos numéricos ni ground truth institucional."
     },
     {
       "numero": 20,

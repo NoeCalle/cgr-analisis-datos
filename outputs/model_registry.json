@@ -7,26 +7,26 @@
       "artifacts": {
         "favoritismo_model": {
           "path": "outputs/champions/modelo_favoritismo_rf.joblib",
-          "sha256": "f5dae4835db4ac8e8eb813504d6df13c64f16e16ea2a75f348c2d4cf0e1bb830"
+          "sha256": "4831c6362a281e9b0fe6793ddf893977c407d2a4f1225ca36087ca0741d01345"
         },
         "fraccionamiento_model": {
           "path": "outputs/champions/modelo_fraccionamiento_isoforest.joblib",
-          "sha256": "dc2c5789ceffe56f55c135892b32c35b5dc0b9dc8a257cd0d1f45e630b8d43f6"
+          "sha256": "6234d9a6beb183342b6210e3e672d9b6e4fa773a93d20ad1f081eff38098fbc0"
         },
         "fraccionamiento_scaler": {
           "path": "outputs/champions/scaler_fraccionamiento.joblib",
-          "sha256": "521ef4fd2a39b48cea778ad1739a59007b8e3adefdd853147731ea9618df3f4e"
+          "sha256": "594092d338b3015ab482762e3d3fc59770648c3a85e9033f78028c523308e9b8"
         },
         "preprocessor": {
           "path": "outputs/champions/preprocesador_contratos.joblib",
-          "sha256": "1dd9e0fa07749b9402b730bb979c1d8547fcec2cd1de5bd8d294be62be29e426"
+          "sha256": "d96f609a6961e3e9fe645d77c9b845ce862ebdcdcbdf8a8738a4c4836f71057f"
         },
         "preprocessor_json": {
           "path": "outputs/champions/preprocesador_contratos.json",
-          "sha256": "8314ed1e6d320aaea9d512f4765317492a667c751e7d73137e9a8c3c45e750fd"
+          "sha256": "96b31216e635efce4e743f05f9f403de9038a54ff33e0938305b4e7f34a4febc"
         }
       },
-      "champion_id": "poc-f4db62d69c71d044",
+      "champion_id": "poc-d93bb27f2afab5bc",
       "models": {
         "favoritismo": {
           "algorithm": "RandomForestClassifier",
@@ -47,7 +47,7 @@
           "framework": "scikit-learn",
           "label": "label_favoritismo",
           "params": {
-            "max_depth": 3,
+            "max_depth": 4,
             "min_samples_leaf": 1,
             "n_estimators": 100
           }
@@ -65,8 +65,8 @@
           "framework": "scikit-learn",
           "label": "label_fraccionamiento",
           "params": {
-            "contamination": "auto",
-            "max_samples": 0.5,
+            "contamination": 0.05,
+            "max_samples": 0.8,
             "n_estimators": 100
           }
         }
@@ -79,16 +79,16 @@
       },
       "training": {
         "config": "config/local-training.yaml",
-        "contracts_rows": 3709,
+        "contracts_rows": 4296,
         "favoritismo_amount_source": "monto_capped",
-        "favoritismo_positives": 6,
-        "favoritismo_rows": 2328,
+        "favoritismo_positives": 30,
+        "favoritismo_rows": 2362,
         "fraccionamiento_amount_source": "monto",
-        "fraccionamiento_positives": 8,
-        "fraccionamiento_rows": 180,
+        "fraccionamiento_positives": 24,
+        "fraccionamiento_rows": 265,
         "ground_truth_required": true,
         "source_type": "local_csv",
-        "training_data_fingerprint_sha256": "cc965662fe78c476b59d08e2065450d5e9a47561be184f73a843899fc096eff2",
+        "training_data_fingerprint_sha256": "71419777a7e364091b16165b7489fb4e7c4ed19e7a997e892366904ba8d97e74",
         "validation_evidence": [
           "outputs/comparacion_modelos_favoritismo.json",
           "outputs/tuning_favoritismo_resumen.json",
@@ -100,26 +100,39 @@
       "artifacts": {
         "favoritismo_model": {
           "path": "outputs/champions_spark/modelo_favoritismo_rf",
-          "sha256": "8001332b776c23cf7d05cdbd629f970b05b63200a9274a887c1c45577c7cf018"
+          "sha256": "72bd10ef8a26890507ba5e85e1de26231ed0682fa3536a4ee84c6a64cccc01e4"
         },
         "fraccionamiento_model": {
           "path": "outputs/champions_spark/modelo_fraccionamiento_kmeans",
-          "sha256": "44614771c4fc3ff075188accce5642a472cd8e4a7690e40696e3e45e551ecf4f"
+          "sha256": "edcf5d268432912512390371375f4db54120cee5732fe658ba82bec3de2af14f"
         },
         "fraccionamiento_scaler": {
           "path": "outputs/champions_spark/scaler_fraccionamiento",
-          "sha256": "fddf74fb2ff7d944e242dffa51e3e3bc107ef5005dc4d7ea985f0e93c2c0f24d"
+          "sha256": "a5f58c30f233ae8b29acffa438a652961e8a33cee6f0d826ae53e53473955b55"
         },
         "preprocessor_json": {
           "path": "outputs/champions_spark/preprocesador_contratos.json",
-          "sha256": "8314ed1e6d320aaea9d512f4765317492a667c751e7d73137e9a8c3c45e750fd"
+          "sha256": "96b31216e635efce4e743f05f9f403de9038a54ff33e0938305b4e7f34a4febc"
         }
       },
-      "champion_id": "spark-poc-2abc0f054908c60e",
+      "champion_id": "spark-poc-81b28cf92909acb2",
       "models": {
         "favoritismo": {
           "algorithm": "RandomForestClassificationModel",
           "amount_source": "monto_capped",
+          "feature_importances": {
+            "concentracion_objeto": 0.14732709712436473,
+            "contratos_por_mes": 0.0021750462105713806,
+            "dias_actividad": 0.04951742935228782,
+            "monto_por_funcionario": 0.2378540298191684,
+            "monto_promedio": 0.010679483706675118,
+            "monto_total": 0.32482893007526953,
+            "n_contratos": 0.1765086443782471,
+            "n_funcionarios_distintos": 0.000622316503505938,
+            "n_objetos_unicos": 0.006121892019513328,
+            "pct_comparacion_precios": 0.00034195323015846985,
+            "pct_contratacion_directa": 0.04402317758023798
+          },
           "features": [
             "n_contratos",
             "monto_total",
@@ -138,7 +151,7 @@
           "params": {
             "maxDepth": 3,
             "numTrees": 100,
-            "selection_source": "spark_cv_summary"
+            "selection_source": "spark_operational_holdout"
           }
         },
         "fraccionamiento": {
@@ -154,7 +167,8 @@
           "framework": "Apache Spark MLlib",
           "label": "label_fraccionamiento",
           "params": {
-            "k": 2
+            "k": 2,
+            "selection_source": "spark_operational_holdout"
           }
         }
       },
@@ -166,14 +180,14 @@
       },
       "training": {
         "config": "config/local-training.yaml",
-        "contracts_rows": 3709,
+        "contracts_rows": 4296,
         "engine": "Apache Spark MLlib",
         "favoritismo_amount_source": "monto_capped",
-        "favoritismo_positives": 6,
-        "favoritismo_rows": 2328,
+        "favoritismo_positives": 30,
+        "favoritismo_rows": 2362,
         "fraccionamiento_amount_source": "monto",
-        "fraccionamiento_positives": 8,
-        "fraccionamiento_rows": 180,
+        "fraccionamiento_positives": 24,
+        "fraccionamiento_rows": 265,
         "ground_truth_required": true,
         "input_engine": "pandas_adapter",
         "pandas_materialization": true,
@@ -181,12 +195,12 @@
         "source_type": "local_csv",
         "spark_mode": "local[*]",
         "spark_native_ingestion": false,
-        "training_data_fingerprint_sha256": "cc965662fe78c476b59d08e2065450d5e9a47561be184f73a843899fc096eff2",
+        "training_data_fingerprint_sha256": "71419777a7e364091b16165b7489fb4e7c4ed19e7a997e892366904ba8d97e74",
         "validation_evidence": [
-          "outputs/spark_favoritismo_resumen.json",
-          "outputs/spark_fraccionamiento_resumen.json",
+          "outputs/tuning_favoritismo_spark_resumen.json",
+          "outputs/tuning_fraccionamiento_spark_resumen.json",
           "outputs/comparacion_modelos_favoritismo.json",
-          "outputs/tuning_fraccionamiento_resumen.json"
+          "outputs/tuning_favoritismo_resumen.json"
         ]
       }
     }

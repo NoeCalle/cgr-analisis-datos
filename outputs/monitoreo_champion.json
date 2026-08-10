@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "active_profile": "spark_mllib",
+  "champion_id": "spark-poc-81b28cf92909acb2",
+  "champion_framework": "Apache Spark MLlib",
+  "feature_source": "monto_capped + champion preprocessor",
+  "gates": {
+    "psi_max": 0.25,
+    "recall_at_k_min": 0.8
+  },
+  "scenarios": [
+    {
+      "escenario": "normal",
+      "psi": {
+        "monto_total": 0.20827796068326193,
+        "pct_contratacion_directa": 0.012560843575744707,
+        "pct_comparacion_precios": 0.1456545383101751,
+        "concentracion_objeto": 0.2304853386247846
+      },
+      "psi_max": 0.2304853386247846,
+      "recall_at_k_champion": null,
+      "trigger_drift": false,
+      "trigger_recall": false,
+      "retraining_required": false,
+      "scored_groups": 633,
+      "positivos": 0,
+      "active_profile": "spark_mllib",
+      "champion_id": "spark-poc-81b28cf92909acb2",
+      "candidate_generated": false,
+      "candidate_id": null,
+      "automatic_promotion": false
+    },
+    {
+      "escenario": "con_drift",
+      "psi": {
+        "monto_total": 0.13562884584200013,
+        "pct_contratacion_directa": 0.8568249553902654,
+        "pct_comparacion_precios": 0.21731854340298254,
+        "concentracion_objeto": 0.1434051254539516
+      },
+      "psi_max": 0.8568249553902654,
+      "recall_at_k_champion": 1.0,
+      "trigger_drift": true,
+      "trigger_recall": false,
+      "retraining_required": true,
+      "scored_groups": 658,
+      "positivos": 6,
+      "active_profile": "spark_mllib",
+      "champion_id": "spark-poc-81b28cf92909acb2",
+      "candidate_generated": true,
+      "candidate_id": "spark-poc-0811fd49134d15ea",
+      "automatic_promotion": false,
+      "candidate_manifest": "outputs/runtime/retraining/con_drift/candidate/candidate_manifest.json"
+    }
+  ],
+  "automatic_promotion": false,
+  "notice": "Los candidates generados requieren revisión/promoción explícita; no existe autopromoción."
+}

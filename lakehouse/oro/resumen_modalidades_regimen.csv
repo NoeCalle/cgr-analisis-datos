@@ -1,26 +1,26 @@
 regimen,modalidad,clasificacion_modalidad,n_contratos,monto_contractual
-Ley 30225,Adjudicación Simplificada,compatible_referencial_por_cuantia,809,73936241.9
-Ley 30225,Comparación de Precios,especial_no_inferible_por_cuantia,692,71004768.17
-Ley 30225,Licitación Pública,requiere_revision_contexto,363,44488114.82
-Ley 30225,Contratación Directa,especial_no_inferible_por_cuantia,251,28613645.78
-Ley 30225,Concurso Público,requiere_revision_contexto,216,21830593.47
-Ley 30225,SIN_DATO,sin_informacion,63,5112606.37
-Ley 30225,Adjudicación Simplificada,requiere_revision_contexto,16,12432769.34
-Ley 30225,Adjudicación Simplificada,sin_cuantia_para_comparar,11,0.0
-Ley 30225,Licitación Pública,compatible_referencial_por_cuantia,6,3960451.87
-Ley 30225,Concurso Público,compatible_referencial_por_cuantia,3,2451721.51
-Ley 30225,Concurso Público,sin_cuantia_para_comparar,3,0.0
-Ley 30225,Licitación Pública,sin_cuantia_para_comparar,3,0.0
-Ley 32069,Adjudicación Simplificada,requiere_revision_contexto,429,45612002.53
-Ley 32069,Comparación de Precios,especial_no_inferible_por_cuantia,347,34432734.0
-Ley 32069,Licitación Pública,requiere_revision_contexto,164,23029880.36
-Ley 32069,Contratación Directa,especial_no_inferible_por_cuantia,132,15677704.04
-Ley 32069,Concurso Público,requiere_revision_contexto,126,14000298.77
-Ley 32069,SIN_DATO,sin_informacion,28,3110106.05
-Ley 32069,Concurso Público Abreviado,compatible_referencial_por_cuantia,11,2542010.6
-Ley 32069,Adjudicación Simplificada,sin_cuantia_para_comparar,9,0.0
-Ley 32069,Licitación Pública Abreviada,compatible_referencial_por_cuantia,9,1357035.85
-Ley 32069,Licitación Pública,compatible_referencial_por_cuantia,7,4919330.98
-Ley 32069,Licitación Pública,sin_cuantia_para_comparar,5,0.0
+Ley 30225,Adjudicación Simplificada,compatible_referencial_por_cuantia,899,101756678.42
+Ley 30225,Comparación de Precios,especial_no_inferible_por_cuantia,714,76131886.8
+Ley 30225,Licitación Pública,requiere_revision_contexto,398,54144454.68
+Ley 30225,Contratación Directa,especial_no_inferible_por_cuantia,329,56706715.88
+Ley 30225,Concurso Público,requiere_revision_contexto,268,34725426.46
+Ley 30225,SIN_DATO,sin_informacion,49,6734254.14
+Ley 30225,Adjudicación Simplificada,requiere_revision_contexto,40,28930078.14
+Ley 30225,Licitación Pública,compatible_referencial_por_cuantia,24,16615121.13
+Ley 30225,Adjudicación Simplificada,sin_cuantia_para_comparar,19,0.0
+Ley 30225,Licitación Pública,sin_cuantia_para_comparar,10,0.0
+Ley 30225,Concurso Público,compatible_referencial_por_cuantia,8,5819287.0
+Ley 30225,Concurso Público,sin_cuantia_para_comparar,4,0.0
+Ley 32069,Adjudicación Simplificada,requiere_revision_contexto,503,76712011.85
+Ley 32069,Comparación de Precios,especial_no_inferible_por_cuantia,359,39982729.27
+Ley 32069,Licitación Pública,requiere_revision_contexto,207,38580532.48
+Ley 32069,Contratación Directa,especial_no_inferible_por_cuantia,199,37909583.74
+Ley 32069,Concurso Público,requiere_revision_contexto,149,23339981.96
+Ley 32069,SIN_DATO,sin_informacion,42,5435161.1
+Ley 32069,Licitación Pública Abreviada,compatible_referencial_por_cuantia,22,17247577.86
+Ley 32069,Licitación Pública,compatible_referencial_por_cuantia,19,13674465.06
+Ley 32069,Adjudicación Simplificada,sin_cuantia_para_comparar,14,0.0
+Ley 32069,Concurso Público Abreviado,compatible_referencial_por_cuantia,9,1949755.12
+Ley 32069,Concurso Público,compatible_referencial_por_cuantia,4,2929277.45
 Ley 32069,Concurso Público,sin_cuantia_para_comparar,4,0.0
-Ley 32069,Concurso Público,compatible_referencial_por_cuantia,2,1388318.45
+Ley 32069,Licitación Pública,sin_cuantia_para_comparar,3,0.0

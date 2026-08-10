@@ -1,33 +1,33 @@
 {
-  "schema_version": 2,
-  "generado_utc": "2026-08-10T18:23:18.783772+00:00",
-  "git_commit": "47226e0495146294dbd181fc9bfafd50db168fb2",
+  "schema_version": 3,
+  "generado_utc": "2026-08-10T23:29:38.813091+00:00",
+  "git_commit": "87c9d5706b3009c2e3e45717f8fbed8633c9b7a0",
   "naturaleza": "Prototipo independiente. Las métricas sintéticas evalúan el PoC y no estiman desempeño productivo. El análisis de pagos usa datos sintéticos y no representa SIAF real. Las salidas sobre datos públicos son señales de priorización para revisión y no constituyen hallazgos ni determinaciones de irregularidad.",
   "sintetico": {
-    "contratos": 3709,
+    "contratos": 4296,
     "columnas_contratos": 12,
-    "valores_nulos_totales": 241,
-    "filas_con_algun_nulo": 237,
-    "p99_monto_pen": 736485.5939000004,
-    "registros_sobre_p99": 37,
+    "valores_nulos_totales": 263,
+    "filas_con_algun_nulo": 259,
+    "p99_monto_pen": 894438.0726000003,
+    "registros_sobre_p99": 43,
     "modalidades": {
-      "Adjudicación Simplificada": 1274,
-      "Comparación de Precios": 1039,
-      "Licitación Pública": 548,
-      "Contratación Directa": 383,
-      "Concurso Público": 354,
+      "Adjudicación Simplificada": 1475,
+      "Comparación de Precios": 1073,
+      "Licitación Pública": 661,
+      "Contratación Directa": 528,
+      "Concurso Público": 437,
       "SIN_DATO": 91,
-      "Concurso Público Abreviado": 11,
-      "Licitación Pública Abreviada": 9
+      "Licitación Pública Abreviada": 22,
+      "Concurso Público Abreviado": 9
     },
     "categorias_principales": {
-      "services": 1863,
-      "goods": 1465,
-      "works": 381
+      "services": 2180,
+      "goods": 1681,
+      "works": 435
     },
     "favoritismo": {
-      "pares_proveedor_entidad": 2328,
-      "positivos_sembrados": 6,
+      "pares_proveedor_entidad": 2362,
+      "positivos_sembrados": 30,
       "features": [
         "n_contratos",
         "monto_total",
@@ -43,8 +43,10 @@
       ]
     },
     "fraccionamiento": {
-      "grupos_proveedor_entidad_objeto": 180,
-      "positivos_sembrados": 8,
+      "grupos_proveedor_entidad_objeto": 265,
+      "grupos_proveedor_entidad_objeto_familia": 265,
+      "positivos_sembrados": 24,
+      "usa_objeto_familia": true,
       "features": [
         "n_contratos_grupo",
         "max_contratos_ventana_15d",
@@ -65,24 +67,24 @@
     "institutional_dependency": "El reemplazo de pagos sintéticos por pagos SIAF reales, y la validación jurídica/funcional de modalidades, requiere fuentes, diccionarios y especialistas CGR.",
     "modalidades": {
       "clasificacion_modalidad": {
-        "compatible_referencial_por_cuantia": 847,
-        "especial_no_inferible_por_cuantia": 1422,
-        "requiere_revision_contexto": 1314,
-        "sin_cuantia_para_comparar": 35,
+        "compatible_referencial_por_cuantia": 985,
+        "especial_no_inferible_por_cuantia": 1601,
+        "requiere_revision_contexto": 1565,
+        "sin_cuantia_para_comparar": 54,
         "sin_informacion": 91
       },
       "contratos_por_regimen": {
-        "Ley 30225": 2436,
-        "Ley 32069": 1273
+        "Ley 30225": 2762,
+        "Ley 32069": 1534
       },
       "modalidades_observadas": {
-        "Adjudicación Simplificada": 1274,
-        "Comparación de Precios": 1039,
-        "Concurso Público": 354,
-        "Concurso Público Abreviado": 11,
-        "Contratación Directa": 383,
-        "Licitación Pública": 548,
-        "Licitación Pública Abreviada": 9,
+        "Adjudicación Simplificada": 1475,
+        "Comparación de Precios": 1073,
+        "Concurso Público": 437,
+        "Concurso Público Abreviado": 9,
+        "Contratación Directa": 528,
+        "Licitación Pública": 661,
+        "Licitación Pública Abreviada": 22,
         "SIN_DATO": 91
       },
       "nota_interpretacion": "La comparación por cuantía es referencial. 'requiere_revision_contexto' no significa ilegalidad; exige revisar el supuesto jurídico, objeto, causal y demás antecedentes."
@@ -112,25 +114,25 @@
       }
     },
     "payments": {
-      "contract_amount_missing_rows": 69,
-      "contracts_rows": 3709,
-      "contracts_with_payments": 3709,
+      "contract_amount_missing_rows": 92,
+      "contracts_rows": 4296,
+      "contracts_with_payments": 4296,
       "dias_devengado_a_pagado_p50": 16.0,
       "dias_devengado_a_pagado_p90": 28.0,
-      "dias_devengado_a_pagado_p95": 77.0,
+      "dias_devengado_a_pagado_p95": 78.0,
       "estado_pago_contratos": {
-        "pagado_aproximadamente_completo": 2894,
-        "pago_parcial": 452,
-        "pendiente_sin_pago": 218,
-        "sin_pago_o_sin_cuantia": 69,
-        "sobrepago_senal_revisar": 76
+        "pagado_aproximadamente_completo": 3335,
+        "pago_parcial": 515,
+        "pendiente_sin_pago": 261,
+        "sin_pago_o_sin_cuantia": 92,
+        "sobrepago_senal_revisar": 93
       },
-      "monto_contractual_total_valido": 409900334.85999995,
-      "monto_devengado_total": 388348328.18,
-      "monto_pagado_total": 374259575.66999996,
+      "monto_contractual_total_valido": 639324978.5400001,
+      "monto_devengado_total": 608457875.5200001,
+      "monto_pagado_total": 586728228.0,
       "orphan_payments": 0,
-      "payments_rows": 6726,
-      "ratio_pagado_global_sobre_monto_valido": 0.9130501827909632,
+      "payments_rows": 7790,
+      "ratio_pagado_global_sobre_monto_valido": 0.9177308062323591,
       "ratio_pagado_p50": 1.0,
       "ratio_pagado_p90": 1.0
     },
@@ -139,7 +141,12 @@
     "source_type": "local_csv"
   },
   "seleccion_favoritismo": {
-    "diseno": "predicciones out-of-fold, StratifiedKFold 3-fold, mismas particiones para todos",
+    "schema_version": 2,
+    "pipeline": "operational_frozen_preprocessor",
+    "amount_source": "monto_capped",
+    "split": "holdout final por par proveedor-entidad reservado antes del FIT del preprocesador",
+    "preprocessor_fit_scope": "development_only",
+    "cv": "StratifiedKFold(n_splits=5, shuffle=True, random_state=42)",
     "features": [
       "n_contratos",
       "monto_total",
@@ -153,50 +160,54 @@
       "contratos_por_mes",
       "monto_por_funcionario"
     ],
-    "n_registros": 2328,
-    "positivos": 6,
-    "criterio_primario": "AUC-PR por desbalance severo",
-    "metricas_reportadas": [
-      "accuracy",
-      "auc_pr",
-      "auc_roc",
-      "precision",
-      "recall",
-      "f1"
-    ],
+    "n_contracts_total": 4296,
+    "n_dev": 1771,
+    "positivos_dev": 22,
+    "n_holdout": 591,
+    "positivos_holdout": 8,
+    "criterio_primario": "AUC-PR por desbalance",
     "resultados": [
       {
         "modelo": "RandomForest",
-        "accuracy": 0.997852233676976,
-        "auc_pr": 0.6714285714285714,
-        "auc_roc": 0.9986362331323572,
-        "precision": 0.6666666666666666,
-        "recall": 0.3333333333333333,
-        "f1": 0.4444444444444444
-      },
-      {
-        "modelo": "RegresionLogistica",
-        "accuracy": 0.9957044673539519,
-        "auc_pr": 0.6211419753086419,
-        "auc_roc": 0.99519092736147,
-        "precision": 0.3333333333333333,
-        "recall": 0.6666666666666666,
-        "f1": 0.4444444444444444
+        "accuracy": 0.9988706945228685,
+        "auc_pr": 0.990592885375494,
+        "auc_roc": 0.9998700556161964,
+        "precision": 1.0,
+        "recall": 0.9090909090909091,
+        "f1": 0.9523809523809523,
+        "recall_at_k": 0.9090909090909091,
+        "threshold": 0.5
       },
       {
         "modelo": "GradientBoosting",
-        "accuracy": 0.9969931271477663,
-        "auc_pr": 0.41795532646048106,
-        "auc_roc": 0.7492463393626184,
-        "precision": 0.42857142857142855,
-        "recall": 0.5,
-        "f1": 0.46153846153846156
+        "accuracy": 0.9988706945228685,
+        "auc_pr": 0.9105468274266229,
+        "auc_roc": 0.9454493476791933,
+        "precision": 1.0,
+        "recall": 0.9090909090909091,
+        "f1": 0.9523809523809523,
+        "recall_at_k": 0.9090909090909091,
+        "threshold": 0.5
+      },
+      {
+        "modelo": "RegresionLogistica",
+        "accuracy": 0.9898362507058159,
+        "auc_pr": 0.7508199652806978,
+        "auc_roc": 0.9968553459119497,
+        "precision": 0.5526315789473685,
+        "recall": 0.9545454545454546,
+        "f1": 0.7,
+        "recall_at_k": 0.6363636363636364,
+        "threshold": 0.5
       }
     ],
     "mejor_candidato": "RandomForest",
-    "advertencia": "comparación sobre benchmark sintético; Accuracy se reporta por el Anexo 3 pero no se usa como criterio primario"
+    "advertencia": "benchmark sintético; no estima desempeño productivo"
   },
   "tuning_favoritismo": {
+    "schema_version": 2,
+    "pipeline": "operational_frozen_preprocessor",
+    "amount_source": "monto_capped",
     "features": [
       "n_contratos",
       "monto_total",
@@ -210,20 +221,41 @@
       "contratos_por_mes",
       "monto_por_funcionario"
     ],
-    "metrica_seleccion": "average_precision (AUC-PR)",
-    "cv": "StratifiedKFold(n_splits=3, shuffle=True, random_state=42)",
+    "metrica_seleccion": "average_precision (AUC-PR) en desarrollo",
+    "cv": "StratifiedKFold(n_splits=5, shuffle=True, random_state=42)",
+    "holdout_final": "reservado antes de tuning y antes del FIT del preprocesador",
+    "n_total": 2362,
+    "n_desarrollo": 1771,
+    "positivos_desarrollo": 22,
+    "n_holdout": 591,
+    "positivos_holdout": 8,
     "mejor_configuracion": {
-      "max_depth": 3,
+      "max_depth": 4,
       "min_samples_leaf": 1,
       "n_estimators": 100
     },
-    "mejor_auc_pr_cv": 0.8444444444444444,
-    "baseline_300_6_auc_pr_cv": 0.8444444444444444,
-    "advertencia": "resultado sobre ground truth sintético; no estima desempeño productivo"
+    "mejor_auc_pr_cv": 1.0,
+    "metricas_holdout_final": {
+      "accuracy": 1.0,
+      "auc_pr": 1.0,
+      "auc_roc": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "recall_at_k": 1.0,
+      "threshold": 0.5
+    },
+    "preprocessor": {
+      "schema_version": 1,
+      "fit_scope": "development_only",
+      "monto_p99": 898292.0427999999
+    },
+    "advertencia": "benchmark sintético; el holdout no debe reutilizarse para retuning"
   },
   "tuning_fraccionamiento": {
-    "diseno": "holdout final separado antes del tuning; validaciones repetidas solo en desarrollo",
-    "metrica_seleccion": "AUC-PR media en validaciones repetidas",
+    "schema_version": 2,
+    "diseno": "holdout final separado antes del tuning; ranking y umbral calibrados solo en desarrollo",
+    "metrica_seleccion": "AUC-PR media para ranking; F1 medio para contamination/umbral binario",
     "metricas_reportadas_holdout": [
       "accuracy",
       "auc_roc",
@@ -233,30 +265,250 @@
       "f1",
       "recall_at_k"
     ],
-    "n_total": 180,
-    "positivos_total": 8,
-    "n_desarrollo": 112,
-    "positivos_desarrollo": 5,
+    "n_total": 265,
+    "positivos_total": 24,
+    "n_desarrollo": 185,
+    "positivos_desarrollo": 17,
     "mejor_configuracion": {
       "n_estimators": 100,
-      "max_samples": 0.5,
-      "contamination": "auto",
-      "auc_pr_validacion_medio": 0.4019047619047619,
-      "recall_at_k_validacion_medio": 0.2
+      "max_samples": 0.8,
+      "contamination": 0.05,
+      "auc_pr_validacion_medio": 0.5336974105372947,
+      "recall_at_k_validacion_medio": 0.4,
+      "f1_umbral_validacion_medio": 0.45
+    },
+    "selection_protocol": {
+      "ranking_params": "n_estimators/max_samples seleccionados por AUC-PR y recall@K",
+      "binary_threshold": "contamination seleccionada después por F1 de validación",
+      "holdout_used_for_selection": false
     },
     "metricas_holdout_final": {
       "recall_at_k": 0.0,
-      "accuracy": 0.7941176470588235,
-      "auc_roc": 0.8564102564102564,
-      "auc_pr": 0.17086247086247086,
-      "precision": 0.17647058823529413,
-      "recall": 1.0,
-      "f1": 0.3,
-      "n_test": 68,
-      "positivos_test": 3,
-      "anomalias_predichas": 17
+      "accuracy": 0.8875,
+      "auc_roc": 0.6594911937377692,
+      "auc_pr": 0.13328228236454687,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "n_test": 80,
+      "positivos_test": 7,
+      "anomalias_predichas": 2
     },
-    "advertencia": "benchmark sintético con pocos positivos; Accuracy se reporta por el Anexo 3 pero no se usa como criterio primario"
+    "advertencia": "benchmark sintético de compatibilidad; el champion Spark KMeans tiene evaluación independiente"
+  },
+  "evaluacion_champion_spark": {
+    "champion_id": "spark-poc-81b28cf92909acb2",
+    "favoritismo": {
+      "schema_version": 1,
+      "algorithm": "RandomForestClassificationModel",
+      "pipeline": "spark_operational_features",
+      "amount_source": "monto_capped",
+      "features": [
+        "n_contratos",
+        "monto_total",
+        "monto_promedio",
+        "n_objetos_unicos",
+        "pct_contratacion_directa",
+        "pct_comparacion_precios",
+        "n_funcionarios_distintos",
+        "dias_actividad",
+        "concentracion_objeto",
+        "contratos_por_mes",
+        "monto_por_funcionario"
+      ],
+      "design": "holdout final por proveedor-entidad reservado antes del FIT del preprocesador",
+      "cv": "5-fold estratificado determinístico solo en desarrollo",
+      "n_desarrollo": 1771,
+      "positivos_desarrollo": 22,
+      "n_holdout": 591,
+      "positivos_holdout": 8,
+      "mejor_configuracion": {
+        "numTrees": 100,
+        "maxDepth": 3,
+        "auc_pr_cv": 1.0
+      },
+      "metricas_holdout_final": {
+        "accuracy": 1.0,
+        "auc_pr": 1.0,
+        "auc_roc": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "recall_at_k": 1.0,
+        "threshold": 0.5
+      },
+      "feature_importances": {
+        "n_contratos": 0.2243999236023372,
+        "monto_total": 0.27306786346084577,
+        "monto_promedio": 0.01205453416150111,
+        "n_objetos_unicos": 0.006683264224610426,
+        "pct_contratacion_directa": 0.043598901714472546,
+        "pct_comparacion_precios": 0.00020224131547676947,
+        "n_funcionarios_distintos": 0.0002453732633005905,
+        "dias_actividad": 0.04816446664444551,
+        "concentracion_objeto": 0.14791000044977187,
+        "contratos_por_mes": 0.0025743389048901106,
+        "monto_por_funcionario": 0.24109909225834789
+      },
+      "preprocessor_fit_scope": "development_only",
+      "advertencia": "benchmark sintético; holdout final no usado para tuning"
+    },
+    "fraccionamiento": {
+      "schema_version": 1,
+      "algorithm": "StandardScalerModel + KMeansModel + distancia al centroide",
+      "pipeline": "spark_operational_features",
+      "features": [
+        "n_contratos_grupo",
+        "max_contratos_ventana_15d",
+        "monto_total_ventana_15d",
+        "pct_montos_bajo_umbral",
+        "monto_total_grupo"
+      ],
+      "design": "holdout final por proveedor-entidad-familia reservado antes del FIT del preprocesador; validación repetida solo en desarrollo",
+      "selection_metric": "AUC-PR media de ranking",
+      "k_values": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "n_desarrollo": 193,
+      "positivos_desarrollo": 19,
+      "n_holdout": 71,
+      "positivos_holdout": 6,
+      "mejor_configuracion": {
+        "k": 2,
+        "auc_pr_validacion_medio": 0.36495831285385033,
+        "recall_at_k_validacion_medio": 0.27777777777777773
+      },
+      "metricas_holdout_final": {
+        "accuracy": 0.9436619718309859,
+        "auc_roc": 0.9358974358974359,
+        "auc_pr": 0.7065656565656565,
+        "precision": 0.6666666666666666,
+        "recall": 0.6666666666666666,
+        "f1": 0.6666666666666666,
+        "recall_at_k": 0.6666666666666666
+      },
+      "preprocessor_fit_scope": "development_only",
+      "labels_used_for_fit": false,
+      "advertencia": "benchmark sintético; el holdout no se usa para seleccionar k"
+    },
+    "registry_models": {
+      "favoritismo": {
+        "algorithm": "RandomForestClassificationModel",
+        "amount_source": "monto_capped",
+        "feature_importances": {
+          "concentracion_objeto": 0.14732709712436473,
+          "contratos_por_mes": 0.0021750462105713806,
+          "dias_actividad": 0.04951742935228782,
+          "monto_por_funcionario": 0.2378540298191684,
+          "monto_promedio": 0.010679483706675118,
+          "monto_total": 0.32482893007526953,
+          "n_contratos": 0.1765086443782471,
+          "n_funcionarios_distintos": 0.000622316503505938,
+          "n_objetos_unicos": 0.006121892019513328,
+          "pct_comparacion_precios": 0.00034195323015846985,
+          "pct_contratacion_directa": 0.04402317758023798
+        },
+        "features": [
+          "n_contratos",
+          "monto_total",
+          "monto_promedio",
+          "n_objetos_unicos",
+          "pct_contratacion_directa",
+          "pct_comparacion_precios",
+          "n_funcionarios_distintos",
+          "dias_actividad",
+          "concentracion_objeto",
+          "contratos_por_mes",
+          "monto_por_funcionario"
+        ],
+        "framework": "Apache Spark MLlib",
+        "label": "label_favoritismo",
+        "params": {
+          "maxDepth": 3,
+          "numTrees": 100,
+          "selection_source": "spark_operational_holdout"
+        }
+      },
+      "fraccionamiento": {
+        "algorithm": "StandardScalerModel + KMeansModel + distancia al centroide",
+        "amount_source": "monto",
+        "features": [
+          "n_contratos_grupo",
+          "max_contratos_ventana_15d",
+          "monto_total_ventana_15d",
+          "pct_montos_bajo_umbral",
+          "monto_total_grupo"
+        ],
+        "framework": "Apache Spark MLlib",
+        "label": "label_fraccionamiento",
+        "params": {
+          "k": 2,
+          "selection_source": "spark_operational_holdout"
+        }
+      }
+    }
+  },
+  "monitoreo_champion": {
+    "schema_version": 1,
+    "active_profile": "spark_mllib",
+    "champion_id": "spark-poc-81b28cf92909acb2",
+    "champion_framework": "Apache Spark MLlib",
+    "feature_source": "monto_capped + champion preprocessor",
+    "gates": {
+      "psi_max": 0.25,
+      "recall_at_k_min": 0.8
+    },
+    "scenarios": [
+      {
+        "escenario": "normal",
+        "psi": {
+          "monto_total": 0.20827796068326193,
+          "pct_contratacion_directa": 0.012560843575744707,
+          "pct_comparacion_precios": 0.1456545383101751,
+          "concentracion_objeto": 0.2304853386247846
+        },
+        "psi_max": 0.2304853386247846,
+        "recall_at_k_champion": null,
+        "trigger_drift": false,
+        "trigger_recall": false,
+        "retraining_required": false,
+        "scored_groups": 633,
+        "positivos": 0,
+        "active_profile": "spark_mllib",
+        "champion_id": "spark-poc-81b28cf92909acb2",
+        "candidate_generated": false,
+        "candidate_id": null,
+        "automatic_promotion": false
+      },
+      {
+        "escenario": "con_drift",
+        "psi": {
+          "monto_total": 0.13562884584200013,
+          "pct_contratacion_directa": 0.8568249553902654,
+          "pct_comparacion_precios": 0.21731854340298254,
+          "concentracion_objeto": 0.1434051254539516
+        },
+        "psi_max": 0.8568249553902654,
+        "recall_at_k_champion": 1.0,
+        "trigger_drift": true,
+        "trigger_recall": false,
+        "retraining_required": true,
+        "scored_groups": 658,
+        "positivos": 6,
+        "active_profile": "spark_mllib",
+        "champion_id": "spark-poc-81b28cf92909acb2",
+        "candidate_generated": true,
+        "candidate_id": "spark-poc-0811fd49134d15ea",
+        "automatic_promotion": false,
+        "candidate_manifest": "outputs/runtime/retraining/con_drift/candidate/candidate_manifest.json"
+      }
+    ],
+    "automatic_promotion": false,
+    "notice": "Los candidates generados requieren revisión/promoción explícita; no existe autopromoción."
   },
   "validacion_datos_publicos": {
     "fecha_validacion": "2026-08-07",
@@ -319,8 +571,8 @@
   },
   "run_manifest": {
     "schema_version": 3,
-    "generado_utc": "2026-08-10T18:23:18.401019+00:00",
-    "git_commit": "47226e0495146294dbd181fc9bfafd50db168fb2",
+    "generado_utc": "2026-08-10T23:29:38.430875+00:00",
+    "git_commit": "87c9d5706b3009c2e3e45717f8fbed8633c9b7a0",
     "entorno": {
       "python": "3.12.13",
       "pandas": "3.0.2",
@@ -351,24 +603,24 @@
       "institutional_dependency": "El reemplazo de pagos sintéticos por pagos SIAF reales, y la validación jurídica/funcional de modalidades, requiere fuentes, diccionarios y especialistas CGR.",
       "modalidades": {
         "clasificacion_modalidad": {
-          "compatible_referencial_por_cuantia": 847,
-          "especial_no_inferible_por_cuantia": 1422,
-          "requiere_revision_contexto": 1314,
-          "sin_cuantia_para_comparar": 35,
+          "compatible_referencial_por_cuantia": 985,
+          "especial_no_inferible_por_cuantia": 1601,
+          "requiere_revision_contexto": 1565,
+          "sin_cuantia_para_comparar": 54,
           "sin_informacion": 91
         },
         "contratos_por_regimen": {
-          "Ley 30225": 2436,
-          "Ley 32069": 1273
+          "Ley 30225": 2762,
+          "Ley 32069": 1534
         },
         "modalidades_observadas": {
-          "Adjudicación Simplificada": 1274,
-          "Comparación de Precios": 1039,
-          "Concurso Público": 354,
-          "Concurso Público Abreviado": 11,
-          "Contratación Directa": 383,
-          "Licitación Pública": 548,
-          "Licitación Pública Abreviada": 9,
+          "Adjudicación Simplificada": 1475,
+          "Comparación de Precios": 1073,
+          "Concurso Público": 437,
+          "Concurso Público Abreviado": 9,
+          "Contratación Directa": 528,
+          "Licitación Pública": 661,
+          "Licitación Pública Abreviada": 22,
           "SIN_DATO": 91
         },
         "nota_interpretacion": "La comparación por cuantía es referencial. 'requiere_revision_contexto' no significa ilegalidad; exige revisar el supuesto jurídico, objeto, causal y demás antecedentes."
@@ -398,25 +650,25 @@
         }
       },
       "payments": {
-        "contract_amount_missing_rows": 69,
-        "contracts_rows": 3709,
-        "contracts_with_payments": 3709,
+        "contract_amount_missing_rows": 92,
+        "contracts_rows": 4296,
+        "contracts_with_payments": 4296,
         "dias_devengado_a_pagado_p50": 16.0,
         "dias_devengado_a_pagado_p90": 28.0,
-        "dias_devengado_a_pagado_p95": 77.0,
+        "dias_devengado_a_pagado_p95": 78.0,
         "estado_pago_contratos": {
-          "pagado_aproximadamente_completo": 2894,
-          "pago_parcial": 452,
-          "pendiente_sin_pago": 218,
-          "sin_pago_o_sin_cuantia": 69,
-          "sobrepago_senal_revisar": 76
+          "pagado_aproximadamente_completo": 3335,
+          "pago_parcial": 515,
+          "pendiente_sin_pago": 261,
+          "sin_pago_o_sin_cuantia": 92,
+          "sobrepago_senal_revisar": 93
         },
-        "monto_contractual_total_valido": 409900334.85999995,
-        "monto_devengado_total": 388348328.18,
-        "monto_pagado_total": 374259575.66999996,
+        "monto_contractual_total_valido": 639324978.5400001,
+        "monto_devengado_total": 608457875.5200001,
+        "monto_pagado_total": 586728228.0,
         "orphan_payments": 0,
-        "payments_rows": 6726,
-        "ratio_pagado_global_sobre_monto_valido": 0.9130501827909632,
+        "payments_rows": 7790,
+        "ratio_pagado_global_sobre_monto_valido": 0.9177308062323591,
         "ratio_pagado_p50": 1.0,
         "ratio_pagado_p90": 1.0
       },
@@ -425,7 +677,12 @@
       "source_type": "local_csv"
     },
     "comparacion_modelos_favoritismo": {
-      "diseno": "predicciones out-of-fold, StratifiedKFold 3-fold, mismas particiones para todos",
+      "schema_version": 2,
+      "pipeline": "operational_frozen_preprocessor",
+      "amount_source": "monto_capped",
+      "split": "holdout final por par proveedor-entidad reservado antes del FIT del preprocesador",
+      "preprocessor_fit_scope": "development_only",
+      "cv": "StratifiedKFold(n_splits=5, shuffle=True, random_state=42)",
       "features": [
         "n_contratos",
         "monto_total",
@@ -439,50 +696,54 @@
         "contratos_por_mes",
         "monto_por_funcionario"
       ],
-      "n_registros": 2328,
-      "positivos": 6,
-      "criterio_primario": "AUC-PR por desbalance severo",
-      "metricas_reportadas": [
-        "accuracy",
-        "auc_pr",
-        "auc_roc",
-        "precision",
-        "recall",
-        "f1"
-      ],
+      "n_contracts_total": 4296,
+      "n_dev": 1771,
+      "positivos_dev": 22,
+      "n_holdout": 591,
+      "positivos_holdout": 8,
+      "criterio_primario": "AUC-PR por desbalance",
       "resultados": [
         {
           "modelo": "RandomForest",
-          "accuracy": 0.997852233676976,
-          "auc_pr": 0.6714285714285714,
-          "auc_roc": 0.9986362331323572,
-          "precision": 0.6666666666666666,
-          "recall": 0.3333333333333333,
-          "f1": 0.4444444444444444
-        },
-        {
-          "modelo": "RegresionLogistica",
-          "accuracy": 0.9957044673539519,
-          "auc_pr": 0.6211419753086419,
-          "auc_roc": 0.99519092736147,
-          "precision": 0.3333333333333333,
-          "recall": 0.6666666666666666,
-          "f1": 0.4444444444444444
+          "accuracy": 0.9988706945228685,
+          "auc_pr": 0.990592885375494,
+          "auc_roc": 0.9998700556161964,
+          "precision": 1.0,
+          "recall": 0.9090909090909091,
+          "f1": 0.9523809523809523,
+          "recall_at_k": 0.9090909090909091,
+          "threshold": 0.5
         },
         {
           "modelo": "GradientBoosting",
-          "accuracy": 0.9969931271477663,
-          "auc_pr": 0.41795532646048106,
-          "auc_roc": 0.7492463393626184,
-          "precision": 0.42857142857142855,
-          "recall": 0.5,
-          "f1": 0.46153846153846156
+          "accuracy": 0.9988706945228685,
+          "auc_pr": 0.9105468274266229,
+          "auc_roc": 0.9454493476791933,
+          "precision": 1.0,
+          "recall": 0.9090909090909091,
+          "f1": 0.9523809523809523,
+          "recall_at_k": 0.9090909090909091,
+          "threshold": 0.5
+        },
+        {
+          "modelo": "RegresionLogistica",
+          "accuracy": 0.9898362507058159,
+          "auc_pr": 0.7508199652806978,
+          "auc_roc": 0.9968553459119497,
+          "precision": 0.5526315789473685,
+          "recall": 0.9545454545454546,
+          "f1": 0.7,
+          "recall_at_k": 0.6363636363636364,
+          "threshold": 0.5
         }
       ],
       "mejor_candidato": "RandomForest",
-      "advertencia": "comparación sobre benchmark sintético; Accuracy se reporta por el Anexo 3 pero no se usa como criterio primario"
+      "advertencia": "benchmark sintético; no estima desempeño productivo"
     },
     "tuning_favoritismo": {
+      "schema_version": 2,
+      "pipeline": "operational_frozen_preprocessor",
+      "amount_source": "monto_capped",
       "features": [
         "n_contratos",
         "monto_total",
@@ -496,20 +757,41 @@
         "contratos_por_mes",
         "monto_por_funcionario"
       ],
-      "metrica_seleccion": "average_precision (AUC-PR)",
-      "cv": "StratifiedKFold(n_splits=3, shuffle=True, random_state=42)",
+      "metrica_seleccion": "average_precision (AUC-PR) en desarrollo",
+      "cv": "StratifiedKFold(n_splits=5, shuffle=True, random_state=42)",
+      "holdout_final": "reservado antes de tuning y antes del FIT del preprocesador",
+      "n_total": 2362,
+      "n_desarrollo": 1771,
+      "positivos_desarrollo": 22,
+      "n_holdout": 591,
+      "positivos_holdout": 8,
       "mejor_configuracion": {
-        "max_depth": 3,
+        "max_depth": 4,
         "min_samples_leaf": 1,
         "n_estimators": 100
       },
-      "mejor_auc_pr_cv": 0.8444444444444444,
-      "baseline_300_6_auc_pr_cv": 0.8444444444444444,
-      "advertencia": "resultado sobre ground truth sintético; no estima desempeño productivo"
+      "mejor_auc_pr_cv": 1.0,
+      "metricas_holdout_final": {
+        "accuracy": 1.0,
+        "auc_pr": 1.0,
+        "auc_roc": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "recall_at_k": 1.0,
+        "threshold": 0.5
+      },
+      "preprocessor": {
+        "schema_version": 1,
+        "fit_scope": "development_only",
+        "monto_p99": 898292.0427999999
+      },
+      "advertencia": "benchmark sintético; el holdout no debe reutilizarse para retuning"
     },
     "tuning_fraccionamiento": {
-      "diseno": "holdout final separado antes del tuning; validaciones repetidas solo en desarrollo",
-      "metrica_seleccion": "AUC-PR media en validaciones repetidas",
+      "schema_version": 2,
+      "diseno": "holdout final separado antes del tuning; ranking y umbral calibrados solo en desarrollo",
+      "metrica_seleccion": "AUC-PR media para ranking; F1 medio para contamination/umbral binario",
       "metricas_reportadas_holdout": [
         "accuracy",
         "auc_roc",
@@ -519,30 +801,36 @@
         "f1",
         "recall_at_k"
       ],
-      "n_total": 180,
-      "positivos_total": 8,
-      "n_desarrollo": 112,
-      "positivos_desarrollo": 5,
+      "n_total": 265,
+      "positivos_total": 24,
+      "n_desarrollo": 185,
+      "positivos_desarrollo": 17,
       "mejor_configuracion": {
         "n_estimators": 100,
-        "max_samples": 0.5,
-        "contamination": "auto",
-        "auc_pr_validacion_medio": 0.4019047619047619,
-        "recall_at_k_validacion_medio": 0.2
+        "max_samples": 0.8,
+        "contamination": 0.05,
+        "auc_pr_validacion_medio": 0.5336974105372947,
+        "recall_at_k_validacion_medio": 0.4,
+        "f1_umbral_validacion_medio": 0.45
+      },
+      "selection_protocol": {
+        "ranking_params": "n_estimators/max_samples seleccionados por AUC-PR y recall@K",
+        "binary_threshold": "contamination seleccionada después por F1 de validación",
+        "holdout_used_for_selection": false
       },
       "metricas_holdout_final": {
         "recall_at_k": 0.0,
-        "accuracy": 0.7941176470588235,
-        "auc_roc": 0.8564102564102564,
-        "auc_pr": 0.17086247086247086,
-        "precision": 0.17647058823529413,
-        "recall": 1.0,
-        "f1": 0.3,
-        "n_test": 68,
-        "positivos_test": 3,
-        "anomalias_predichas": 17
+        "accuracy": 0.8875,
+        "auc_roc": 0.6594911937377692,
+        "auc_pr": 0.13328228236454687,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "n_test": 80,
+        "positivos_test": 7,
+        "anomalias_predichas": 2
       },
-      "advertencia": "benchmark sintético con pocos positivos; Accuracy se reporta por el Anexo 3 pero no se usa como criterio primario"
+      "advertencia": "benchmark sintético de compatibilidad; el champion Spark KMeans tiene evaluación independiente"
     },
     "spark_favoritismo": {
       "motor": "Apache Spark MLlib",
@@ -552,8 +840,8 @@
       "algoritmo": "RandomForestClassifier",
       "metrica_seleccion": "AUC-PR CV",
       "cv": "3-fold estratificado con orden xxhash64 determinístico",
-      "n_registros": 2328,
-      "positivos": 6,
+      "n_registros": 2362,
+      "positivos": 30,
       "mejor_configuracion": {
         "numTrees": 100,
         "maxDepth": 3
@@ -575,7 +863,7 @@
       "amount_source": "monto",
       "ranking": "outputs/ranking_riesgo_favoritismo_spark.csv",
       "modelo_runtime": "outputs/runtime/modelo_favoritismo_spark_rf",
-      "duracion_s": 47.312,
+      "duracion_s": 49.244,
       "advertencia": "Benchmark sintético con solo 6 positivos: la métrica CV es de alta varianza y no se usa como estimación de desempeño productivo. Ejecución Spark real local; clúster CGR pendiente."
     },
     "spark_fraccionamiento": {
@@ -585,6 +873,7 @@
       "dataset": "lakehouse/plata/contratos_procesados.csv",
       "algoritmo": "StandardScaler + KMeans + distancia al centroide",
       "k": 2,
+      "selection_source": "spark_holdout_summary",
       "features": [
         "n_contratos_grupo",
         "max_contratos_ventana_15d",
@@ -592,18 +881,20 @@
         "pct_montos_bajo_umbral",
         "monto_total_grupo"
       ],
+      "window_semantics": "cantidad y monto de la misma ventana de 15 días; empate por inicio más temprano",
+      "object_grouping": "firma lexical reproducible objeto_familia (Spark SQL nativo)",
       "sanity_sintetico": {
-        "n_grupos": 180,
-        "positivos_sinteticos": 8,
-        "top_k_aciertos": 4,
-        "senal_interpretable_marcados": 9,
-        "senal_interpretable_positivos": 8
+        "n_grupos": 265,
+        "positivos_sinteticos": 24,
+        "top_k_aciertos": 14,
+        "senal_interpretable_marcados": 49,
+        "senal_interpretable_positivos": 24
       },
       "ranking": "outputs/ranking_riesgo_fraccionamiento_spark.csv",
       "modelo_runtime": "outputs/runtime/modelo_fraccionamiento_spark_kmeans",
       "scaler_runtime": "outputs/runtime/modelo_fraccionamiento_spark_scaler",
-      "duracion_s": 21.377,
-      "advertencia": "Sanity check sobre benchmark sintético; no estima desempeño productivo. Ejecución Spark real local; clúster CGR pendiente."
+      "duracion_s": 26.054,
+      "advertencia": "Sanity check sobre benchmark sintético; la evidencia out-of-sample del KMeans se publica en tuning_fraccionamiento_spark_resumen.json. No estima desempeño productivo."
     },
     "graphframes": {
       "motor": "Apache Spark + GraphFrames",
@@ -614,7 +905,7 @@
         "jars/graphframes-graphx-spark4_2_13-0_10_0.jar"
       ],
       "n_vertices": 280,
-      "n_aristas": 2995,
+      "n_aristas": 3130,
       "n_senales_vinculo_sinteticas": 5,
       "n_componentes_conectados": 1,
       "pagerank_top_n": 10,
@@ -622,7 +913,7 @@
         "outputs/vinculos_graphframes_sospechosos.csv",
         "outputs/vinculos_graphframes_pagerank.csv"
       ],
-      "duracion_s": 22.412,
+      "duracion_s": 22.215,
       "advertencia": "Datos de contacto sintéticos; clúster y fuentes institucionales CGR pendientes."
     },
     "validacion_p0_datos_reales": {
@@ -687,118 +978,118 @@
     "artefactos": {
       "data/pagos_siaf_sintetico.csv": {
         "existe": true,
-        "sha256": "336db965216fa0a207641a09724bca5b06523454c7314eaf6ae07f7645573ed5",
-        "bytes": 574069
+        "sha256": "e16c4b40776746daf604ccb1ebf5e915eca9ee276decba790c63c2efb50d1ca5",
+        "bytes": 666168
       },
       "lakehouse/bronce/pagos_siaf_sintetico.csv": {
         "existe": true,
-        "sha256": "336db965216fa0a207641a09724bca5b06523454c7314eaf6ae07f7645573ed5",
-        "bytes": 574069
+        "sha256": "e16c4b40776746daf604ccb1ebf5e915eca9ee276decba790c63c2efb50d1ca5",
+        "bytes": 666168
       },
       "lakehouse/plata/contratos_procesados.csv": {
         "existe": true,
-        "sha256": "d50bf10118f18d30b956b0545f00fc837c49b2c1755df8f7d543461f4ed44be6",
-        "bytes": 730302
+        "sha256": "1f05e02dbb1ab15cbe0ed48c0f6d0bd8dddbef5809d6023b0a1f62bb2b6a64d0",
+        "bytes": 855703
       },
       "lakehouse/plata/dataset_favoritismo.csv": {
         "existe": true,
-        "sha256": "0db44abd6ad41df1fb15a94a79c89ac4ad4ceb83bf6a0722f8099969b692fc15",
-        "bytes": 186075
+        "sha256": "a27706d7fcdcacd8898c9dd0e79032642fc4d7d245d1879757fafb96e5e9abfa",
+        "bytes": 191585
       },
       "lakehouse/plata/dataset_fraccionamiento.csv": {
         "existe": true,
-        "sha256": "9ac60a0c452617cc4c4a9f2704a70f767338fd32f171b024336b5b1092c2298e",
-        "bytes": 14516
+        "sha256": "d33c8c54eec30891b6d3827adddc1b40dcb8c1c6a87aec3b30b48a7d7356605a",
+        "bytes": 29034
       },
       "outputs/analisis_pagos_modalidades.json": {
         "existe": true,
-        "sha256": "8fd0521c6651b15fb8dbd8c037c024967c5f8f8e116d4b3c199634cd00953d3b",
-        "bytes": 4003
+        "sha256": "f86a65fa4d6b89430a9cfeb342f8cd0118348a4a9239dfcf3a30e210b9dca3f3",
+        "bytes": 4000
       },
       "outputs/resumen_pagos_contrato.csv": {
         "existe": true,
-        "sha256": "2c06ba423a7e22cde405124ece2dd2814c76dcf9315ec24c298a18fd8433849e",
-        "bytes": 633812
+        "sha256": "0ce6153ee7509efab8c09ef5db798e202caac2459dedeacfd6d56923f3e7b0b7",
+        "bytes": 734868
       },
       "outputs/resumen_modalidades_regimen.csv": {
         "existe": true,
-        "sha256": "bc00f06363d45c801e2a35ea4948cd19f36c3da8c2a973d49fcb788aad38fc6b",
-        "bytes": 1907
+        "sha256": "ef057b128b4b3990acb5d7c107e3fde370e0c8ed48ad65da2b2e3c4f33657f55",
+        "bytes": 1915
       },
       "outputs/comparacion_modelos_favoritismo.json": {
         "existe": true,
-        "sha256": "341406ca16fcbfb6f2f7ee6fa598e85287b82c0a3f882022ccf0edc98d2b46c5",
-        "bytes": 1587
+        "sha256": "f9819a41521246b7fffd41a44dd1d5dea70a512d6d63fc53ac8d18383e6c0a20",
+        "bytes": 1867
       },
       "outputs/tuning_favoritismo_resumen.json": {
         "existe": true,
-        "sha256": "641a65307c520b387cb77ccc01e551caa521e756b2c2273836f8221650e8c792",
-        "bytes": 715
+        "sha256": "2a84984e1f722f7d78e409db69e16750d075b25090f679da17913c3589497ffc",
+        "bytes": 1285
       },
       "outputs/tuning_fraccionamiento_resumen.json": {
         "existe": true,
-        "sha256": "1ff9f2428bd7a221513886c7ec65eb45ca2dadb2183b8a377a244eefde466430",
-        "bytes": 1049
+        "sha256": "11f9122d185f02e552a106a56c34ad226f389115282eb8ae6ec7c0c6d85fcd31",
+        "bytes": 1343
       },
       "outputs/ranking_riesgo_favoritismo.csv": {
         "existe": true,
-        "sha256": "5b06159eba0df7db27b2d28b6a58fb142d1aa0653145edaddf4196bde4156c82",
-        "bytes": 192442
+        "sha256": "918e0d7c8b792c0466a6e7255a7b4e020252da98d639d3513eeafa915fe9bef8",
+        "bytes": 198420
       },
       "outputs/ranking_riesgo_fraccionamiento.csv": {
         "existe": true,
-        "sha256": "d87318d9447ee9d63496562f7a743c76d4db34838c50b2060c6729b7b8dbad30",
-        "bytes": 20160
+        "sha256": "4d3d3e7221b616f5f84befa07462f09098c13b07c14e4eebb00e37494fceab78",
+        "bytes": 37352
       },
       "outputs/ranking_vinculos_proveedor_funcionario.csv": {
         "existe": true,
-        "sha256": "800dfae46978faaa6d504c8feb7e4ad5b3e0e823e6be67ca4331e2768ad8ccca",
-        "bytes": 121706
+        "sha256": "73f2e8535110752e496e93976b6d1a01ae77e81f516e11c4edfe419eb7d550a0",
+        "bytes": 127500
       },
       "outputs/spark_favoritismo_resumen.json": {
         "existe": true,
-        "sha256": "8dc8d5640fd576c62a5188ddbee57adb56472b33fcc2783f7ac9f43310da89a4",
-        "bytes": 1118
+        "sha256": "f51ba6cb60b89daa0700eca7bc62a8ccd68c510d1e75c00df509b5d9cf1145ad",
+        "bytes": 1119
       },
       "outputs/spark_fraccionamiento_resumen.json": {
         "existe": true,
-        "sha256": "cf4987b6c3e43b598d39a837fd0156ec6c157c388ad6c253336d05978a2a0c59",
-        "bytes": 964
+        "sha256": "c4f06b767dc6ed5b0a3f765649bb2b753d909cf1502ea8378b1c315dc90e4267",
+        "bytes": 1249
       },
       "outputs/graphframes_resumen.json": {
         "existe": true,
-        "sha256": "540db27c1f190c5dc752b66d02d9a90c1a692de0a4646ac2fa5b0900a4eda659",
+        "sha256": "c9b03b7c081ce305935464cd1fc9aa0ef69bc0097fb21676f645399e72e0ddc4",
         "bytes": 603
       },
       "outputs/ranking_riesgo_favoritismo_spark.csv": {
         "existe": true,
-        "sha256": "d4d47eafd85591cd13988dbcd3761c4a1fe08c4ff6dc816c533802bc057c93f0",
-        "bytes": 63759
+        "sha256": "6a953b9cf8dbd99e9d077245155d21cc2b7bc575e2dd513483097543904fd761",
+        "bytes": 66148
       },
       "outputs/ranking_riesgo_fraccionamiento_spark.csv": {
         "existe": true,
-        "sha256": "50222997fb35e6b826af62d52192fac604535dc5c4b4917fd0546ea149262ab8",
-        "bytes": 14042
+        "sha256": "3dd50f8656678e49885dabe47b2cc3f721140eb7f34ba5badf1768ffb93182a4",
+        "bytes": 30778
       },
       "outputs/vinculos_graphframes_sospechosos.csv": {
         "existe": true,
-        "sha256": "8f49edb49bfd60eba87578466cc1f30f2044efcf3aed346055ca8e91f58c8a5d",
-        "bytes": 635
+        "sha256": "27b895085fcdd00a363238c8e25b0ce6d6259e475e42389a5e61304404721a1d",
+        "bytes": 668
       },
       "outputs/vinculos_graphframes_pagerank.csv": {
         "existe": true,
-        "sha256": "035acdb7a696eb8724fc0b724df9692dea5cd613c06f8b78d1db636ec79d4a58",
-        "bytes": 372
+        "sha256": "5186e10e907d52bd5c9c8406220cddcb4111659987134fb3ba945b36fca6301e",
+        "bytes": 373
       },
       "lakehouse/oro/resumen_pagos_contrato.csv": {
         "existe": true,
-        "sha256": "2c06ba423a7e22cde405124ece2dd2814c76dcf9315ec24c298a18fd8433849e",
-        "bytes": 633812
+        "sha256": "0ce6153ee7509efab8c09ef5db798e202caac2459dedeacfd6d56923f3e7b0b7",
+        "bytes": 734868
       },
       "lakehouse/oro/resumen_modalidades_regimen.csv": {
         "existe": true,
-        "sha256": "bc00f06363d45c801e2a35ea4948cd19f36c3da8c2a973d49fcb788aad38fc6b",
-        "bytes": 1907
+        "sha256": "ef057b128b4b3990acb5d7c107e3fde370e0c8ed48ad65da2b2e3c4f33657f55",
+        "bytes": 1915
       },
       "data/diccionario_datos.csv": {
         "existe": true,
@@ -816,17 +1107,19 @@
     "implementado_y_probado": [
       "EDA y feature engineering",
       "análisis sintético de pagos, montos contractuales y modalidades",
-      "Random Forest para priorización de favoritismo",
-      "Isolation Forest + regla interpretable para posible fraccionamiento",
-      "SHAP para explicabilidad del modelo supervisado",
-      "Spark MLlib en modo local del PoC",
+      "Random Forest Spark de favoritismo con CV/holdout del mismo pipeline operacional",
+      "KMeans Spark de fraccionamiento con tuning/holdout propios",
+      "Isolation Forest como benchmark de compatibilidad para fraccionamiento",
+      "Feature Importance ligada al champion Spark activo y SHAP complementario sklearn",
+      "objeto_familia y ventanas de 15 días con semántica pandas/Spark alineada",
+      "Spark MLlib en modo local/configurable del PoC",
       "GraphFrames en escenario sintético",
       "Airflow con Python de proyecto separado",
       "simulación local de capas Bronce/Plata/Oro",
       "Delta Lake local con time travel sujeto a retención",
       "esquema T-SQL y RDL de SSRS como artefactos de despliegue",
       "CI de regresión y smoke del pipeline sintético",
-      "autoevaluación que genera candidato sin promoción automática",
+      "autoevaluación registry-aware del champion activo que genera candidate sin promoción automática",
       "TRAIN/INFERENCE con favoritismo operacional basado en monto_capped congelado"
     ],
     "dependencia_institucional_no_demostrada": [
@@ -848,6 +1141,8 @@
     "prohibir_umbral_fijo_400k_como_regla_general": true,
     "promocion_modelo_requiere_revision_humana": true,
     "pagos_sinteticos_no_equivalen_siaf_real": true,
-    "modalidad_requiere_contexto_juridico": true
+    "modalidad_requiere_contexto_juridico": true,
+    "metricas_champion_deben_corresponder_al_pipeline_servido": true,
+    "monitoreo_debe_apuntar_al_champion_activo": true
   }
 }
