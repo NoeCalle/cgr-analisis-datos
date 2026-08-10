@@ -15,6 +15,7 @@ import yaml
 from core.schemas import SCHEMAS, campos_canonicos, campos_requeridos
 
 ALLOWED_SOURCE_TYPES = {"local_csv", "sqlserver", "spark_sql"}
+CANONICAL_SCHEMA_VERSION = 1
 SECRET_KEY_PATTERN = re.compile(r"(^|_)(password|passwd|pwd|token|secret|api_key|connection_string)($|_)", re.I)
 ENV_REFERENCE_SUFFIXES = ("_env", "env")
 
@@ -30,8 +31,20 @@ def cargar_config(path: str | Path) -> dict[str, Any]:
     return data
 
 
+def obtener_version_contrato(config: dict[str, Any]) -> int:
+    """Devuelve la versión canónica, preservando compatibilidad con configs v1 antiguas."""
+    version = config.get("contract_schema_version", CANONICAL_SCHEMA_VERSION)
+    if type(version) is not int or version != CANONICAL_SCHEMA_VERSION:
+        raise ValueError(
+            "contract_schema_version incompatible: "
+            f"{version!r}; esta versión del código soporta {CANONICAL_SCHEMA_VERSION}."
+        )
+    return version
+
+
 def validar_config(config: dict[str, Any]) -> None:
     _rechazar_secrets_inline(config)
+    obtener_version_contrato(config)
 
     source = config.get("source")
     if not isinstance(source, dict):
@@ -75,11 +88,13 @@ def validar_config(config: dict[str, Any]) -> None:
             )
 
         missing = set(campos_requeridos(domain, mode)) - set(domain_mapping)
-        # Contracts es el dominio mínimo obligatorio. Las dimensiones pueden
-        # mapearse parcialmente hasta conocer el esquema institucional real.
-        if domain == "contracts" and missing:
+        # Si un dominio se configura, su contrato mínimo debe ser ejecutable.
+        # Para omitir una dimensión todavía no disponible, se omite el dominio
+        # completo del mapping y de la fuente; no se acepta una configuración
+        # que pase --validate-only pero falle al leer el DataFrame real.
+        if missing:
             raise ValueError(
-                f"mapping.contracts no define campos obligatorios para {mode}: {sorted(missing)}"
+                f"mapping.{domain} no define campos obligatorios para {mode}: {sorted(missing)}"
             )
 
     location_key = "datasets" if source_type == "local_csv" else "tables"
