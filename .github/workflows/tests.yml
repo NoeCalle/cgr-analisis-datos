@@ -160,7 +160,7 @@ jobs:
           assert not any(c.startswith('label_') for c in frac.columns)
           assert 'score_riesgo_favoritismo' in fav.columns
           assert 'score_anomalia' in frac.columns
-          print('Perfil sklearn de compatibilidad Sprint 4 OK')
+          print('Perfil sklearn de compatibilidad OK')
           PY
 
       - name: Run canonical legacy Spark MLlib and GraphFrames path
@@ -229,10 +229,10 @@ jobs:
           assert Path('outputs/champions_spark').exists() == before['spark_champion_exists']
           if before['spark_champion_exists']:
               assert sha256_ruta('outputs/champions_spark') == before['spark_champion_sha256']
-          print(f"TRAIN Spark aislado Sprint 4 OK: candidate={manifest['candidate_id']}")
+          print(f"TRAIN Spark aislado OK: candidate={manifest['candidate_id']}")
           PY
 
-      - name: Promote Sprint 4 Spark champion and smoke operational inference
+      - name: Promote Spark champion and smoke operational inference
         env:
           PYSPARK_PYTHON: python
           PYSPARK_DRIVER_PYTHON: python
@@ -286,7 +286,7 @@ jobs:
           assert 'score_riesgo_favoritismo' in fav.columns
           assert 'score_anomalia' in frac.columns
           assert 'senal_priorizacion_fraccionamiento' in frac.columns
-          print('Sprint 4 serving Spark MLlib OK: candidate promovido, monto P99 congelado')
+          print('Serving Spark MLlib OK: candidate promovido, monto P99 congelado')
           PY
 
       - name: Publish Oro and build traceability
@@ -297,7 +297,7 @@ jobs:
           python src/generar_run_manifest.py
           python src/generar_evidencia_documental.py
 
-      - name: Validate reproducibility and Sprint 4 artifacts
+      - name: Validate reproducibility and current artifacts
         run: |
           python - <<'PY'
           import json
@@ -385,7 +385,7 @@ jobs:
           }
           assert esperados <= oro
           assert Path('outputs/extraccion_estandar_sql.csv').exists()
-          print('Reproducibilidad legacy + Spark/GraphFrames + pagos/modalidades Sprint 4 OK')
+          print('Reproducibilidad legacy + Spark/GraphFrames + pagos/modalidades OK')
           PY
 
       - name: Setup Node
@@ -401,7 +401,7 @@ jobs:
           npm ci
           npm run all
 
-      - name: Enrich formal DOCX with Sprint 4 payments analysis
+      - name: Enrich formal DOCX with current payments and architecture
         run: python reporte/enriquecer_pagos_modalidades.py
 
       - name: Materialize paginated indexes and duplex settings
@@ -423,6 +423,7 @@ jobs:
           import subprocess
           from pathlib import Path
 
+          marker = 'ANEXO TÉCNICO — PAGOS, MODALIDADES Y ARQUITECTURA OPERACIONAL'
           pdfs = sorted(Path('/tmp/cgr-docx-pdf').glob('*.pdf'))
           assert len(pdfs) == 8, pdfs
           for pdf in pdfs:
@@ -431,18 +432,17 @@ jobs:
               assert 'Índice' in text, f'{pdf.name}: falta índice'
               assert re.search(r'\.{3,}\s*\d+\s*$', text, re.MULTILINE)
               assert 'Página' in text
-              if pdf.name in {
-                  'Reporte_Tecnico_Prototipo_CGR_1.8.2.pdf',
-                  'Producto_01_Plan_de_Trabajo.pdf',
-                  'Producto_07_Informe_Final.pdf',
-              }:
-                  assert 'ANEXO TÉCNICO SPRINT 4' in text, f'{pdf.name}: falta anexo Sprint 4'
-                  assert text.rfind('Referencias Bibliográficas') > text.rfind('ANEXO TÉCNICO SPRINT 4')
-          print(f'DOCX/PDF smoke Sprint 4: {len(pdfs)} documentos verificados')
+              assert marker in text, f'{pdf.name}: falta anexo técnico operacional'
+              assert text.rfind('Referencias Bibliográficas') > text.rfind(marker)
+          print(f'DOCX/PDF smoke documental: {len(pdfs)} documentos verificados')
           PY
 
-      - name: Audit complete public TDR
-        run: python src/auditar_tdr_completo.py
+      - name: Regenerate documentation audits
+        run: |
+          python src/generar_dependencias_cgr.py
+          python src/generar_checklist_anexo3.py
+          python src/auditar_tdr_completo.py
+          python src/auditar_release.py
 
       - name: Upload reproducibility and serving evidence
         uses: actions/upload-artifact@v4
@@ -470,6 +470,12 @@ jobs:
             outputs/charts/12_modalidades_regimen.png
             outputs/auditoria_tdr_completo.json
             docs/Auditoria_TDR_Completo.md
+            outputs/checklist_anexo3.json
+            docs/Checklist_Anexo_03.md
+            outputs/dependencias_cgr.json
+            docs/Dependencias_Institucionales_CGR.md
+            outputs/auditoria_release.json
+            docs/Auditoria_Final_Release.md
             outputs/linaje_datos.csv
             outputs/run_manifest.json
             outputs/evidencia_documental.json
@@ -539,6 +545,12 @@ jobs:
             outputs/resumen_modalidades_regimen.csv \
             outputs/auditoria_tdr_completo.json \
             docs/Auditoria_TDR_Completo.md \
+            outputs/checklist_anexo3.json \
+            docs/Checklist_Anexo_03.md \
+            outputs/dependencias_cgr.json \
+            docs/Dependencias_Institucionales_CGR.md \
+            outputs/auditoria_release.json \
+            docs/Auditoria_Final_Release.md \
             outputs/spark_favoritismo_resumen.json \
             outputs/spark_fraccionamiento_resumen.json \
             outputs/graphframes_resumen.json \
@@ -572,6 +584,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No hay artefactos verificados nuevos que persistir."
           else
-            git commit -m "chore: regenerar artefactos Sprint 4 verificados [skip ci]"
+            git commit -m "chore: regenerar artefactos verificados [skip ci]"
             git push
           fi
