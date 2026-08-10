@@ -7,6 +7,8 @@ anclados únicamente a la evidencia histórica ``local[*]``.
 
 Los DOCX base son generados por la librería JS ``docx``. Para evitar depender de
 nombres de estilos de python-docx, los headings y bordes se aplican en OOXML.
+El enriquecimiento se aplica al Informe Técnico y a los siete Productos para que
+ningún entregable formal quede rezagado respecto de la arquitectura operacional.
 """
 
 from __future__ import annotations
@@ -27,8 +29,7 @@ CHART_MODALIDADES = ROOT / "outputs/charts/12_modalidades_regimen.png"
 
 DESTINOS = [
     ROOT / "reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx",
-    ROOT / "reporte/productos_formales/Producto_07_Informe_Final.docx",
-    ROOT / "reporte/productos_formales/Producto_01_Plan_de_Trabajo.docx",
+    *sorted((ROOT / "reporte/productos_formales").glob("Producto_*.docx")),
 ]
 
 MARCADOR = "ANEXO TÉCNICO — PAGOS, MODALIDADES Y ARQUITECTURA OPERACIONAL"
