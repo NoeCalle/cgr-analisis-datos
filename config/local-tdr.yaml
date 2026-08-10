@@ -1,5 +1,6 @@
 # Perfil local específico para la auditoría integral del TDR.
 # Extiende el escenario sintético con pagos; no sustituye fuentes SIAF reales.
+contract_schema_version: 1
 mode: inference
 
 source:
