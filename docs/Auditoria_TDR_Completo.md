@@ -95,9 +95,9 @@ Evidencia: `outputs/tuning_favoritismo_spark_resumen.json`, `outputs/tuning_frac
 
 ### 10. Apache Spark MLlib escalable y pruebas de rendimiento/robustez — 🟡
 
-La ruta operacional spark_sql es Spark-native, evita toPandas y admite master configurable; validaciones metodológicas locales existen, pero clúster, volumen, performance, robustez y aceptación productiva requieren infraestructura/ground truth CGR.
+TRAIN, INFERENCE y evaluación/tuning spark_sql conservan ejecución Spark-native y fingerprint distribuido; existe benchmark parametrizable, pero clúster, volumen, performance, robustez y aceptación productiva requieren infraestructura/ground truth CGR.
 
-Evidencia: `outputs/inference_spark_smoke_summary.json`, `outputs/tuning_favoritismo_spark_resumen.json`, `outputs/tuning_fraccionamiento_spark_resumen.json`, `src/core/schemas_spark.py`, `tests/test_spark_native_integration.py`
+Evidencia: `outputs/inference_spark_smoke_summary.json`, `outputs/tuning_favoritismo_spark_resumen.json`, `outputs/tuning_fraccionamiento_spark_resumen.json`, `src/core/schemas_spark.py`, `src/spark/evaluar_favoritismo_spark.py`, `src/spark/evaluar_fraccionamiento_spark.py`, `src/spark/benchmark_operacional.py`, `tests/test_spark_native_integration.py`, `tests/test_spark_evaluation_native.py`
 
 ### 11. Reportes automáticos con tablas, estadísticas, gráficos y métricas — ✅
 
@@ -107,7 +107,7 @@ Evidencia: `src/generar_evidencia_documental.py`, `reporte/Reporte_Tecnico_Proto
 
 ### 12. Documentación técnica completa, código fuente, diccionario y diagrama — ✅
 
-Código, versiones, hashes, diccionario, diagrama y documentación están versionados.
+Código, versiones, hashes, diccionario, diagrama y documentación están versionados; el run manifest separa metadata variable de una huella estable de reproducibilidad.
 
 Evidencia: `data/diccionario_datos.csv`, `outputs/charts/09_diagrama_modelo_datos.png`, `outputs/run_manifest.json`, `README.md`
 

@@ -152,13 +152,17 @@
         "outputs/tuning_favoritismo_spark_resumen.json",
         "outputs/tuning_fraccionamiento_spark_resumen.json",
         "src/core/schemas_spark.py",
-        "tests/test_spark_native_integration.py"
+        "src/spark/evaluar_favoritismo_spark.py",
+        "src/spark/evaluar_fraccionamiento_spark.py",
+        "src/spark/benchmark_operacional.py",
+        "tests/test_spark_native_integration.py",
+        "tests/test_spark_evaluation_native.py"
       ],
       "dependencias_cgr": [
         "CGR-DEP-06",
         "CGR-DEP-03"
       ],
-      "detalle": "La ruta operacional spark_sql es Spark-native, evita toPandas y admite master configurable; validaciones metodológicas locales existen, pero clúster, volumen, performance, robustez y aceptación productiva requieren infraestructura/ground truth CGR."
+      "detalle": "TRAIN, INFERENCE y evaluación/tuning spark_sql conservan ejecución Spark-native y fingerprint distribuido; existe benchmark parametrizable, pero clúster, volumen, performance, robustez y aceptación productiva requieren infraestructura/ground truth CGR."
     },
     {
       "numero": 11,
@@ -185,7 +189,7 @@
         "README.md"
       ],
       "dependencias_cgr": [],
-      "detalle": "Código, versiones, hashes, diccionario, diagrama y documentación están versionados."
+      "detalle": "Código, versiones, hashes, diccionario, diagrama y documentación están versionados; el run manifest separa metadata variable de una huella estable de reproducibilidad."
     },
     {
       "numero": 13,

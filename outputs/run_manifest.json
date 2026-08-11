@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
-  "generado_utc": "2026-08-11T02:23:10.496327+00:00",
-  "git_commit": "6dc45b4267edfc05cec5ac98cc040410030f8e2a",
+  "generado_utc": "2026-08-11T17:04:07.107166+00:00",
+  "git_commit": "41291beaafd3cf1527a9bbeb9e976315c2fe7689",
   "entorno": {
     "python": "3.12.13",
     "pandas": "3.0.2",
@@ -12,6 +12,43 @@
     "delta-spark": "4.3.0",
     "graphframes-py": "0.10.0",
     "graphviz": "0.21"
+  },
+  "reproducibility": {
+    "schema_version": 1,
+    "environment": {
+      "python": "3.12.13",
+      "pandas": "3.0.2",
+      "numpy": "2.4.4",
+      "scikit-learn": "1.8.0",
+      "shap": "0.52.0",
+      "pyspark": "4.1.1",
+      "delta-spark": "4.3.0",
+      "graphframes-py": "0.10.0",
+      "graphviz": "0.21"
+    },
+    "inputs_sha256": {
+      "requirements.txt": "71b7f0360204db4b959e60a29296f57ba25c5cfefa0a780d428132d9d91ca790",
+      "reporte/package-lock.json": "73d6a12f3a2a4525e05afc473ce7984180d6943077e081945b5c584f895b1aff",
+      "config/local.yaml": "8fb0f229eceaebbbbddd9345f3d82118a4b614d754c40b93c7b06c0ea2d5ca8a",
+      "config/local-training.yaml": "104b8fc89ec6e578890b066dadb1cde9b004f7b531755f9104daf8e5948b2355",
+      "src/generar_datos.py": "ce015264bf35617428b6bdfa2137a3ae828799561ac2a0325c46ede0f81ad9c3",
+      "src/generar_pagos_sinteticos.py": "2f9d9db672643f13e87f77234632eb65cbf9520d5966fd98191b2593207b8c2c",
+      "src/preprocesamiento.py": "0259f5fa042f4d210112e75aaa31297d63ac2e354de24d4ec51ba47e7103d5c0",
+      "src/core/objeto_similarity.py": "39f6f06e168184a7f1253c314538e090971ca9e462f3a8f6f591314d2e2eacae",
+      "src/core/fingerprints.py": "1ac870a6dc27fd1b6d0d78132a69d5ee58476b7fc733b88883dd336e5f458589",
+      "src/spark/evaluar_favoritismo_spark.py": "888040aa21462b7a8e20f862e0cd61053c4f376777fc043ed664f1eb9a579414",
+      "src/spark/evaluar_fraccionamiento_spark.py": "ea8da41b22da7ea5e7c45a88ca22369ab1054c934cfd9d36dc5eb1fa5eee603c",
+      "src/spark/entrenar_candidato_spark.py": "7fea02e2f98573a21dfe5062c7561e2c1e25aa69afbc06093a1f1ae341bbb1be",
+      "src/spark/score_inference_spark.py": "f6ae011a5533cfc534f29295a4bdb8cb5224a848f401cf9cae0e63fc01503a36",
+      "data/contratos_siaf_seace.csv": "59e3ab1d3cbb33ed4d425ea9a72cae068997456830cf8b8f1242c1ae21370ebf",
+      "data/pagos_siaf_sintetico.csv": "e16c4b40776746daf604ccb1ebf5e915eca9ee276decba790c63c2efb50d1ca5"
+    },
+    "algorithm": "sha256",
+    "fingerprint_sha256": "c138e3fc7b3c9ad87eb7e5b37bfe0e74cd60c6d07c5caca98453a13b6ae22678",
+    "excludes_execution_metadata": [
+      "generado_utc",
+      "duracion_s"
+    ]
   },
   "arquitectura_datos": {
     "entrada_modelos": "lakehouse/plata",
@@ -292,7 +329,7 @@
     "amount_source": "monto",
     "ranking": "outputs/ranking_riesgo_favoritismo_spark.csv",
     "modelo_runtime": "outputs/runtime/modelo_favoritismo_spark_rf",
-    "duracion_s": 46.092,
+    "duracion_s": 49.246,
     "advertencia": "Benchmark sintético con solo 6 positivos: la métrica CV es de alta varianza y no se usa como estimación de desempeño productivo. Ejecución Spark real local; clúster CGR pendiente."
   },
   "spark_fraccionamiento": {
@@ -301,7 +338,7 @@
     "implementacion_objetivo_tdr": true,
     "dataset": "lakehouse/plata/contratos_procesados.csv",
     "algoritmo": "StandardScaler + KMeans + distancia al centroide",
-    "k": 2,
+    "k": 3,
     "selection_source": "spark_holdout_summary",
     "features": [
       "n_contratos_grupo",
@@ -315,14 +352,14 @@
     "sanity_sintetico": {
       "n_grupos": 265,
       "positivos_sinteticos": 24,
-      "top_k_aciertos": 14,
+      "top_k_aciertos": 4,
       "senal_interpretable_marcados": 49,
       "senal_interpretable_positivos": 24
     },
     "ranking": "outputs/ranking_riesgo_fraccionamiento_spark.csv",
     "modelo_runtime": "outputs/runtime/modelo_fraccionamiento_spark_kmeans",
     "scaler_runtime": "outputs/runtime/modelo_fraccionamiento_spark_scaler",
-    "duracion_s": 24.504,
+    "duracion_s": 26.371,
     "advertencia": "Sanity check sobre benchmark sintético; la evidencia out-of-sample del KMeans se publica en tuning_fraccionamiento_spark_resumen.json. No estima desempeño productivo."
   },
   "graphframes": {
@@ -342,7 +379,7 @@
       "outputs/vinculos_graphframes_sospechosos.csv",
       "outputs/vinculos_graphframes_pagerank.csv"
     ],
-    "duracion_s": 22.442,
+    "duracion_s": 22.612,
     "advertencia": "Datos de contacto sintéticos; clúster y fuentes institucionales CGR pendientes."
   },
   "validacion_p0_datos_reales": {
@@ -462,7 +499,7 @@
     },
     "outputs/ranking_riesgo_favoritismo.csv": {
       "existe": true,
-      "sha256": "21419d2c7de98f7ae247599d5647ad936608e0c18d5bef668b5ffc8edde2c2b1",
+      "sha256": "5a1b2f4b49736688fce290d08dc75e3ce3e9d9098a9f454fcfc6a696eef460ab",
       "bytes": 198422
     },
     "outputs/ranking_riesgo_fraccionamiento.csv": {
@@ -477,17 +514,17 @@
     },
     "outputs/spark_favoritismo_resumen.json": {
       "existe": true,
-      "sha256": "048fc3a59880a4a4442ac6e820654fa3c30a9386323c686a0d70660ed4406c89",
+      "sha256": "78ab4a12520cba83241a0f5ee8488e3e8c98d87aba91d2ee49ecf00348687f62",
       "bytes": 1119
     },
     "outputs/spark_fraccionamiento_resumen.json": {
       "existe": true,
-      "sha256": "fec8f6e2faf7583d8142eea1c633b4397081c02a94aa64e39f4a0d6b2802488c",
-      "bytes": 1249
+      "sha256": "731577eea90c89f9b714bfb7c9b99c81367363ee506869caf315e202b97bd7f0",
+      "bytes": 1248
     },
     "outputs/graphframes_resumen.json": {
       "existe": true,
-      "sha256": "f063d0b07de29d8a31e922473d7af83d231a6c2e07a7e72f0c803e5b5cd075b5",
+      "sha256": "e23561ad59cba05d9e092bc814cb10e339d724be78680a782c2fed76e2f4c74d",
       "bytes": 603
     },
     "outputs/ranking_riesgo_favoritismo_spark.csv": {
@@ -497,8 +534,8 @@
     },
     "outputs/ranking_riesgo_fraccionamiento_spark.csv": {
       "existe": true,
-      "sha256": "3dd50f8656678e49885dabe47b2cc3f721140eb7f34ba5badf1768ffb93182a4",
-      "bytes": 30778
+      "sha256": "fa2e93deb71ced4ed745a786080d750ffa8ff375b2699d7ba4a6ca217a8bd770",
+      "bytes": 30888
     },
     "outputs/vinculos_graphframes_sospechosos.csv": {
       "existe": true,

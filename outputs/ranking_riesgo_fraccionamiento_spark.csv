@@ -1,266 +1,266 @@
 id_proveedor,id_entidad,objeto,objeto_familia,max_contratos_ventana_15d,monto_total_ventana_15d,pct_montos_bajo_umbral,score_anomalia,senal_priorizacion_fraccionamiento,label
-P0042,E00,Rehabilitación de vía pública,works::rehabilitacion|via,5,8620839.04,1.0,8.752364557100586,True,1
-P0166,E03,Obra de rehabilitación de carretera,works::rehabilitacion|via,4,8442262.08,1.0,8.423715347232232,True,1
-P0196,E14,Obra de rehabilitación de carretera,works::rehabilitacion|via,5,6493061.750000001,1.0,6.501704494872492,True,1
-P0179,E00,Obra de rehabilitación de carretera,works::rehabilitacion|via,4,4979075.13,1.0,4.8384014631289745,True,1
-P0065,E02,Obra de rehabilitación de carretera,works::rehabilitacion|via,4,4564229.58,1.0,4.472197517249678,True,0
-P0048,E12,Servicio de capacitación,services::capacitacion,6,1027544.03,1.0,3.8700214948556813,True,1
-P0186,E12,Servicio de capacitación,services::capacitacion,6,918900.1199999999,1.0,3.7015031064245694,True,1
-P0045,E11,Suministro de combustible,goods::combustible|suministro,1,507919.05,0.0,3.6878479743790074,False,0
-P0202,E02,Servicio de transporte,services::transporte,6,854181.64,1.0,3.6855224430975366,True,1
-P0072,E12,Consultoría en ingeniería,services::consultoria|ingenieria,6,625329.5700000001,1.0,3.641580834816068,True,1
-P0185,E08,Rehabilitación de vía pública,works::rehabilitacion|via,3,3398596.94,1.0,3.501542991034129,True,0
-P0084,E09,Consultoría en ingeniería,services::consultoria|ingenieria,5,620844.66,1.0,2.922296586374866,True,0
-P0030,E17,Consultoría en ingeniería,services::consultoria|ingenieria,5,964662.0700000001,1.0,2.884217260653655,True,1
-P0134,E13,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,5,873048.3700000001,1.0,2.8536270982827894,True,1
-P0178,E07,Consultoría en ingeniería,services::consultoria|ingenieria,5,825321.63,1.0,2.839225052776325,True,1
-P0189,E16,Suministro de combustible,goods::combustible|suministro,5,823456.86,1.0,2.8386840027196243,True,1
-P0003,E00,Suministro de combustible,goods::combustible|suministro,5,766580.2799999999,1.0,2.8229728659612654,True,0
-P0111,E12,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,5,698263.78,1.0,2.806151705821671,True,0
-P0013,E13,Contratación de servicio de transporte,services::transporte,5,681700.87,1.0,2.802414774448341,True,1
-P0110,E05,Adquisición de equipo informático,goods::equipo|informatico,5,680250.41,1.0,2.802093908863494,True,1
-P0128,E17,Adquisición de equipo informático,goods::equipo|informatico,5,615819.7200000001,1.0,2.7888851778625092,True,0
-P0190,E16,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,5,535078.76,1.0,2.7752464258126843,True,0
-P0040,E06,Contratación de servicio de transporte,services::transporte,5,532783.35,1.0,2.7749065104602373,True,0
-P0043,E13,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,5,506831.87,1.0,2.771248544170474,True,0
-P0215,E15,Adquisición de equipos informáticos,goods::equipo|informatico,1,526998.54,0.5,2.436769183627032,False,0
-P0054,E07,Servicio de capacitación,services::capacitacion,1,649735.39,0.5,2.4339494010254015,False,0
-P0211,E14,Adquisición de equipos informáticos,goods::equipo|informatico,1,651447.31,0.5,2.4324737421656755,False,0
-P0108,E06,Suministro de combustible,goods::combustible|suministro,1,379283.82,0.5,2.420838328160557,False,0
-P0063,E16,Adquisición de equipos informáticos,goods::equipo|informatico,1,518462.89,0.5,2.4200557152164195,False,0
-P0034,E00,Suministro de combustible,goods::combustible|suministro,1,366965.21,0.5,2.410849610380414,False,0
-P0004,E01,Consultoría en ingeniería,services::consultoria|ingenieria,1,113639.35,0.5,2.4039322908806553,False,0
-P0087,E09,Adquisición de materiales de construcción,goods::construccion|material,1,15084.69,0.5,2.4034512992648387,False,0
-P0014,E14,Adquisición de bienes de oficina,goods::bienes|oficina,1,124429.23,0.5,2.402081429145976,False,0
-P0215,E09,Obra de rehabilitación vial,works::rehabilitacion|via,2,979471.6000000001,1.0,2.2697526784412396,False,0
-P0211,E05,Obra de rehabilitación vial,works::rehabilitacion|via,2,504148.26,1.0,2.1634968599750706,False,0
-P0029,E07,Obra de rehabilitación vial,works::rehabilitacion|via,1,331928.5,1.0,2.1618436705115704,False,0
-P0034,E00,Servicio de capacitación,services::capacitacion,1,100149.27,0.875,2.080718691664641,False,0
-P0177,E09,Adquisición de equipos informáticos,goods::equipo|informatico,2,722913.07,0.25,2.0649313401755,False,0
-P0185,E10,Suministro de combustible,goods::combustible|suministro,4,899845.9400000001,1.0,2.0519371874565087,True,1
-P0053,E06,Suministro de combustible,goods::combustible|suministro,2,1069587.13,0.36363636363636365,2.039852546593748,False,0
-P0219,E13,Mantenimiento preventivo de infraestructura,services::infraestructura|mantenimiento,4,857447.42,1.0,2.0332389369615567,True,1
-P0169,E15,Servicio de capacitación,services::capacitacion,4,849346.5800000001,1.0,2.0297899756903397,True,1
-P0107,E00,Servicio de capacitación,services::capacitacion,1,163609.44,0.6,2.015874118545357,False,0
-P0197,E04,Obra de rehabilitación vial,works::rehabilitacion|via,2,540490.02,1.0,2.011219314275061,False,0
-P0146,E11,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,61676.38,0.8181818181818182,2.008861882299805,False,0
-P0114,E16,Servicios de transporte,services::transporte,4,763281.47,1.0,1.9956664268177242,True,1
-P0107,E15,Contratación de servicio de transporte,services::transporte,4,747825.51,1.0,1.9900366899888249,True,0
-P0061,E05,Adquisición de materiales de construcción,goods::construccion|material,1,744960.97,0.2857142857142857,1.9850390956757065,False,0
-P0134,E12,Consultoría en ingeniería,services::consultoria|ingenieria,4,576018.57,1.0,1.9381800513019423,True,0
-P0001,E11,Consultoría en ingeniería,services::consultoria|ingenieria,4,564326.71,1.0,1.9353883744892597,True,0
-P0167,E05,Servicio de capacitación,services::capacitacion,2,365738.82,0.9090909090909091,1.9301939123836787,False,0
-P0156,E04,Suministro de combustible,goods::combustible|suministro,3,812025.0700000001,0.8333333333333334,1.9216561301235533,True,0
-P0096,E11,Servicio de transporte,services::transporte,4,474285.88999999996,1.0,1.9171506888688232,True,1
-P0120,E02,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,4,462350.45,1.0,1.9151717443073017,True,0
-P0082,E15,Consultoría en ingeniería,services::consultoria|ingenieria,4,432399.85000000003,1.0,1.9106633630156384,True,0
-P0208,E15,Compra de equipos informáticos,goods::equipo|informatico,4,427199.24000000005,1.0,1.9099474532681522,True,0
-P0014,E14,Servicio de capacitación,services::capacitacion,1,297736.05,0.6,1.8958305355228637,False,0
-P0163,E17,Servicio de transporte,services::transporte,1,372518.17,0.8571428571428571,1.8835991663211724,False,0
-P0143,E11,Adquisición de equipos informáticos,goods::equipo|informatico,2,889192.18,0.3,1.851694025875917,False,0
-P0067,E00,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,247382.89,0.375,1.8122279244103876,False,0
-P0153,E01,Adquisición de materiales de construcción,goods::construccion|material,2,837565.89,0.45454545454545453,1.811665002973005,False,0
-P0077,E15,Adquisición de bienes de oficina,goods::bienes|oficina,2,142027.6,0.7142857142857143,1.7636232845746793,False,0
-P0139,E07,Suministro de combustible,goods::combustible|suministro,2,1428933.8399999999,0.4,1.725452682489045,False,0
-P0126,E15,Adquisición de materiales de construcción,goods::construccion|material,2,1325019.24,0.3333333333333333,1.7243036456195815,False,0
-P0196,E06,Mantenimiento preventivo de infraestructura,services::infraestructura|mantenimiento,1,266957.05,0.5,1.7224590633246235,False,0
-P0045,E11,Servicio de capacitación,services::capacitacion,1,456525.86,0.6666666666666666,1.6555051635589668,False,0
-P0215,E08,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,2,639053.05,0.8333333333333334,1.6500965952495366,False,0
-P0143,E06,Servicios de transporte,services::transporte,2,1028939.8400000001,0.4,1.6346919393083679,False,0
-P0135,E00,Consultoría en ingeniería,services::consultoria|ingenieria,2,1626117.48,0.4,1.6160713779646987,False,0
-P0130,E01,Adquisición de equipos informáticos,goods::equipo|informatico,2,881300.1900000001,0.6,1.583804040074597,False,0
-P0108,E06,Obra de rehabilitación vial,works::rehabilitacion|via,1,77765.46,1.0,1.571483169773474,False,0
-P0018,E01,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,2,414310.26,0.6666666666666666,1.5593017736063854,False,0
-P0209,E01,Consultoría en ingeniería,services::consultoria|ingenieria,1,385656.13,0.4444444444444444,1.5311540141938822,False,0
-P0097,E00,Contratación de servicio de transporte,services::transporte,3,1126843.1,1.0,1.4886742669412387,True,1
-P0089,E08,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,2,646015.77,0.8181818181818182,1.4757845229226119,False,0
-P0167,E05,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,2,1480818.82,0.6,1.4680974581969497,False,0
-P0072,E01,Servicio de capacitación,services::capacitacion,1,68750.89,0.6666666666666666,1.4524774297697671,False,0
-P0142,E17,Compra de materiales de construcción,goods::construccion|material,2,660278.62,0.6666666666666666,1.4292203817531002,False,0
-P0149,E04,Adquisición de materiales de construcción,goods::construccion|material,2,997405.5800000001,0.875,1.4239448898137241,False,0
-P0063,E01,Adquisición de materiales de construcción,goods::construccion|material,1,493330.63,0.7,1.4214136093659504,False,0
-P0186,E00,Adquisición de bienes de oficina,goods::bienes|oficina,2,369098.28,0.7142857142857143,1.4171981615256144,False,0
-P0002,E03,Servicio de capacitación,services::capacitacion,1,591342.52,0.4444444444444444,1.3943889093859074,False,0
-P0138,E05,Adquisición de materiales de construcción,goods::construccion|material,2,1080329.8800000001,0.4,1.371994001835331,False,0
-P0019,E12,Adquisición de materiales de construcción,goods::construccion|material,1,862931.92,0.5,1.3693802200657061,False,0
-P0051,E17,Compra de materiales de construcción,goods::construccion|material,1,252971.47,1.0,1.3681005288593897,False,0
-P0052,E13,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,629297.13,0.4444444444444444,1.3661050837359285,False,0
-P0011,E06,Suministro de combustible,goods::combustible|suministro,2,1493048.48,0.375,1.3550268992241472,False,0
-P0195,E01,Contratación de servicio de transporte,services::transporte,3,953757.7100000001,1.0,1.350850365976955,True,1
-P0054,E07,Suministro de combustible,goods::combustible|suministro,2,580950.0700000001,0.7272727272727273,1.2878815750768904,False,0
-P0178,E01,Servicio de capacitación,services::capacitacion,2,439149.1,0.6,1.2839540353428602,False,0
-P0022,E12,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,2,1078817.31,0.5,1.2252587741905052,False,0
-P0044,E12,Adquisición de equipos informáticos,goods::equipo|informatico,2,1446247.02,0.5,1.2046501768151225,False,0
-P0029,E15,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,2,877839.4500000001,0.5,1.2007976288080129,False,0
-P0213,E04,Servicio de transporte,services::transporte,1,344262.49,0.625,1.200199968212732,False,0
-P0131,E11,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,2,239094.48,0.5555555555555556,1.1947635537066437,False,0
-P0054,E00,Servicio de capacitación,services::capacitacion,3,671107.45,1.0,1.1699410518487776,True,1
-P0170,E04,Consultoría en ingeniería,services::consultoria|ingenieria,3,669572.11,1.0,1.1691471021325521,True,1
-P0107,E17,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,387738.94,0.625,1.1661275856199735,False,0
-P0167,E09,Contratación de servicio de transporte,services::transporte,3,609075.56,1.0,1.139764125724674,True,1
-P0003,E13,Suministro de combustible,goods::combustible|suministro,3,551352.03,1.0,1.1153594498048132,True,0
-P0055,E17,Suministro de combustible,goods::combustible|suministro,3,528631.72,1.0,1.1067798617940832,True,0
-P0197,E14,Servicio de conservación preventiva de infraestructura,services::infraestructura|mantenimiento,2,1147174.17,0.5,1.1034606695716322,False,0
-P0056,E04,Adquisición de materiales de construcción,goods::construccion|material,3,500752.99,1.0,1.097074602827332,True,0
-P0019,E00,Suministro de combustible,goods::combustible|suministro,2,825443.25,0.4444444444444444,1.08311827011954,False,0
-P0090,E13,Suministro de combustible,goods::combustible|suministro,3,429677.55,1.0,1.0765858557366974,True,0
-P0076,E15,Servicio de capacitación,services::capacitacion,3,424726.18000000005,1.0,1.0753927343397374,True,0
-P0023,E00,Consultoría en ingeniería,services::consultoria|ingenieria,3,347140.93,1.0,1.0608190130548365,True,0
-P0001,E17,Adquisición de materiales de construcción,goods::construccion|material,3,346054.74,1.0,1.0606708047458009,True,0
-P0175,E15,Consultoría en ingeniería,services::consultoria|ingenieria,3,313468.67,1.0,1.0569527052491372,True,0
-P0016,E16,Adquisición de bienes de oficina,goods::bienes|oficina,3,275444.08,1.0,1.054408297659791,True,0
-P0185,E16,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,2,523435.29000000004,0.7,1.0449103230564307,False,0
-P0212,E17,Adquisición de bienes de oficina,goods::bienes|oficina,2,870999.91,0.5,1.0335857655563856,False,0
-P0024,E17,Servicio de capacitación,services::capacitacion,2,1051143.93,0.7777777777777778,1.0197425362330237,False,0
-P0010,E01,Consultoría en ingeniería,services::consultoria|ingenieria,2,711528.76,0.75,1.0116749064771633,False,0
-P0099,E17,Adquisición de materiales de construcción,goods::construccion|material,1,838853.8,0.5555555555555556,0.9728412325245074,False,0
-P0051,E10,Adquisición de bienes de oficina,goods::bienes|oficina,1,357393.04,1.0,0.8838320620584702,False,0
-P0112,E08,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,2,937742.3799999999,0.7,0.7942113225235607,False,0
-P0215,E15,Servicio de capacitación,services::capacitacion,2,702707.66,0.5555555555555556,0.7655141408452435,False,0
-P0005,E17,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,13611.5,1.0,0.6470247941940096,False,0
-P0055,E02,Servicio de transporte,services::transporte,1,13585.78,1.0,0.6462685291220346,False,0
-P0135,E09,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,10624.62,1.0,0.6454826536006576,False,0
-P0101,E00,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,5680.7,1.0,0.6443491284153995,False,0
-P0019,E13,Obra de rehabilitación vial,works::rehabilitacion|via,1,3998.45,1.0,0.6439249454785465,False,0
-P0050,E17,Obra de rehabilitación vial,works::rehabilitacion|via,1,7984.72,1.0,0.6433097927216027,False,0
-P0200,E08,Consultoría en ingeniería,services::consultoria|ingenieria,1,23097.12,1.0,0.642604783648716,False,0
-P0145,E06,Consultoría en ingeniería,services::consultoria|ingenieria,1,20948.62,1.0,0.6418416397178924,False,0
-P0082,E04,Servicio de capacitación,services::capacitacion,1,18452.01,1.0,0.6416846340129136,False,0
-P0086,E10,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,8194.58,1.0,0.6414061448226158,False,0
-P0053,E03,Adquisición de materiales de construcción,goods::construccion|material,1,11638.88,1.0,0.6413139141767208,False,0
-P0113,E11,Servicio de capacitación,services::capacitacion,1,17800.19,1.0,0.6400712535650019,False,0
-P0064,E09,Adquisición de equipos informáticos,goods::equipo|informatico,1,22344.69,1.0,0.6399922637267165,False,0
-P0179,E03,Obra de rehabilitación vial,works::rehabilitacion|via,1,20429.51,1.0,0.6398879192592282,False,0
-P0077,E03,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,24956.52,1.0,0.6394627532754682,False,0
-P0111,E13,Adquisición de equipos informáticos,goods::equipo|informatico,1,18769.91,1.0,0.6384694550472949,False,0
-P0073,E13,Obra de rehabilitación vial,works::rehabilitacion|via,1,25295.93,1.0,0.6384571068838392,False,0
-P0196,E13,Consultoría en ingeniería,services::consultoria|ingenieria,1,29928.37,1.0,0.6381500693262386,False,0
-P0039,E02,Servicio de transporte,services::transporte,1,26145.7,1.0,0.6381043387252942,False,0
-P0085,E14,Suministro de combustible,goods::combustible|suministro,1,7748.63,1.0,0.6370815460488115,False,0
-P0034,E08,Suministro de combustible,goods::combustible|suministro,1,11890.18,1.0,0.6369675137303485,False,0
-P0018,E15,Suministro de combustible,goods::combustible|suministro,1,25024.61,1.0,0.6353970463396916,False,0
-P0108,E17,Adquisición de bienes de oficina,goods::bienes|oficina,1,26068.35,1.0,0.6346343594899617,False,0
-P0211,E16,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,28537.7,1.0,0.6339250868570596,False,0
-P0079,E13,Servicio de transporte,services::transporte,1,22701.8,1.0,0.633360645984556,False,0
-P0153,E12,Adquisición de bienes de oficina,goods::bienes|oficina,1,37924.06,1.0,0.6333183391748847,False,0
-P0179,E12,Consultoría en ingeniería,services::consultoria|ingenieria,1,32946.98,1.0,0.6331842189544601,False,0
-P0088,E16,Servicio de transporte,services::transporte,1,34562.09,1.0,0.6321131791096078,False,0
-P0060,E06,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,22500.34,1.0,0.632061944454387,False,0
-P0141,E05,Servicio de capacitación,services::capacitacion,1,38936.29,1.0,0.6308417476832074,False,0
-P0094,E05,Obra de rehabilitación vial,works::rehabilitacion|via,1,25163.45,1.0,0.6305487266400964,False,0
-P0139,E10,Consultoría en ingeniería,services::consultoria|ingenieria,1,12709.12,1.0,0.6301105276013893,False,0
-P0049,E10,Adquisición de bienes de oficina,goods::bienes|oficina,1,6842.8,1.0,0.629619618955278,False,0
-P0085,E15,Adquisición de equipos informáticos,goods::equipo|informatico,1,25119.22,1.0,0.6288526654575883,False,0
-P0058,E08,Adquisición de equipos informáticos,goods::equipo|informatico,1,423847.13,1.0,0.6276715018518824,False,0
-P0188,E14,Adquisición de bienes de oficina,goods::bienes|oficina,1,35452.49,1.0,0.627348922124986,False,0
-P0090,E11,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,29340.77,1.0,0.6269523087036076,False,0
-P0112,E01,Adquisición de equipos informáticos,goods::equipo|informatico,1,35276.12,1.0,0.6256560824615949,False,0
-P0100,E14,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,49485.63,1.0,0.6255841920279366,False,0
-P0201,E01,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,30842.55,1.0,0.6252956761213359,False,0
-P0056,E09,Obra de rehabilitación vial,works::rehabilitacion|via,1,37388.79,1.0,0.6247013099604997,False,0
-P0203,E17,Servicio de capacitación,services::capacitacion,1,50401.68,1.0,0.6242020732004764,False,0
-P0211,E17,Adquisición de equipos informáticos,goods::equipo|informatico,1,20475.82,1.0,0.6238516215373581,False,0
-P0114,E11,Adquisición de materiales de construcción,goods::construccion|material,1,20517.83,1.0,0.6237607379462183,False,0
-P0141,E06,Suministro de combustible,goods::combustible|suministro,1,57095.64,1.0,0.6228993075572453,False,0
-P0033,E05,Servicio de capacitación,services::capacitacion,1,45872.11,1.0,0.6226020387235808,False,0
-P0213,E05,Adquisición de bienes de oficina,goods::bienes|oficina,1,25750.0,1.0,0.6224900093375079,False,0
-P0199,E07,Servicio de capacitación,services::capacitacion,1,38748.68,1.0,0.6222509961942023,False,0
-P0058,E09,Adquisición de bienes de oficina,goods::bienes|oficina,1,22485.41,1.0,0.6220912659390634,False,0
-P0199,E05,Servicio de transporte,services::transporte,1,32770.39,1.0,0.6218503996755176,False,0
-P0012,E15,Servicio de capacitación,services::capacitacion,1,31438.6,1.0,0.6215313163633815,False,0
-P0080,E13,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,14763.27,1.0,0.6214429283186472,False,0
-P0019,E00,Consultoría en ingeniería,services::consultoria|ingenieria,1,30402.81,1.0,0.6210964583207343,False,0
-P0023,E14,Servicio de transporte,services::transporte,1,61687.33,1.0,0.6210009896782057,False,0
-P0044,E13,Adquisición de bienes de oficina,goods::bienes|oficina,1,24258.38,1.0,0.6209741836513814,False,0
-P0096,E15,Adquisición de materiales de construcción,goods::construccion|material,1,28141.4,1.0,0.6207867334694149,False,0
-P0087,E10,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,74325.15,1.0,0.6207831530812332,False,0
-P0034,E17,Servicio de capacitación,services::capacitacion,1,72390.94,1.0,0.6207016971334073,False,0
-P0133,E00,Consultoría en ingeniería,services::consultoria|ingenieria,1,66227.97,1.0,0.6205097665341269,False,0
-P0176,E09,Servicio de capacitación,services::capacitacion,1,46837.99,1.0,0.6200006242304698,False,0
-P0051,E17,Consultoría en ingeniería,services::consultoria|ingenieria,1,19014.19,1.0,0.6199083250947296,False,0
-P0130,E17,Servicio de capacitación,services::capacitacion,1,54314.19,1.0,0.6198753942795246,False,0
-P0182,E05,Consultoría en ingeniería,services::consultoria|ingenieria,1,26191.52,1.0,0.6198469778879395,False,0
-P0174,E12,Consultoría en ingeniería,services::consultoria|ingenieria,1,16854.87,1.0,0.6198248152919906,False,0
-P0153,E07,Adquisición de materiales de construcción,goods::construccion|material,1,34860.24,1.0,0.6196830373749764,False,0
-P0008,E17,Obra de rehabilitación vial,works::rehabilitacion|via,1,49012.55,1.0,0.6194921967143784,False,0
-P0112,E14,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,52767.69,1.0,0.6193226699642859,False,0
-P0077,E01,Adquisición de bienes de oficina,goods::bienes|oficina,1,71013.8,1.0,0.6189154108511828,False,0
-P0210,E13,Adquisición de materiales de construcción,goods::construccion|material,1,56769.77,1.0,0.6189012096523074,False,0
-P0123,E15,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,20772.03,1.0,0.6188885406619576,False,0
-P0111,E04,Adquisición de materiales de construcción,goods::construccion|material,1,56408.34,1.0,0.6187879840004161,False,0
-P0108,E14,Servicio de capacitación,services::capacitacion,1,46317.08,1.0,0.6187000835759785,False,0
-P0092,E01,Consultoría en ingeniería,services::consultoria|ingenieria,1,29692.68,1.0,0.6181351199702821,False,0
-P0127,E11,Obra de rehabilitación vial,works::rehabilitacion|via,1,79966.3,1.0,0.6178029647932338,False,0
-P0043,E12,Consultoría en ingeniería,services::consultoria|ingenieria,1,23617.31,1.0,0.6177987849410931,False,0
-P0100,E17,Adquisición de bienes de oficina,goods::bienes|oficina,1,71013.8,1.0,0.6176092669110934,False,0
-P0118,E04,Servicio de capacitación,services::capacitacion,1,62758.87,1.0,0.6175702721708721,False,0
-P0171,E10,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,65139.14,1.0,0.6175207403030076,False,0
-P0141,E09,Servicio de transporte,services::transporte,1,26693.56,1.0,0.6169420643177652,False,0
-P0088,E14,Obra de rehabilitación vial,works::rehabilitacion|via,1,57961.77,1.0,0.6168448924849889,False,0
-P0147,E13,Consultoría en ingeniería,services::consultoria|ingenieria,1,75689.97,1.0,0.6168089498431172,False,0
-P0174,E00,Adquisición de materiales de construcción,goods::construccion|material,1,76238.79,1.0,0.6165957250124768,False,0
-P0054,E07,Consultoría en ingeniería,services::consultoria|ingenieria,1,79802.54,1.0,0.6165360717286554,False,0
-P0020,E14,Obra de rehabilitación vial,works::rehabilitacion|via,1,45493.22,1.0,0.6163694386435388,False,0
-P0013,E05,Servicio de transporte,services::transporte,1,71182.85,1.0,0.6162582357723508,False,0
-P0132,E03,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,42933.31,1.0,0.6159698897000283,False,0
-P0091,E10,Adquisición de equipos informáticos,goods::equipo|informatico,1,83315.13,1.0,0.6155412049409235,False,0
-P0198,E03,Servicio de capacitación,services::capacitacion,1,73748.64,1.0,0.6151421092981378,False,0
-P0213,E08,Suministro de combustible,goods::combustible|suministro,1,68419.5,1.0,0.61507250049616,False,0
-P0076,E13,Adquisición de equipos informáticos,goods::equipo|informatico,1,34289.06,1.0,0.6149976690751925,False,0
-P0017,E00,Obra de rehabilitación vial,works::rehabilitacion|via,1,45384.72,1.0,0.6146872851860656,False,0
-P0165,E03,Servicio de capacitación,services::capacitacion,1,77955.5,1.0,0.6146526954237944,False,0
-P0155,E05,Obra de rehabilitación vial,works::rehabilitacion|via,1,85043.06,1.0,0.6143875590191453,False,0
-P0147,E01,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,72219.67,1.0,0.6143151157645765,False,0
-P0072,E15,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,77515.16,1.0,0.6141454504144928,False,0
-P0135,E14,Obra de rehabilitación vial,works::rehabilitacion|via,1,64771.29,1.0,0.6140056309891019,False,0
-P0144,E04,Adquisición de bienes de oficina,goods::bienes|oficina,1,53018.78,1.0,0.6136386411868477,False,0
-P0152,E08,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,51962.72,1.0,0.6130741413200413,False,0
-P0073,E11,Servicio de capacitación,services::capacitacion,1,74404.85,1.0,0.6118666080898996,False,0
-P0088,E14,Suministro de combustible,goods::combustible|suministro,1,67094.65,1.0,0.6117917893493315,False,0
-P0065,E07,Adquisición de equipos informáticos,goods::equipo|informatico,1,81196.63,1.0,0.6116335493714042,False,0
-P0025,E10,Servicio de capacitación,services::capacitacion,1,74404.85,1.0,0.6088975554518558,False,0
-P0138,E05,Adquisición de bienes de oficina,goods::bienes|oficina,1,110158.22,1.0,0.6081058878697052,False,0
-P0212,E15,Servicio de capacitación,services::capacitacion,1,164305.87,1.0,0.6075542953807636,False,0
-P0041,E03,Suministro de combustible,goods::combustible|suministro,1,102797.03,1.0,0.6071404995375489,False,0
-P0219,E00,Adquisición de equipos informáticos,goods::equipo|informatico,1,86599.83,1.0,0.6065549067031522,False,0
-P0094,E00,Obra de rehabilitación vial,works::rehabilitacion|via,1,361385.25,1.0,0.6060152433913014,False,0
-P0031,E00,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,98694.86,1.0,0.60566998111071,False,0
-P0042,E03,Adquisición de equipos informáticos,goods::equipo|informatico,1,64222.77,1.0,0.6055197492429187,False,0
-P0173,E11,Obra de rehabilitación vial,works::rehabilitacion|via,1,71311.96,1.0,0.6048764728570554,False,0
-P0155,E16,Obra de rehabilitación vial,works::rehabilitacion|via,1,75160.42,1.0,0.6040117139483746,False,0
-P0014,E12,Suministro de combustible,goods::combustible|suministro,1,104988.78,1.0,0.6031792182785589,False,0
-P0051,E10,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,77550.23,1.0,0.6031262473810712,False,0
-P0078,E02,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,77087.93,1.0,0.6029406704728794,False,0
-P0082,E05,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,86166.87,1.0,0.6008292248204515,False,0
-P0112,E02,Adquisición de equipos informáticos,goods::equipo|informatico,1,88840.63,1.0,0.6001072120533608,False,0
-P0014,E01,Servicio de transporte,services::transporte,1,337289.75,1.0,0.5974868510569123,False,0
-P0059,E02,Servicio de transporte,services::transporte,1,142253.07,1.0,0.597365049810258,False,0
-P0019,E06,Adquisición de materiales de construcción,goods::construccion|material,1,137179.16,1.0,0.5972377092875739,False,0
-P0031,E15,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,139567.56,1.0,0.5970783963639997,False,0
-P0067,E15,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,107535.77,1.0,0.5966569443126422,False,0
-P0118,E03,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,135812.44,1.0,0.5962378460446448,False,0
-P0196,E06,Adquisición de materiales de construcción,goods::construccion|material,1,308642.52,1.0,0.5961064057771811,False,0
-P0205,E15,Adquisición de equipos informáticos,goods::equipo|informatico,1,114068.95,1.0,0.5954662582818837,False,0
-P0062,E03,Obra de rehabilitación vial,works::rehabilitacion|via,1,146356.21,1.0,0.595349279687116,False,0
-P0118,E12,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,154748.7,1.0,0.5943710623682271,False,0
-P0104,E11,Obra de rehabilitación vial,works::rehabilitacion|via,1,166189.31,1.0,0.5933849140325776,False,0
-P0219,E16,Suministro de combustible,goods::combustible|suministro,1,163277.4,1.0,0.5913118716683768,False,0
-P0142,E17,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,149817.16,1.0,0.591290908861811,False,0
-P0164,E01,Consultoría en ingeniería,services::consultoria|ingenieria,1,236393.99,1.0,0.5911497917751821,False,0
-P0152,E02,Adquisición de equipos informáticos,goods::equipo|informatico,1,300571.51,1.0,0.5906186535617184,False,0
-P0092,E17,Adquisición de materiales de construcción,goods::construccion|material,1,173751.22,1.0,0.5905724494390516,False,0
-P0156,E06,Adquisición de bienes de oficina,goods::bienes|oficina,1,160867.73,1.0,0.5898640169651937,False,0
-P0060,E09,Adquisición de materiales de construcción,goods::construccion|material,1,179938.55,1.0,0.5897696505222224,False,0
-P0211,E06,Servicio de capacitación,services::capacitacion,1,153321.06,1.0,0.5891438940929211,False,0
-P0165,E13,Servicio de transporte,services::transporte,1,190024.03,1.0,0.5878712143919985,False,0
-P0194,E15,Adquisición de equipos informáticos,goods::equipo|informatico,1,161935.86,1.0,0.5874483562114041,False,0
-P0213,E05,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,244759.34,1.0,0.5867969916438673,False,0
-P0180,E09,Adquisición de equipos informáticos,goods::equipo|informatico,1,217171.85,1.0,0.5857868983289348,False,0
-P0145,E08,Servicio de capacitación,services::capacitacion,1,235014.27,1.0,0.585756408394742,False,0
-P0125,E08,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,208783.3,1.0,0.5850198027756683,False,0
-P0126,E15,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,2,74651.58,1.0,0.3909656485015018,False,0
-P0025,E01,Adquisición de bienes de oficina,goods::bienes|oficina,2,345263.26,1.0,0.352755680074353,False,0
-P0176,E16,Servicio de capacitación,services::capacitacion,2,153687.86,1.0,0.3514581184553943,False,0
-P0165,E00,Adquisición de bienes de oficina,goods::bienes|oficina,2,220310.14,1.0,0.33554210969495146,False,0
-P0148,E17,Servicio de capacitación,services::capacitacion,2,268384.3,1.0,0.3354608520455897,False,0
-P0145,E04,Servicio de capacitación,services::capacitacion,2,232151.22,1.0,0.33461229964921835,False,0
+P0042,E00,Rehabilitación de vía pública,works::rehabilitacion|via,5,8620839.04,1.0,8.357786393389402,True,1
+P0166,E03,Obra de rehabilitación de carretera,works::rehabilitacion|via,4,8442262.08,1.0,8.151078985006581,True,1
+P0196,E14,Obra de rehabilitación de carretera,works::rehabilitacion|via,5,6493061.750000001,1.0,5.824995350838685,True,1
+P0179,E00,Obra de rehabilitación de carretera,works::rehabilitacion|via,4,4979075.13,1.0,4.037679373340582,True,1
+P0065,E02,Obra de rehabilitación de carretera,works::rehabilitacion|via,4,4564229.58,1.0,3.5472836790020024,True,0
+P0045,E11,Suministro de combustible,goods::combustible|suministro,1,507919.05,0.0,3.4620852817541268,False,0
+P0185,E08,Rehabilitación de vía pública,works::rehabilitacion|via,3,3398596.94,1.0,2.5175682901071825,True,0
+P0215,E09,Obra de rehabilitación vial,works::rehabilitacion|via,2,979471.6000000001,1.0,2.375893128404159,False,0
+P0215,E15,Adquisición de equipos informáticos,goods::equipo|informatico,1,526998.54,0.5,2.3748188886166313,False,0
+P0054,E07,Servicio de capacitación,services::capacitacion,1,649735.39,0.5,2.3736094834157986,False,0
+P0211,E14,Adquisición de equipos informáticos,goods::equipo|informatico,1,651447.31,0.5,2.371802860284684,False,0
+P0063,E16,Adquisición de equipos informáticos,goods::equipo|informatico,1,518462.89,0.5,2.355365637632699,False,0
+P0108,E06,Suministro de combustible,goods::combustible|suministro,1,379283.82,0.5,2.3525527319992117,False,0
+P0034,E00,Suministro de combustible,goods::combustible|suministro,1,366965.21,0.5,2.3406902621316825,False,0
+P0004,E01,Consultoría en ingeniería,services::consultoria|ingenieria,1,113639.35,0.5,2.3228559782596414,False,0
+P0014,E14,Adquisición de bienes de oficina,goods::bienes|oficina,1,124429.23,0.5,2.321168076968412,False,0
+P0087,E09,Adquisición de materiales de construcción,goods::construccion|material,1,15084.69,0.5,2.317266833678139,False,0
+P0211,E05,Obra de rehabilitación vial,works::rehabilitacion|via,2,504148.26,1.0,2.1645859073798333,False,0
+P0029,E07,Obra de rehabilitación vial,works::rehabilitacion|via,1,331928.5,1.0,2.091123668389405,False,0
+P0197,E04,Obra de rehabilitación vial,works::rehabilitacion|via,2,540490.02,1.0,2.0368939755099915,False,0
+P0053,E06,Suministro de combustible,goods::combustible|suministro,2,1069587.13,0.36363636363636365,1.9897004762471115,False,0
+P0156,E04,Suministro de combustible,goods::combustible|suministro,3,812025.0700000001,0.8333333333333334,1.9817573217015805,True,0
+P0177,E09,Adquisición de equipos informáticos,goods::equipo|informatico,2,722913.07,0.25,1.9138313000910887,False,0
+P0034,E00,Servicio de capacitación,services::capacitacion,1,100149.27,0.875,1.8368865091474997,False,0
+P0139,E07,Suministro de combustible,goods::combustible|suministro,2,1428933.8399999999,0.4,1.8198935230998448,False,0
+P0167,E05,Servicio de capacitación,services::capacitacion,2,365738.82,0.9090909090909091,1.812077235092199,False,0
+P0061,E05,Adquisición de materiales de construcción,goods::construccion|material,1,744960.97,0.2857142857142857,1.770684371716182,False,0
+P0135,E00,Consultoría en ingeniería,services::consultoria|ingenieria,2,1626117.48,0.4,1.7557882841158878,False,0
+P0126,E15,Adquisición de materiales de construcción,goods::construccion|material,2,1325019.24,0.3333333333333333,1.7475298615864776,False,0
+P0107,E00,Servicio de capacitación,services::capacitacion,1,163609.44,0.6,1.734664770932588,False,0
+P0153,E01,Adquisición de materiales de construcción,goods::construccion|material,2,837565.89,0.45454545454545453,1.729076295225621,False,0
+P0163,E17,Servicio de transporte,services::transporte,1,372518.17,0.8571428571428571,1.728518176799695,False,0
+P0072,E12,Consultoría en ingeniería,services::consultoria|ingenieria,6,625329.5700000001,1.0,1.7125912040241553,True,1
+P0167,E05,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,2,1480818.82,0.6,1.691321809090146,False,0
+P0215,E08,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,2,639053.05,0.8333333333333334,1.6792497886065796,False,0
+P0143,E11,Adquisición de equipos informáticos,goods::equipo|informatico,2,889192.18,0.3,1.677502613667978,False,0
+P0146,E11,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,61676.38,0.8181818181818182,1.6651198402828449,False,0
+P0014,E14,Servicio de capacitación,services::capacitacion,1,297736.05,0.6,1.6469606740036238,False,0
+P0108,E06,Obra de rehabilitación vial,works::rehabilitacion|via,1,77765.46,1.0,1.6135714303515225,False,0
+P0045,E11,Servicio de capacitación,services::capacitacion,1,456525.86,0.6666666666666666,1.5972777340457076,False,0
+P0054,E00,Servicio de capacitación,services::capacitacion,3,671107.45,1.0,1.5961378833316437,True,1
+P0170,E04,Consultoría en ingeniería,services::consultoria|ingenieria,3,669572.11,1.0,1.5954418098412895,True,1
+P0143,E06,Servicios de transporte,services::transporte,2,1028939.8400000001,0.4,1.5913323922837657,False,0
+P0130,E01,Adquisición de equipos informáticos,goods::equipo|informatico,2,881300.1900000001,0.6,1.5872962320972583,False,0
+P0048,E12,Servicio de capacitación,services::capacitacion,6,1027544.03,1.0,1.5737537370161785,True,1
+P0167,E09,Contratación de servicio de transporte,services::transporte,3,609075.56,1.0,1.569468491605683,True,1
+P0195,E01,Contratación de servicio de transporte,services::transporte,3,953757.7100000001,1.0,1.5657571271409185,True,1
+P0149,E04,Adquisición de materiales de construcción,goods::construccion|material,2,997405.5800000001,0.875,1.5541659007511577,False,0
+P0003,E13,Suministro de combustible,goods::combustible|suministro,3,551352.03,1.0,1.5474151030722194,True,0
+P0055,E17,Suministro de combustible,goods::combustible|suministro,3,528631.72,1.0,1.53949185255402,True,0
+P0202,E02,Servicio de transporte,services::transporte,6,854181.64,1.0,1.5370408697155826,True,1
+P0056,E04,Adquisición de materiales de construcción,goods::construccion|material,3,500752.99,1.0,1.5303687117861748,True,0
+P0090,E13,Suministro de combustible,goods::combustible|suministro,3,429677.55,1.0,1.5101725340532215,True,0
+P0076,E15,Servicio de capacitación,services::capacitacion,3,424726.18000000005,1.0,1.5089327902725584,True,0
+P0077,E15,Adquisición de bienes de oficina,goods::bienes|oficina,2,142027.6,0.7142857142857143,1.5018035348509164,False,0
+P0208,E15,Compra de equipos informáticos,goods::equipo|informatico,4,427199.24000000005,1.0,1.4998395310706545,True,0
+P0082,E15,Consultoría en ingeniería,services::consultoria|ingenieria,4,432399.85000000003,1.0,1.493979039299566,True,0
+P0186,E12,Servicio de capacitación,services::capacitacion,6,918900.1199999999,1.0,1.492704254737581,True,1
+P0023,E00,Consultoría en ingeniería,services::consultoria|ingenieria,3,347140.93,1.0,1.4924237315599624,True,0
+P0001,E17,Adquisición de materiales de construcción,goods::construccion|material,3,346054.74,1.0,1.4922319976148857,True,0
+P0175,E15,Consultoría en ingeniería,services::consultoria|ingenieria,3,313468.67,1.0,1.4869928009226372,True,0
+P0016,E16,Adquisición de bienes de oficina,goods::bienes|oficina,3,275444.08,1.0,1.4821434590778282,True,0
+P0011,E06,Suministro de combustible,goods::combustible|suministro,2,1493048.48,0.375,1.4819928192602054,False,0
+P0097,E00,Contratación de servicio de transporte,services::transporte,3,1126843.1,1.0,1.4724063758778732,True,1
+P0120,E02,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,4,462350.45,1.0,1.4602826423619373,True,0
+P0096,E11,Servicio de transporte,services::transporte,4,474285.88999999996,1.0,1.446881312900742,True,1
+P0067,E00,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,247382.89,0.375,1.4195763916079944,False,0
+P0089,E08,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,2,646015.77,0.8181818181818182,1.397943451715985,False,0
+P0051,E17,Compra de materiales de construcción,goods::construccion|material,1,252971.47,1.0,1.396798927593212,False,0
+P0018,E01,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,2,414310.26,0.6666666666666666,1.394935500763311,False,0
+P0043,E13,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,5,506831.87,1.0,1.3756223012765836,True,0
+P0044,E12,Adquisición de equipos informáticos,goods::equipo|informatico,2,1446247.02,0.5,1.3705587248387188,False,0
+P0196,E06,Mantenimiento preventivo de infraestructura,services::infraestructura|mantenimiento,1,266957.05,0.5,1.3573596331168436,False,0
+P0142,E17,Compra de materiales de construcción,goods::construccion|material,2,660278.62,0.6666666666666666,1.351974463793817,False,0
+P0001,E11,Consultoría en ingeniería,services::consultoria|ingenieria,4,564326.71,1.0,1.3463286851548226,True,0
+P0040,E06,Contratación de servicio de transporte,services::transporte,5,532783.35,1.0,1.3458912139848198,True,0
+P0190,E16,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,5,535078.76,1.0,1.343264117496244,True,0
+P0134,E12,Consultoría en ingeniería,services::consultoria|ingenieria,4,576018.57,1.0,1.333349442653377,True,0
+P0084,E09,Consultoría en ingeniería,services::consultoria|ingenieria,5,620844.66,1.0,1.330390617562321,True,0
+P0138,E05,Adquisición de materiales de construcción,goods::construccion|material,2,1080329.8800000001,0.4,1.2710806118062252,False,0
+P0128,E17,Adquisición de equipo informático,goods::equipo|informatico,5,615819.7200000001,1.0,1.2511539971297787,True,0
+P0022,E12,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,2,1078817.31,0.5,1.2445278993809503,False,0
+P0186,E00,Adquisición de bienes de oficina,goods::bienes|oficina,2,369098.28,0.7142857142857143,1.217838244573201,False,0
+P0019,E12,Adquisición de materiales de construcción,goods::construccion|material,1,862931.92,0.5,1.210730190973589,False,0
+P0197,E14,Servicio de conservación preventiva de infraestructura,services::infraestructura|mantenimiento,2,1147174.17,0.5,1.1880959693740276,False,0
+P0110,E05,Adquisición de equipo informático,goods::equipo|informatico,5,680250.41,1.0,1.1781256838128984,True,1
+P0013,E13,Contratación de servicio de transporte,services::transporte,5,681700.87,1.0,1.1764872126703458,True,1
+P0111,E12,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,5,698263.78,1.0,1.1577960731878603,True,0
+P0107,E15,Contratación de servicio de transporte,services::transporte,4,747825.51,1.0,1.145225361602555,True,0
+P0114,E16,Servicios de transporte,services::transporte,4,763281.47,1.0,1.1285863027885936,True,1
+P0054,E07,Suministro de combustible,goods::combustible|suministro,2,580950.0700000001,0.7272727272727273,1.1239310822337372,False,0
+P0024,E17,Servicio de capacitación,services::capacitacion,2,1051143.93,0.7777777777777778,1.1144129447007345,False,0
+P0029,E15,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,2,877839.4500000001,0.5,1.1134872285383342,False,0
+P0209,E01,Consultoría en ingeniería,services::consultoria|ingenieria,1,385656.13,0.4444444444444444,1.1110894338898452,False,0
+P0178,E01,Servicio de capacitación,services::capacitacion,2,439149.1,0.6,1.0837993856640558,False,0
+P0003,E00,Suministro de combustible,goods::combustible|suministro,5,766580.2799999999,1.0,1.0810971233558655,True,0
+P0063,E01,Adquisición de materiales de construcción,goods::construccion|material,1,493330.63,0.7,1.0431311991614287,False,0
+P0169,E15,Servicio de capacitación,services::capacitacion,4,849346.5800000001,1.0,1.0370379467116821,True,1
+P0219,E13,Mantenimiento preventivo de infraestructura,services::infraestructura|mantenimiento,4,857447.42,1.0,1.0285283870317832,True,1
+P0189,E16,Suministro de combustible,goods::combustible|suministro,5,823456.86,1.0,1.0178036956760836,True,1
+P0178,E07,Consultoría en ingeniería,services::consultoria|ingenieria,5,825321.63,1.0,1.015738391741878,True,1
+P0002,E03,Servicio de capacitación,services::capacitacion,1,591342.52,0.4444444444444444,1.0058840350714053,False,0
+P0185,E10,Suministro de combustible,goods::combustible|suministro,4,899845.9400000001,1.0,0.9843361687241158,True,1
+P0134,E13,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,5,873048.3700000001,1.0,0.9631181164657868,True,1
+P0010,E01,Consultoría en ingeniería,services::consultoria|ingenieria,2,711528.76,0.75,0.9563344705508542,False,0
+P0052,E13,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,629297.13,0.4444444444444444,0.9401655098586749,False,0
+P0072,E01,Servicio de capacitación,services::capacitacion,1,68750.89,0.6666666666666666,0.9316400084118565,False,0
+P0019,E00,Suministro de combustible,goods::combustible|suministro,2,825443.25,0.4444444444444444,0.8864163330040961,False,0
+P0030,E17,Consultoría en ingeniería,services::consultoria|ingenieria,5,964662.0700000001,1.0,0.8636309647816081,True,1
+P0051,E10,Adquisición de bienes de oficina,goods::bienes|oficina,1,357393.04,1.0,0.8626500355372115,False,0
+P0212,E17,Adquisición de bienes de oficina,goods::bienes|oficina,2,870999.91,0.5,0.8579881862861634,False,0
+P0112,E08,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,2,937742.3799999999,0.7,0.8341486749559025,False,0
+P0185,E16,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,2,523435.29000000004,0.7,0.7787090570298403,False,0
+P0025,E01,Adquisición de bienes de oficina,goods::bienes|oficina,2,345263.26,1.0,0.7712881947382566,False,0
+P0213,E04,Servicio de transporte,services::transporte,1,344262.49,0.625,0.7182610527027243,False,0
+P0107,E17,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,387738.94,0.625,0.6953187323871194,False,0
+P0099,E17,Adquisición de materiales de construcción,goods::construccion|material,1,838853.8,0.5555555555555556,0.6827605504970476,False,0
+P0148,E17,Servicio de capacitación,services::capacitacion,2,268384.3,1.0,0.6809763131992789,False,0
+P0126,E15,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,2,74651.58,1.0,0.6768020731086444,False,0
+P0145,E04,Servicio de capacitación,services::capacitacion,2,232151.22,1.0,0.6742100695808518,False,0
+P0165,E00,Adquisición de bienes de oficina,goods::bienes|oficina,2,220310.14,1.0,0.6725857005876217,False,0
+P0176,E16,Servicio de capacitación,services::capacitacion,2,153687.86,1.0,0.6689478123339194,False,0
+P0131,E11,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,2,239094.48,0.5555555555555556,0.6537244684865084,False,0
+P0058,E08,Adquisición de equipos informáticos,goods::equipo|informatico,1,423847.13,1.0,0.4972229051604814,False,0
+P0012,E15,Servicio de capacitación,services::capacitacion,1,31438.6,1.0,0.3825453555229784,False,0
+P0215,E15,Servicio de capacitación,services::capacitacion,2,702707.66,0.5555555555555556,0.3718027133416328,False,0
+P0094,E00,Obra de rehabilitación vial,works::rehabilitacion|via,1,361385.25,1.0,0.3286097393670199,False,0
+P0014,E01,Servicio de transporte,services::transporte,1,337289.75,1.0,0.29902299732228144,False,0
+P0196,E06,Adquisición de materiales de construcción,goods::construccion|material,1,308642.52,1.0,0.29501014349777976,False,0
+P0212,E15,Servicio de capacitación,services::capacitacion,1,164305.87,1.0,0.28514324823586173,False,0
+P0005,E17,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,13611.5,1.0,0.2718664884445202,False,0
+P0055,E02,Servicio de transporte,services::transporte,1,13585.78,1.0,0.27048058818371484,False,0
+P0152,E02,Adquisición de equipos informáticos,goods::equipo|informatico,1,300571.51,1.0,0.2704457782463524,False,0
+P0135,E09,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,10624.62,1.0,0.26859717682090134,False,0
+P0101,E00,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,5680.7,1.0,0.2658588482339677,False,0
+P0200,E08,Consultoría en ingeniería,services::consultoria|ingenieria,1,23097.12,1.0,0.26529316269677067,False,0
+P0019,E13,Obra de rehabilitación vial,works::rehabilitacion|via,1,3998.45,1.0,0.26488555766348276,False,0
+P0050,E17,Obra de rehabilitación vial,works::rehabilitacion|via,1,7984.72,1.0,0.2642986976414765,False,0
+P0145,E06,Consultoría en ingeniería,services::consultoria|ingenieria,1,20948.62,1.0,0.2635366176433107,False,0
+P0082,E04,Servicio de capacitación,services::capacitacion,1,18452.01,1.0,0.2628567869137428,False,0
+P0164,E01,Consultoría en ingeniería,services::consultoria|ingenieria,1,236393.99,1.0,0.26284550871530366,False,0
+P0053,E03,Adquisición de materiales de construcción,goods::construccion|material,1,11638.88,1.0,0.26119923077944696,False,0
+P0086,E10,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,8194.58,1.0,0.26091815187742406,False,0
+P0064,E09,Adquisición de equipos informáticos,goods::equipo|informatico,1,22344.69,1.0,0.26036162408275554,False,0
+P0179,E03,Obra de rehabilitación vial,works::rehabilitacion|via,1,20429.51,1.0,0.2598739424348025,False,0
+P0113,E11,Servicio de capacitación,services::capacitacion,1,17800.19,1.0,0.25981583184069595,False,0
+P0077,E03,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,24956.52,1.0,0.25980458646017895,False,0
+P0196,E13,Consultoría en ingeniería,services::consultoria|ingenieria,1,29928.37,1.0,0.2582008950980145,False,0
+P0073,E13,Obra de rehabilitación vial,works::rehabilitacion|via,1,25295.93,1.0,0.2580078785538358,False,0
+P0039,E02,Servicio de transporte,services::transporte,1,26145.7,1.0,0.25749436181735497,False,0
+P0111,E13,Adquisición de equipos informáticos,goods::equipo|informatico,1,18769.91,1.0,0.25704689340407205,False,0
+P0034,E08,Suministro de combustible,goods::combustible|suministro,1,11890.18,1.0,0.25349223306906776,False,0
+P0085,E14,Suministro de combustible,goods::combustible|suministro,1,7748.63,1.0,0.2532710862413116,False,0
+P0018,E15,Suministro de combustible,goods::combustible|suministro,1,25024.61,1.0,0.2523674411216118,False,0
+P0108,E17,Adquisición de bienes de oficina,goods::bienes|oficina,1,26068.35,1.0,0.2511328378979078,False,0
+P0153,E12,Adquisición de bienes de oficina,goods::bienes|oficina,1,37924.06,1.0,0.25059279826157194,False,0
+P0211,E16,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,28537.7,1.0,0.2502044011735918,False,0
+P0179,E12,Consultoría en ingeniería,services::consultoria|ingenieria,1,32946.98,1.0,0.2495243689448717,False,0
+P0213,E05,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,244759.34,1.0,0.24890572782493514,False,0
+P0079,E13,Servicio de transporte,services::transporte,1,22701.8,1.0,0.2483846735721049,False,0
+P0088,E16,Servicio de transporte,services::transporte,1,34562.09,1.0,0.2478119833140978,False,0
+P0141,E05,Servicio de capacitación,services::capacitacion,1,38936.29,1.0,0.2461751236025657,False,0
+P0060,E06,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,22500.34,1.0,0.24606210646175744,False,0
+P0094,E05,Obra de rehabilitación vial,works::rehabilitacion|via,1,25163.45,1.0,0.2437103805053824,False,0
+P0051,E17,Consultoría en ingeniería,services::consultoria|ingenieria,1,19014.19,1.0,0.24360591356318836,False,0
+P0139,E10,Consultoría en ingeniería,services::consultoria|ingenieria,1,12709.12,1.0,0.2420209343855296,False,0
+P0049,E10,Adquisición de bienes de oficina,goods::bienes|oficina,1,6842.8,1.0,0.24129975590176064,False,0
+P0085,E15,Adquisición de equipos informáticos,goods::equipo|informatico,1,25119.22,1.0,0.2407689494613214,False,0
+P0188,E14,Adquisición de bienes de oficina,goods::bienes|oficina,1,35452.49,1.0,0.2393200434251099,False,0
+P0100,E14,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,49485.63,1.0,0.23823380064370964,False,0
+P0090,E11,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,29340.77,1.0,0.2379318783182735,False,0
+P0141,E09,Servicio de transporte,services::transporte,1,26693.56,1.0,0.23759236488463104,False,0
+P0112,E01,Adquisición de equipos informáticos,goods::equipo|informatico,1,35276.12,1.0,0.23632770609295606,False,0
+P0203,E17,Servicio de capacitación,services::capacitacion,1,50401.68,1.0,0.23584952316345453,False,0
+P0201,E01,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,30842.55,1.0,0.23527587799272567,False,0
+P0056,E09,Obra de rehabilitación vial,works::rehabilitacion|via,1,37388.79,1.0,0.23491475553089047,False,0
+P0141,E06,Suministro de combustible,goods::combustible|suministro,1,57095.64,1.0,0.23459788807161414,False,0
+P0087,E10,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,74325.15,1.0,0.23402126742199422,False,0
+P0034,E17,Servicio de capacitación,services::capacitacion,1,72390.94,1.0,0.23345623652778816,False,0
+P0211,E17,Adquisición de equipos informáticos,goods::equipo|informatico,1,20475.82,1.0,0.232815191549117,False,0
+P0114,E11,Adquisición de materiales de construcción,goods::construccion|material,1,20517.83,1.0,0.23269374413710256,False,0
+P0165,E13,Servicio de transporte,services::transporte,1,190024.03,1.0,0.2326155127391636,False,0
+P0033,E05,Servicio de capacitación,services::capacitacion,1,45872.11,1.0,0.23230028879505932,False,0
+P0080,E13,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,14763.27,1.0,0.2321110579256617,False,0
+P0174,E12,Consultoría en ingeniería,services::consultoria|ingenieria,1,16854.87,1.0,0.23202191633508193,False,0
+P0023,E14,Servicio de transporte,services::transporte,1,61687.33,1.0,0.23191586147824503,False,0
+P0133,E00,Consultoría en ingeniería,services::consultoria|ingenieria,1,66227.97,1.0,0.2318540842273794,False,0
+P0199,E07,Servicio de capacitación,services::capacitacion,1,38748.68,1.0,0.23089891059243967,False,0
+P0213,E05,Adquisición de bienes de oficina,goods::bienes|oficina,1,25750.0,1.0,0.2307729898033793,False,0
+P0058,E09,Adquisición de bienes de oficina,goods::bienes|oficina,1,22485.41,1.0,0.23046913880426145,False,0
+P0199,E05,Servicio de transporte,services::transporte,1,32770.39,1.0,0.22988037942558745,False,0
+P0077,E01,Adquisición de bienes de oficina,goods::bienes|oficina,1,71013.8,1.0,0.2298174987165214,False,0
+P0127,E11,Obra de rehabilitación vial,works::rehabilitacion|via,1,79966.3,1.0,0.2295917240240947,False,0
+P0123,E15,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,20772.03,1.0,0.2293672590050839,False,0
+P0044,E13,Adquisición de bienes de oficina,goods::bienes|oficina,1,24258.38,1.0,0.22901189276817005,False,0
+P0019,E00,Consultoría en ingeniería,services::consultoria|ingenieria,1,30402.81,1.0,0.22875499534746563,False,0
+P0130,E17,Servicio de capacitación,services::capacitacion,1,54314.19,1.0,0.22866815769602541,False,0
+P0096,E15,Adquisición de materiales de construcción,goods::construccion|material,1,28141.4,1.0,0.2284274009544498,False,0
+P0043,E12,Consultoría en ingeniería,services::consultoria|ingenieria,1,23617.31,1.0,0.228157291497491,False,0
+P0145,E08,Servicio de capacitación,services::capacitacion,1,235014.27,1.0,0.22813325558277905,False,0
+P0176,E09,Servicio de capacitación,services::capacitacion,1,46837.99,1.0,0.22793622270165997,False,0
+P0182,E05,Consultoría en ingeniería,services::consultoria|ingenieria,1,26191.52,1.0,0.22758045386445103,False,0
+P0112,E14,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,52767.69,1.0,0.22748777804358533,False,0
+P0100,E17,Adquisición de bienes de oficina,goods::bienes|oficina,1,71013.8,1.0,0.22739548362904474,False,0
+P0008,E17,Obra de rehabilitación vial,works::rehabilitacion|via,1,49012.55,1.0,0.22731841066027617,False,0
+P0210,E13,Adquisición de materiales de construcción,goods::construccion|material,1,56769.77,1.0,0.22730795406997664,False,0
+P0054,E07,Consultoría en ingeniería,services::consultoria|ingenieria,1,79802.54,1.0,0.22717284349529196,False,0
+P0111,E04,Adquisición de materiales de construcción,goods::construccion|material,1,56408.34,1.0,0.22705661094392016,False,0
+P0147,E13,Consultoría en ingeniería,services::consultoria|ingenieria,1,75689.97,1.0,0.22683256673490088,False,0
+P0153,E07,Adquisición de materiales de construcción,goods::construccion|material,1,34860.24,1.0,0.22674626006816137,False,0
+P0174,E00,Adquisición de materiales de construcción,goods::construccion|material,1,76238.79,1.0,0.22654747699498437,False,0
+P0171,E10,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,65139.14,1.0,0.22617309509756223,False,0
+P0091,E10,Adquisición de equipos informáticos,goods::equipo|informatico,1,83315.13,1.0,0.22606158255890849,False,0
+P0118,E04,Servicio de capacitación,services::capacitacion,1,62758.87,1.0,0.22586946281632958,False,0
+P0108,E14,Servicio de capacitación,services::capacitacion,1,46317.08,1.0,0.2257456989201309,False,0
+P0092,E01,Consultoría en ingeniería,services::consultoria|ingenieria,1,29692.68,1.0,0.22541938801377576,False,0
+P0142,E17,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,149817.16,1.0,0.22515107885365782,False,0
+P0013,E05,Servicio de transporte,services::transporte,1,71182.85,1.0,0.22495528625822309,False,0
+P0155,E05,Obra de rehabilitación vial,works::rehabilitacion|via,1,85043.06,1.0,0.22428007164514527,False,0
+P0088,E14,Obra de rehabilitación vial,works::rehabilitacion|via,1,57961.77,1.0,0.22390969057797042,False,0
+P0198,E03,Servicio de capacitación,services::capacitacion,1,73748.64,1.0,0.22340364163914903,False,0
+P0165,E03,Servicio de capacitación,services::capacitacion,1,77955.5,1.0,0.2233112568266416,False,0
+P0076,E13,Adquisición de equipos informáticos,goods::equipo|informatico,1,34289.06,1.0,0.22267521481090485,False,0
+P0213,E08,Suministro de combustible,goods::combustible|suministro,1,68419.5,1.0,0.22236064210318335,False,0
+P0072,E15,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,77515.16,1.0,0.2223046218342957,False,0
+P0020,E14,Obra de rehabilitación vial,works::rehabilitacion|via,1,45493.22,1.0,0.22216903002608787,False,0
+P0132,E03,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,42933.31,1.0,0.2216594315683802,False,0
+P0147,E01,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,72219.67,1.0,0.22165434300904993,False,0
+P0042,E03,Adquisición de equipos informáticos,goods::equipo|informatico,1,64222.77,1.0,0.22101378443266356,False,0
+P0135,E14,Obra de rehabilitación vial,works::rehabilitacion|via,1,64771.29,1.0,0.2200039371062156,False,0
+P0017,E00,Obra de rehabilitación vial,works::rehabilitacion|via,1,45384.72,1.0,0.21999650138768276,False,0
+P0180,E09,Adquisición de equipos informáticos,goods::equipo|informatico,1,217171.85,1.0,0.21988554174973482,False,0
+P0205,E15,Adquisición de equipos informáticos,goods::equipo|informatico,1,114068.95,1.0,0.21858912196342256,False,0
+P0144,E04,Adquisición de bienes de oficina,goods::bienes|oficina,1,53018.78,1.0,0.21852227863359935,False,0
+P0065,E07,Adquisición de equipos informáticos,goods::equipo|informatico,1,81196.63,1.0,0.21850182199946913,False,0
+P0138,E05,Adquisición de bienes de oficina,goods::bienes|oficina,1,110158.22,1.0,0.21847852196255527,False,0
+P0152,E08,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,51962.72,1.0,0.21779985423205836,False,0
+P0073,E11,Servicio de capacitación,services::capacitacion,1,74404.85,1.0,0.21776352055327397,False,0
+P0125,E08,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,208783.3,1.0,0.21708468675727216,False,0
+P0088,E14,Suministro de combustible,goods::combustible|suministro,1,67094.65,1.0,0.2166937371065196,False,0
+P0041,E03,Suministro de combustible,goods::combustible|suministro,1,102797.03,1.0,0.21494481907574955,False,0
+P0025,E10,Servicio de capacitación,services::capacitacion,1,74404.85,1.0,0.21300998463549234,False,0
+P0194,E15,Adquisición de equipos informáticos,goods::equipo|informatico,1,161935.86,1.0,0.21256559720964938,False,0
+P0031,E00,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,98694.86,1.0,0.2115191250178045,False,0
+P0219,E00,Adquisición de equipos informáticos,goods::equipo|informatico,1,86599.83,1.0,0.21090350765312557,False,0
+P0104,E11,Obra de rehabilitación vial,works::rehabilitacion|via,1,166189.31,1.0,0.20915874564767176,False,0
+P0173,E11,Obra de rehabilitación vial,works::rehabilitacion|via,1,71311.96,1.0,0.20889682439635704,False,0
+P0060,E09,Adquisición de materiales de construcción,goods::construccion|material,1,179938.55,1.0,0.20888408181294899,False,0
+P0014,E12,Suministro de combustible,goods::combustible|suministro,1,104988.78,1.0,0.20864978761300612,False,0
+P0059,E02,Servicio de transporte,services::transporte,1,142253.07,1.0,0.20813877072758202,False,0
+P0155,E16,Obra de rehabilitación vial,works::rehabilitacion|via,1,75160.42,1.0,0.20783116937751167,False,0
+P0092,E17,Adquisición de materiales de construcción,goods::construccion|material,1,173751.22,1.0,0.2077944056867983,False,0
+P0078,E02,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,77087.93,1.0,0.20735217270845335,False,0
+P0051,E10,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,77550.23,1.0,0.2071661263020354,False,0
+P0118,E12,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,154748.7,1.0,0.2070885062637494,False,0
+P0031,E15,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,139567.56,1.0,0.20694305749060785,False,0
+P0019,E06,Adquisición de materiales de construcción,goods::construccion|material,1,137179.16,1.0,0.20655813198912354,False,0
+P0062,E03,Obra de rehabilitación vial,works::rehabilitacion|via,1,146356.21,1.0,0.20614541851596133,False,0
+P0219,E16,Suministro de combustible,goods::combustible|suministro,1,163277.4,1.0,0.20548132610603986,False,0
+P0082,E05,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,86166.87,1.0,0.20514323984917163,False,0
+P0118,E03,Servicio de limpieza y vigilancia,services::limpieza|vigilancia,1,135812.44,1.0,0.20471222083871812,False,0
+P0112,E02,Adquisición de equipos informáticos,goods::equipo|informatico,1,88840.63,1.0,0.20462332534754413,False,0
+P0156,E06,Adquisición de bienes de oficina,goods::bienes|oficina,1,160867.73,1.0,0.20345141461199612,False,0
+P0211,E06,Servicio de capacitación,services::capacitacion,1,153321.06,1.0,0.20200254826447114,False,0
+P0067,E15,Servicio de mantenimiento de infraestructura,services::infraestructura|mantenimiento,1,107535.77,1.0,0.20154358784772408,False,0
