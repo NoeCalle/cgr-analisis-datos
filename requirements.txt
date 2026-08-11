@@ -32,9 +32,11 @@ graphframes-py==0.10.0
 # --- Verificación de documentos ya generados ---
 python-docx==1.2.0
 
-# Apache Airflow NO se instala aquí. Vive en `.venv_airflow` para aislar sus
-# constraints. Los DAGs ejecutan las tareas ML con `CGR_PROJECT_PYTHON` o
-# `.venv/bin/python`, no con el intérprete de Airflow.
+# Apache Airflow NO se instala aquí. Su runtime separado está declarado en
+# `requirements-airflow.txt` y CI lo instala con las constraints oficiales
+# correspondientes antes de importar los cuatro DAGs con DagBag. Los DAGs
+# ejecutan las tareas ML con `CGR_PROJECT_PYTHON` o `.venv/bin/python`, no con
+# el intérprete de Airflow.
 #
 # SQL Server institucional: `src/connectors/sqlserver.py` importa `pyodbc`
 # de forma diferida. El entorno CGR debe instalar pyodbc + el driver ODBC
