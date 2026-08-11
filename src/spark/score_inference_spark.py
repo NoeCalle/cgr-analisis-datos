@@ -71,26 +71,43 @@ def _write_single_csv_spark(df, target: Path) -> None:
 
 
 def _write_rankings(ranking_fav, ranking_frac, output_dir: Path, *, spark_native: bool) -> dict:
-    output_dir.mkdir(parents=True, exist_ok=False)
+    """Materializa rankings en un directorio nuevo o ya existente pero vacío.
+
+    Mantiene el contrato histórico del helper —aceptar ``tmp_path`` vacío— sin
+    permitir que staging sobrescriba contenido preexistente.
+    """
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    if any(output_dir.iterdir()):
+        raise FileExistsError(f"Directorio de staging no vacío: {output_dir}")
+
     if spark_native:
         fav_name = "ranking_riesgo_favoritismo_spark.parquet"
         frac_name = "ranking_riesgo_fraccionamiento_spark.parquet"
-        ranking_fav.write.mode("errorifexists").parquet(str(output_dir / fav_name))
-        ranking_frac.write.mode("errorifexists").parquet(str(output_dir / frac_name))
+        fav_path = output_dir / fav_name
+        frac_path = output_dir / frac_name
+        ranking_fav.write.mode("errorifexists").parquet(str(fav_path))
+        ranking_frac.write.mode("errorifexists").parquet(str(frac_path))
         return {
             "format": "parquet_distributed",
             "favoritismo_name": fav_name,
             "fraccionamiento_name": frac_name,
+            "favoritismo": fav_path.as_posix(),
+            "fraccionamiento": frac_path.as_posix(),
         }
 
     fav_name = "ranking_riesgo_favoritismo_spark.csv"
     frac_name = "ranking_riesgo_fraccionamiento_spark.csv"
-    _write_single_csv_spark(ranking_fav, output_dir / fav_name)
-    _write_single_csv_spark(ranking_frac, output_dir / frac_name)
+    fav_path = output_dir / fav_name
+    frac_path = output_dir / frac_name
+    _write_single_csv_spark(ranking_fav, fav_path)
+    _write_single_csv_spark(ranking_frac, frac_path)
     return {
         "format": "csv_single_file_compatibility",
         "favoritismo_name": fav_name,
         "fraccionamiento_name": frac_name,
+        "favoritismo": fav_path.as_posix(),
+        "fraccionamiento": frac_path.as_posix(),
     }
 
 
