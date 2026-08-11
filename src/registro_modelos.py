@@ -23,7 +23,8 @@ import re
 import shutil
 import uuid
 
-CANDIDATE_SCHEMA_VERSION = 1
+CANDIDATE_SCHEMA_VERSION = 2
+SUPPORTED_CANDIDATE_SCHEMA_VERSIONS = {1, 2}
 REGISTRY_SCHEMA_VERSION = 2
 DEFAULT_REGISTRY = Path("outputs/model_registry.json")
 CHAMPION_STORE_ROOT = Path("outputs/champion_store")
@@ -165,7 +166,6 @@ def cargar_registry_unificado(
         raise ValueError(f"Registry con schema_version no soportado: {data.get('schema_version')!r}")
     if data.get("status") != "champion" or not isinstance(data.get("serving_profiles"), dict):
         raise ValueError(f"Registry champion inválido: {path}")
-    # Campo aditivo y retrocompatible con los registries schema 2 previos a 3B.
     data.setdefault("history", {})
     return data
 
@@ -192,11 +192,17 @@ def _validar_artefactos(artefactos: dict, requeridos: set[str], contexto: str) -
             raise ValueError(f"SHA-256 no coincide para {contexto}/{nombre}: {ruta}")
 
 
+def _validar_schema_candidate(data: dict, contexto: str) -> int:
+    version = data.get("schema_version")
+    if version not in SUPPORTED_CANDIDATE_SCHEMA_VERSIONS:
+        raise ValueError(f"Manifest candidato {contexto} incompatible: schema_version={version!r}")
+    return int(version)
+
+
 def cargar_manifest_candidato(path: str | Path) -> dict:
     path = Path(path)
     data = json.loads(path.read_text(encoding="utf-8"))
-    if data.get("schema_version") != CANDIDATE_SCHEMA_VERSION:
-        raise ValueError("Manifest candidato incompatible.")
+    _validar_schema_candidate(data, "sklearn")
     if data.get("status") != "candidate":
         raise ValueError("El manifest indicado no representa un modelo candidato.")
     _validar_artefactos(data.get("artifacts", {}), SKLEARN_REQUERIDOS, "candidate/sklearn")
@@ -206,10 +212,13 @@ def cargar_manifest_candidato(path: str | Path) -> dict:
 def cargar_manifest_candidato_spark(path: str | Path) -> dict:
     path = Path(path)
     data = json.loads(path.read_text(encoding="utf-8"))
-    if data.get("schema_version") != CANDIDATE_SCHEMA_VERSION:
-        raise ValueError("Manifest candidato Spark incompatible.")
+    version = _validar_schema_candidate(data, "Spark")
     if data.get("status") != "candidate" or data.get("engine") != SPARK_PROFILE:
         raise ValueError("El manifest indicado no representa un candidato Spark MLlib.")
+    if version >= 2 and data.get("training", {}).get("validation_state") != "evaluated_same_corpus":
+        raise ValueError(
+            "Candidate Spark pendiente de evaluación sobre su propio corpus; promoción bloqueada."
+        )
     _validar_artefactos(data.get("artifacts", {}), SPARK_REQUERIDOS, "candidate/spark_mllib")
     return data
 
@@ -249,8 +258,6 @@ def _materializar_champion_inmutable(
     )
     requeridos = SPARK_REQUERIDOS if profile == SPARK_PROFILE else SKLEARN_REQUERIDOS
 
-    # Reintentar la promoción del mismo candidate es idempotente si los hashes
-    # inmutables coinciden. Nunca se reemplaza un directorio ya publicado.
     if final_root.exists():
         existentes = {
             nombre: {"path": destino.as_posix(), "sha256": spec["sha256"]}
@@ -287,8 +294,6 @@ def _materializar_champion_inmutable(
                 f"Champion {profile} incompleto antes de publicar: "
                 f"{sorted(requeridos - set(staged_specs))}"
             )
-        # Rename dentro del mismo filesystem: el conjunto completo aparece de
-        # una vez. El registry todavía NO se ha modificado en este punto.
         staging.rename(final_root)
         _validar_artefactos(staged_specs, requeridos, f"immutable/{profile}")
         return staged_specs
@@ -316,6 +321,7 @@ def _perfil_desde_candidato(candidato: dict, artefactos_champion: dict, approved
             "scope": "poc_technical_serving",
             "institutional_approval": False,
             "artifact_storage": "immutable_versioned",
+            "candidate_schema_version": candidato.get("schema_version"),
         },
         "training": candidato["training"],
         "models": candidato["models"],
@@ -373,8 +379,7 @@ def promover_candidato_spark(
 
     registry = cargar_registry_unificado(registry_path, allow_missing=True)
     if if_missing and SPARK_PROFILE in registry["serving_profiles"]:
-        perfil = cargar_registry_champion(registry_path, profile=SPARK_PROFILE)
-        return perfil
+        return cargar_registry_champion(registry_path, profile=SPARK_PROFILE)
 
     candidato = cargar_manifest_candidato_spark(manifest_path)
     artefactos_champion = _materializar_champion_inmutable(
