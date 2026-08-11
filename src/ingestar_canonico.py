@@ -6,6 +6,7 @@ Rutas de ejecución:
 
 Uso:
     python src/ingestar_canonico.py --config config/local.yaml
+    python src/ingestar_canonico.py --config config/local.yaml --output-dir outputs/integracion_canonica
     python src/ingestar_canonico.py --config config/cgr.example.yaml --validate-only
 """
 
@@ -159,8 +160,11 @@ def main():
     parser.add_argument("--config", required=True, help="Ruta YAML de configuración.")
     parser.add_argument(
         "--output-dir",
-        default="outputs/integracion_canonica",
-        help="Directorio de preview canónico (solo datos no sensibles/locales).",
+        default=None,
+        help=(
+            "Directorio de preview canónico. Si se omite, la CLI valida/integra sin escribir "
+            "copias del dataset. Use esta opción solo sobre almacenamiento autorizado."
+        ),
     )
     parser.add_argument(
         "--validate-only",
