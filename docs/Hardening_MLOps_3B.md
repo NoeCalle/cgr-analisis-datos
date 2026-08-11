@@ -58,11 +58,13 @@ Los champions legacy existentes en `outputs/champions/` y `outputs/champions_spa
 
 Las evaluaciones operacionales Spark registran `training_data_fingerprint_sha256` del corpus canónico. TRAIN exige que las evidencias de favoritismo y fraccionamiento correspondan al mismo fingerprint y registra también el SHA-256 de cada resumen de validación dentro del manifest.
 
-Un candidate normal queda con:
+En el benchmark público/local, un candidate que consume esa evidencia queda con:
 
 ```text
 validation_state = evaluated_same_corpus
 ```
+
+Para una fuente institucional distinta —incluida una eventual fuente `spark_sql`— no se permite reutilizar silenciosamente las métricas del benchmark público. La evaluación/ground truth correspondiente debe ejecutarse en el entorno institucional y quedar ligada al fingerprint de ese corpus antes de la promoción.
 
 Un candidate creado a raíz de drift hereda temporalmente los parámetros del champion y queda con:
 
@@ -90,6 +92,8 @@ El monitor vigila:
 Si un lote no contiene labels, el drift puede seguir medido pero la generación automática de un candidate queda bloqueada.
 
 `src/monitoreo_modelos.py` consume por defecto `outputs/log_reentrenamiento_champion.csv`, no el log sklearn histórico.
+
+El monitor batch del PoC no colecta una fuente `spark_sql` al driver. Un monitor distribuido contra la fuente Spark institucional debe ejecutarse en la plataforma CGR; 3B no finge esa infraestructura.
 
 ### 6. Airflow: ejecuciones aisladas y monitor externo
 
