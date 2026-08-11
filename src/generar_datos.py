@@ -100,7 +100,9 @@ def _fecha_aleatoria(inicio, fin):
 def generar_proveedores(n=N_PROVEEDORES):
     return pd.DataFrame({
         "id_proveedor": [f"P{i:04d}" for i in range(n)],
-        "ruc": [f"20{RNG.integers(100000000, 999999999)}" for _ in range(n)],
+        # Conserva una llamada RNG por fila para no alterar la semilla del benchmark,
+        # pero antepone SYN para que nunca se confunda con un RUC real publicable.
+        "ruc": [f"SYN-RUC-{RNG.integers(100000000, 999999999)}" for _ in range(n)],
         "razon_social": [f"Proveedor {i:04d} SAC" for i in range(n)],
     })
 
@@ -116,7 +118,9 @@ def generar_funcionarios(n=N_FUNCIONARIOS, entidades=None):
     entidad_asignada = RNG.choice(entidades["id_entidad"], size=n)
     return pd.DataFrame({
         "id_funcionario": [f"F{i:03d}" for i in range(n)],
-        "dni_funcionario": [f"{RNG.integers(10000000, 79999999)}" for _ in range(n)],
+        # El prefijo evita colisiones/confusión con DNI reales manteniendo la
+        # misma secuencia RNG utilizada por el benchmark histórico.
+        "dni_funcionario": [f"SYN-DNI-{RNG.integers(10000000, 79999999)}" for _ in range(n)],
         "id_entidad": entidad_asignada,
     })
 
