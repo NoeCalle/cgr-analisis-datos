@@ -120,9 +120,18 @@ jobs:
               after = text.split(end, 1)[1].lstrip()
               text = before + '\n\n' + block + '\n\n' + after
           else:
-              marker = '## Documentación'
-              if marker not in text:
-                  raise SystemExit('README: no se encontró el marcador de Documentación')
+              # La sincronización no debe depender de un título editorial exacto.
+              # Se inserta antes de la primera sección estable disponible y, si
+              # el README evoluciona, antes de la última sección como fallback.
+              markers = [
+                  '## 18. Documentación técnica',
+                  '## Documentación',
+                  '## 19. CI y reproducibilidad',
+                  '## 20. Principio de uso responsable',
+              ]
+              marker = next((candidate for candidate in markers if candidate in text), None)
+              if marker is None:
+                  raise SystemExit('README: no se encontró un punto estable para insertar el bloque histórico de release')
               text = text.replace(marker, block + '\n\n' + marker, 1)
 
           path.write_text(text, encoding='utf-8')
