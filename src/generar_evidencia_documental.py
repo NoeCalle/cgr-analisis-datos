@@ -1,16 +1,20 @@
-"""Construye una fuente única de evidencia para la documentación formal.
+"""Construye la fuente única de evidencia para la documentación formal.
 
-Los Productos 1-7 y el reporte técnico no deben copiar métricas a mano. Este
-script consolida los datasets y JSON de selección/validación en
+Los Productos 1-7 y el reporte técnico no copian métricas a mano. Este script
+consolida datasets y JSON de selección/validación en
 ``outputs/evidencia_documental.json``.
 
 La evidencia distingue explícitamente:
-- benchmark sintético del PoC y benchmarks de compatibilidad;
-- validación CV/holdout del pipeline Spark actualmente servido;
+- benchmark sintético y benchmarks de compatibilidad;
+- validación CV/holdout de los modelos Spark servidos;
 - monitoreo ligado al champion activo;
 - análisis sintético de pagos, montos y modalidades;
 - validación de integridad sobre datos públicos OCDS/OECE;
-- dependencias institucionales que NO fueron demostradas.
+- dependencias institucionales que no han sido demostradas.
+
+La documentación vigente consume valores actuales. Los antecedentes de cifras o
+contratos sustituidos permanecen en Git/auditorías y no se incorporan como parte
+de la descripción funcional del sistema.
 """
 
 from __future__ import annotations
@@ -165,13 +169,16 @@ def main():
         "criterios_documentales": {
             "usar_termino_senal": True,
             "prohibir_afirmacion_desempeno_productivo": True,
-            "permitir_conteo_obsoleto_solo_como_antecedente_explicito": True,
+            "permitir_conteo_obsoleto_solo_como_antecedente_explicito": False,
+            "prohibir_conteos_obsoletos_en_documentacion_vigente": True,
+            "prohibir_narrativa_interna_sprint_etapa_en_entregables": True,
             "prohibir_pct_no_competitiva": True,
             "prohibir_umbral_fijo_400k_como_regla_general": True,
             "promocion_modelo_requiere_revision_humana": True,
             "pagos_sinteticos_no_equivalen_siaf_real": True,
             "modalidad_requiere_contexto_juridico": True,
             "metricas_champion_deben_corresponder_al_pipeline_servido": True,
+            "benchmarks_compatibilidad_no_sustituyen_metricas_champion": True,
             "monitoreo_debe_apuntar_al_champion_activo": True,
         },
     }
