@@ -33,6 +33,36 @@ def leer_json(rel: str) -> dict:
     return json.loads((ROOT / rel).read_text(encoding="utf-8"))
 
 
+def validar_evaluacion_spark_native() -> tuple[bool, str]:
+    """Gate estructural para que evaluación/tuning no rompa la frontera spark_sql."""
+    paths = [
+        "src/spark/evaluar_favoritismo_spark.py",
+        "src/spark/evaluar_fraccionamiento_spark.py",
+    ]
+    if not all(existe(p) for p in paths):
+        faltan = [p for p in paths if not existe(p)]
+        return False, f"Faltan evaluadores Spark operacionales: {faltan}."
+
+    textos = [(ROOT / p).read_text(encoding="utf-8") for p in paths]
+    fav, frac = textos
+    comunes = all(
+        "integrar_spark(config, spark=spark)" in text
+        and "fingerprint_spark_dataframe" in text
+        and 'source_type == "spark_sql"' in text
+        and '"spark_native_evaluation": source_type == "spark_sql"' in text
+        and ".toPandas(" not in text
+        for text in textos
+    )
+    frac_ok = ".isin(" not in frac
+    if not comunes or not frac_ok:
+        return (
+            False,
+            "Evaluación/tuning Spark no conserva la frontera spark_sql: se exige integrar_spark, "
+            "fingerprint distribuido y ausencia de toPandas/isin sobre el dataset de evaluación.",
+        )
+    return True, "Evaluación/tuning y TRAIN comparten frontera spark_sql y fingerprint distribuido."
+
+
 def criterio_tecnico(numero, seccion, requisito, evidencias, detalle):
     ok = all(existe(e) for e in evidencias)
     return {
@@ -152,10 +182,14 @@ def construir_criterios() -> list[dict]:
                 "outputs/tuning_favoritismo_spark_resumen.json",
                 "outputs/tuning_fraccionamiento_spark_resumen.json",
                 "src/core/schemas_spark.py",
+                "src/spark/evaluar_favoritismo_spark.py",
+                "src/spark/evaluar_fraccionamiento_spark.py",
+                "src/spark/benchmark_operacional.py",
                 "tests/test_spark_native_integration.py",
+                "tests/test_spark_evaluation_native.py",
             ],
             ["CGR-DEP-06", "CGR-DEP-03"],
-            "La ruta operacional spark_sql es Spark-native, evita toPandas y admite master configurable; validaciones metodológicas locales existen, pero clúster, volumen, performance, robustez y aceptación productiva requieren infraestructura/ground truth CGR.",
+            "TRAIN, INFERENCE y evaluación/tuning spark_sql conservan ejecución Spark-native y fingerprint distribuido; existe benchmark parametrizable, pero clúster, volumen, performance, robustez y aceptación productiva requieren infraestructura/ground truth CGR.",
         ),
         criterio_tecnico(
             11, "4.3.1-4.3.2", "Reportes automáticos con tablas, estadísticas, gráficos y métricas",
@@ -165,7 +199,7 @@ def construir_criterios() -> list[dict]:
         criterio_tecnico(
             12, "4.4", "Documentación técnica completa, código fuente, diccionario y diagrama",
             ["data/diccionario_datos.csv", "outputs/charts/09_diagrama_modelo_datos.png", "outputs/run_manifest.json", "README.md"],
-            "Código, versiones, hashes, diccionario, diagrama y documentación están versionados.",
+            "Código, versiones, hashes, diccionario, diagrama y documentación están versionados; el run manifest separa metadata variable de una huella estable de reproducibilidad.",
         ),
         criterio_parcial(
             13, "Anexo 2 / 6", "Lakehouse Bronce/Plata/Oro y DAGs de orquestación",
@@ -333,18 +367,42 @@ def main():
                 criterios[15]["estado"] = "🔴"
                 criterios[15]["detalle"] = "El monitor operacional no demuestra lectura del champion activo sin autopromoción."
 
+    spark_native_ok, spark_native_detail = validar_evaluacion_spark_native()
+    if not spark_native_ok:
+        criterios[9]["estado"] = "🔴"
+        criterios[9]["detalle"] = spark_native_detail
+
     for rel in [
         "src/connectors/spark_sql.py",
         "src/ingestar_canonico.py",
         "src/core/schemas_spark.py",
         "src/spark/ajustar_preprocesamiento_spark.py",
+        "src/spark/evaluar_favoritismo_spark.py",
+        "src/spark/evaluar_fraccionamiento_spark.py",
+        "src/spark/benchmark_operacional.py",
         "src/spark/entrenar_candidato_spark.py",
         "src/spark/score_inference_spark.py",
         "tests/test_spark_native_integration.py",
+        "tests/test_spark_evaluation_native.py",
     ]:
         if not existe(rel):
             criterios[9]["estado"] = "🔴"
             criterios[9]["detalle"] = f"Falta evidencia de arquitectura Spark-native: {rel}."
+
+    if existe("outputs/run_manifest.json"):
+        manifest = leer_json("outputs/run_manifest.json")
+        reproducibility = manifest.get("reproducibility", {})
+        fingerprint = reproducibility.get("fingerprint_sha256")
+        if not (
+            reproducibility.get("algorithm") == "sha256"
+            and isinstance(fingerprint, str)
+            and len(fingerprint) == 64
+            and reproducibility.get("inputs_sha256")
+        ):
+            criterios[11]["estado"] = "🔴"
+            criterios[11]["detalle"] = (
+                "Run manifest no separa una huella estable de reproducibilidad de la metadata variable de ejecución."
+            )
 
     resumen = Counter(c["estado"] for c in criterios)
     payload = {
