@@ -4,43 +4,55 @@ const {
   titulo, subtitulo, parrafo, vineta, tablaConTitulo, imagenConTitulo,
   frontMatter, referencias, documento,
 } = require('./plantilla_docx');
-const { e, pct, num, pen, modelo, syn, fav, frac, selFav, tuneFav, tuneFrac, p0 } = require('./evidencia');
+const {
+  e, pct, num, pen, modelo, syn, fav, frac, selFav, tuneFav, tuneFrac,
+  sparkFavEval, sparkFracEval, monitorChampion, p0,
+} = require('./evidencia');
 
 const OUT = 'productos_formales';
 if (!fs.existsSync(OUT)) fs.mkdirSync(OUT, { recursive: true });
+for (const name of fs.readdirSync(OUT)) {
+  if (/^Producto_.*\.docx$/i.test(name)) fs.rmSync(`${OUT}/${name}`);
+}
 
 const rf = modelo('RandomForest');
 const lr = modelo('RegresionLogistica');
 const gb = modelo('GradientBoosting');
-const hf = tuneFrac.metricas_holdout_final;
+const favHoldout = sparkFavEval.metricas_holdout_final;
+const fracHoldout = sparkFracEval.metricas_holdout_final;
+const isoHoldout = tuneFrac.metricas_holdout_final;
 const p0i = p0.integridad_ocds;
 const manifest = e.run_manifest || {};
-const sparkFav = manifest.spark_favoritismo || {};
-const sparkFrac = manifest.spark_fraccionamiento || {};
 const graphframes = manifest.graphframes || {};
 
 const OBJETIVO_TDR =
-  'Objetivo de consultoría tomado como referencia del TDR: disponer datos procesados y filtrados de fuentes externas e internas, y desarrollar modelos de Machine Learning que permitan identificar casos atípicos y patrones de riesgo relevantes para la labor del auditor. En este repositorio dicho objetivo se desarrolla únicamente como prototipo independiente.';
+  'El TDR tomado como referencia plantea disponer datos procesados y filtrados de fuentes externas e internas y desarrollar modelos de Machine Learning que permitan identificar casos atípicos y patrones de riesgo relevantes para la labor del auditor. Este repositorio demuestra ese objetivo como prototipo independiente y reproducible, sin atribuirse aprobación o despliegue institucional CGR.';
+
+const LIMITACION =
+  'Las métricas obtenidas con el benchmark sintético verifican coherencia metodológica y funcionamiento reproducible del pipeline; no estiman por sí solas desempeño productivo. Las salidas son señales de priorización para revisión humana y no constituyen hallazgos ni determinaciones automáticas de irregularidad.';
+
+function f3(v) {
+  return Number(v).toFixed(3);
+}
 
 function notaMetodologica() {
-  return parrafo(
-    'Nota metodológica: las métricas del benchmark sintético evalúan la coherencia del PoC y no estiman desempeño productivo. ' +
-    'Las salidas sobre datos públicos son señales de priorización para revisión humana y no constituyen hallazgos ni determinaciones automáticas de irregularidad.'
-  );
+  return parrafo(`Nota metodológica: ${LIMITACION}`);
 }
 
 function anexosBase(extra = []) {
   return [
-    vineta('Repositorio organizado con código, datasets sintéticos, evidencia reproducible y documentación: https://github.com/NoeCalle/cgr-analisis-datos'),
-    vineta('Fuente única de cifras documentales: outputs/evidencia_documental.json.'),
-    vineta('Trazabilidad de ejecución: outputs/run_manifest.json y outputs/linaje_datos.csv.'),
+    vineta('Repositorio, código y documentación técnica: https://github.com/NoeCalle/cgr-analisis-datos'),
+    vineta('Fuente machine-readable de cifras documentales: outputs/evidencia_documental.json.'),
+    vineta('Trazabilidad: outputs/run_manifest.json, outputs/linaje_datos.csv y outputs/model_registry.json.'),
+    vineta('Arquitectura MLOps: docs/Arquitectura_MLOps.md.'),
+    vineta('Evaluación Spark y performance: docs/Evaluacion_Spark_y_Performance.md.'),
     ...extra,
   ];
 }
 
 function informeProducto({
   numero, nombre, resumen, introduccion, alcanzados, actividades, cumplimiento,
-  dificultades, conclusiones, tablas = [], graficos = [], anexos = [], referenciasExtra = [],
+  dificultades, conclusiones, tablas = [], graficos = [], anexos = [],
 }) {
   return documento(numero, nombre, nombre, [
     titulo('Resumen Ejecutivo'),
@@ -63,50 +75,50 @@ function informeProducto({
     parrafo(conclusiones),
     titulo('8. Anexos'),
     ...anexosBase(anexos),
-    ...referencias(undefined, referenciasExtra),
+    ...referencias(),
   ]);
 }
 
 // -----------------------------------------------------------------------------
-// Producto 1 - Plan de Trabajo. Estructura literal del Anexo 1, II.1.
+// Producto 1 — Plan de Trabajo
 // -----------------------------------------------------------------------------
 const p1 = documento(1, 'Plan de Trabajo', 'Plan de Trabajo', [
   ...frontMatter({
     tablas: [
-      'Productos y alcance del plan de trabajo',
-      'Actividades a cumplir por cada producto',
+      'Productos y propósito técnico',
+      'Actividades principales por producto',
       'Cronograma contractual de referencia',
     ],
+    graficos: [],
   }),
   titulo('1. Introducción'),
   parrafo(
-    'El presente Plan de Trabajo organiza una prueba de concepto independiente basada en el TDR público del Proyecto Interno 1.8.2. ' +
-    'El repositorio se orienta a demostrar, con evidencia reproducible, la preparación de datos, selección y validación de modelos, Spark MLlib, grafos, orquestación, trazabilidad y reporting, separando expresamente lo verificable fuera de CGR de las actividades que requieren infraestructura, accesos o usuarios institucionales.'
+    'El plan organiza una prueba de concepto independiente basada en el TDR público del Proyecto Interno 1.8.2. El trabajo se estructura por contratos técnicos verificables: integración canónica, calidad de datos, feature engineering, evaluación, modelos Spark MLlib, grafos, TRAIN/INFERENCE, monitoreo, trazabilidad y reporting. Las actividades que requieren accesos, infraestructura o conformidad CGR se mantienen como dependencias institucionales.'
   ),
   titulo('2. Objetivo de Consultoría'),
   parrafo(OBJETIVO_TDR),
   titulo('3. Productos a Alcanzar'),
-  ...tablaConTitulo(1, 'Productos y alcance del plan de trabajo', ['N.°', 'Producto', 'Alcance de referencia'], [
-    ['1', 'Plan de Trabajo', 'Metodología, actividades, cronograma y criterios de cierre.'],
-    ['2', 'Preprocesamiento - Favoritismo', 'Limpieza, transformación, feature engineering y división de datos.'],
-    ['3', 'Modelo - Favoritismo', 'Patrones, análisis estadístico, selección, arquitectura, Spark MLlib y parámetros.'],
-    ['4', 'Entrenamiento/Validación - Favoritismo', 'Métricas, experimentos, validación cruzada, tuning, persistencia e interpretabilidad.'],
-    ['5', 'Preprocesamiento - Fraccionamiento', 'Limpieza, ventanas temporales, contexto normativo, features y división de datos.'],
-    ['6', 'Modelo - Fraccionamiento', 'Selección, anomalías/clustering, arquitectura, Spark MLlib y parámetros.'],
-    ['7', 'Entrenamiento/Validación y cierre técnico', 'Validación, despliegue documentado, integración, monitoreo, repositorio y ruta institucional.'],
-  ], [650, 3100, 5050]),
+  ...tablaConTitulo(1, 'Productos y propósito técnico', ['N.°', 'Producto', 'Propósito'], [
+    ['1', 'Plan de Trabajo', 'Metodología, actividades, cronograma y criterios de evidencia.'],
+    ['2', 'Preprocesamiento - Favoritismo', 'Calidad, limpieza, estado FIT/TRANSFORM y features proveedor-entidad.'],
+    ['3', 'Modelo - Favoritismo', 'Selección metodológica, Random Forest Spark MLlib e interpretabilidad.'],
+    ['4', 'Entrenamiento/Validación - Favoritismo', 'CV, tuning, holdout, candidate/champion y métricas.'],
+    ['5', 'Preprocesamiento - Fraccionamiento', 'Objeto-familia, ventanas coherentes y contexto normativo.'],
+    ['6', 'Modelo - Fraccionamiento', 'KMeans Spark, distancia al centroide, holdout y señal interpretable.'],
+    ['7', 'Informe Final', 'Integración, MLOps, monitoreo, reporting, seguridad y ruta institucional.'],
+  ], [700, 3000, 5100]),
   titulo('4. Actividades a Cumplir por Cada Producto'),
-  ...tablaConTitulo(2, 'Actividades a cumplir por cada producto', ['Producto', 'Actividades principales'], [
-    ['1', 'Planificar alcance, metodología, cronograma, evidencias y dependencias.'],
-    ['2', 'EDA, imputación, outliers, transformación, normalización/codificación, features y división para favoritismo.'],
-    ['3', 'Analizar patrones, comparar algoritmos, documentar arquitectura e implementar Random Forest con Spark MLlib.'],
-    ['4', 'Validación OOF/CV, tuning, persistencia, SHAP, comparación de escenarios y documentación para certificación.'],
-    ['5', 'EDA temporal, limpieza, motor normativo, ventanas, features y división para fraccionamiento.'],
-    ['6', 'Tuning no supervisado, KMeans Spark MLlib, reglas interpretables, arquitectura y parámetros.'],
-    ['7', 'Evaluación final, manual de despliegue, pruebas de integración local, pipeline, monitoreo, repositorio y plan de transferencia.'],
+  ...tablaConTitulo(2, 'Actividades principales por producto', ['Producto', 'Actividades'], [
+    ['1', 'Definir alcance, evidencia, dependencias y criterios de aceptación verificables.'],
+    ['2', 'Integrar datos, aplicar quality gates, ajustar preprocesador y construir features de favoritismo.'],
+    ['3', 'Comparar algoritmos, justificar Random Forest y ejecutar implementación Apache Spark MLlib.'],
+    ['4', 'Reservar holdout antes del FIT, ejecutar CV/tuning, documentar métricas y persistencia.'],
+    ['5', 'Normalizar objetos, construir ventanas de 15 días y resolver referencias normativas.'],
+    ['6', 'Seleccionar k en desarrollo, evaluar KMeans en holdout y conservar benchmark complementario.'],
+    ['7', 'Documentar TRAIN/INFERENCE, registry, monitoreo, Airflow, SQL Server/SSRS, seguridad y transferencia.'],
   ], [1200, 7600]),
   titulo('5. Cronograma'),
-  parrafo('Plazos contractuales de referencia establecidos en el numeral 8 del TDR, contados desde el día siguiente de la suscripción del contrato:'),
+  parrafo('Plazos contractuales de referencia del TDR, contados desde el día siguiente de la suscripción del contrato:'),
   ...tablaConTitulo(3, 'Cronograma contractual de referencia', ['Producto', 'Plazo máximo'], [
     ['Primer Producto', '7 días calendario'],
     ['Segundo Producto', '30 días calendario'],
@@ -118,364 +130,337 @@ const p1 = documento(1, 'Plan de Trabajo', 'Plan de Trabajo', [
   ], [4400, 4400]),
   titulo('6. Anexos'),
   ...anexosBase([
-    vineta('Matriz de correspondencia TDR-PoC: README.md y documentación formal generada en este directorio.'),
-    vineta('Los hitos institucionales DEV/QA/PROD, certificación, marcha blanca y transferencia efectiva se ejecutarán únicamente si existe entorno y coordinación CGR.'),
+    vineta('La auditoría integral del TDR distingue evidencia reproducible de dependencias institucionales.'),
+    vineta('La descripción funcional vigente se encuentra en README.md; la historia de cambios permanece en Git/PR.'),
   ]),
   ...referencias(),
 ]);
 
 // -----------------------------------------------------------------------------
-// Producto 2 - Preprocesamiento Favoritismo.
+// Producto 2 — Preprocesamiento Favoritismo
 // -----------------------------------------------------------------------------
 const p2 = informeProducto({
   numero: 2,
-  nombre: 'Limpieza y Preprocesamiento de Datos para Identificación de Proveedores Favoritos',
-  resumen: `Se procesaron ${num(syn.contratos)} contratos sintéticos para construir ${num(fav.pares_proveedor_entidad)} pares proveedor-entidad, con ${num(fav.positivos_sembrados)} casos positivos sembrados. El flujo implementa limpieza, tratamiento de outliers, transformación, feature engineering y una división reproducible de datos.`,
-  introduccion: 'Este producto documenta la preparación de datos previa al modelado de favoritismo y cubre los componentes de limpieza y preprocesamiento exigidos por el TDR.',
-  tablas: ['Resumen de calidad y preparación del benchmark de favoritismo'],
+  nombre: 'Preprocesamiento para Identificación de Proveedores Favoritos',
+  resumen: `El benchmark reproducible contiene ${num(syn.contratos)} contratos y produce ${num(fav.pares_proveedor_entidad)} pares proveedor-entidad. El contrato operacional separa FIT y TRANSFORM, congela estadísticas aprendidas y utiliza monto_capped para limitar la influencia de extremos monetarios en favoritismo.`,
+  introduccion: 'Este producto documenta cómo se transforma el contrato canónico en variables aptas para el modelo de favoritismo y por qué el preprocesamiento se ajusta únicamente durante TRAIN.',
+  tablas: ['Estado y decisiones del preprocesamiento de favoritismo'],
   graficos: ['Distribución de montos contractuales', 'Modalidades de contratación del benchmark'],
   alcanzados: [
-    subtitulo('3.1 Imputación y calidad de datos'),
-    ...tablaConTitulo(1, 'Resumen de calidad y preparación del benchmark de favoritismo', ['Métrica', 'Resultado'], [
+    subtitulo('3.1 Contrato FIT/TRANSFORM'),
+    parrafo('TRAIN aprende medianas por objeto, mediana global, modas y P99. INFERENCE recibe ese estado congelado y no recalcula parámetros con el lote actual. Esta separación evita train-serving skew y preserva trazabilidad.'),
+    subtitulo('3.2 Tratamiento de montos'),
+    parrafo('Favoritismo utiliza monto_capped con un límite P99 aprendido en TRAIN. La decisión reduce la dominancia de valores monetarios extremos sobre agregados sin introducir información del lote de inferencia.'),
+    ...tablaConTitulo(1, 'Estado y decisiones del preprocesamiento de favoritismo', ['Elemento', 'Evidencia/decisión'], [
       ['Contratos sintéticos', num(syn.contratos)],
-      ['Valores nulos totales en fuente', num(syn.valores_nulos_totales)],
-      ['Filas con al menos un nulo', num(syn.filas_con_algun_nulo)],
-      ['Percentil 99 del monto', pen(syn.p99_monto_pen)],
-      ['Registros sobre P99', num(syn.registros_sobre_p99)],
+      ['P99 del monto', pen(syn.p99_monto_pen)],
       ['Pares proveedor-entidad', num(fav.pares_proveedor_entidad)],
       ['Positivos sintéticos', num(fav.positivos_sembrados)],
-    ], [5000, 3800]),
-    subtitulo('3.2 Tratamiento de outliers'),
-    parrafo('Los montos extremos se identifican mediante el percentil 99 y se controlan en la transformación para impedir que valores aislados dominen el entrenamiento. La operación es determinística y queda cubierta por el pipeline reproducible.'),
+      ['Modalidades', 'Contratación Directa y Comparación de Precios se conservan como variables separadas.'],
+      ['Estado de serving', 'Preprocesador congelado; INFERENCE no ejecuta FIT.'],
+    ], [3300, 5500]),
     ...imagenConTitulo(1, 'Distribución de montos contractuales', '../outputs/charts/01_distribucion_montos.png', 610, 350),
-    subtitulo('3.3 Codificación y normalización'),
-    parrafo('Las variables numéricas se preparan de forma reproducible y las categorías se conservan con semántica explícita. Contratación Directa y Comparación de Precios se modelan como variables separadas, evitando equiparar procedimientos distintos.'),
     ...imagenConTitulo(2, 'Modalidades de contratación del benchmark', '../outputs/charts/02_modalidades_contratacion.png', 610, 350),
-    subtitulo('3.4 Feature engineering'),
-    vineta('Número de contratos, monto total y monto promedio por proveedor-entidad.'),
+    subtitulo('3.3 Feature engineering'),
+    vineta('Número de contratos, monto total y promedio por proveedor-entidad.'),
     vineta('Número de objetos únicos y concentración temática.'),
-    vineta('Porcentaje de Contratación Directa y porcentaje de Comparación de Precios, por separado.'),
-    vineta('Número de funcionarios distintos, días de actividad, contratos por mes y monto por funcionario.'),
-    subtitulo('3.5 División y publicación de datos'),
-    parrafo('El dataset analítico se publica en lakehouse/plata/dataset_favoritismo.csv. Las particiones de validación se realizan en las etapas de comparación y tuning con esquemas estratificados reproducibles.'),
+    vineta('Porcentaje de Contratación Directa y Comparación de Precios por separado.'),
+    vineta('Funcionarios distintos, días de actividad, contratos por mes y monto por funcionario.'),
   ],
   actividades: [
-    vineta('Generación determinística del benchmark sintético con hard negatives.'),
-    vineta('EDA, imputación, control de outliers, transformación y feature engineering.'),
-    vineta('Publicación de datos limpios/features en capa Plata.'),
-    vineta('Validación automática de columnas, conteos y etiquetas en GitHub Actions.'),
+    vineta('Aplicación del contrato canónico y quality gates antes del modelado.'),
+    vineta('Ajuste de estadísticas únicamente sobre datos de TRAIN/desarrollo.'),
+    vineta('Transformación reproducible y construcción de features.'),
+    vineta('Validación automática de schema, labels y consistencia pandas/Spark.'),
   ],
-  cumplimiento: 'Cumplimiento técnico completo dentro del PoC. La sustitución de datos sintéticos por fuentes internas y su validación funcional dependen del entorno institucional CGR.',
+  cumplimiento: 'El contrato de preprocesamiento y features está implementado y probado en el PoC. La recalibración sobre distribuciones institucionales requiere fuentes y ground truth CGR.',
   dificultades: [
-    vineta('El ground truth es sintético; permite probar el pipeline pero no estimar desempeño real.'),
-    vineta('La información abierta OCDS no contiene todos los atributos institucionales previstos por el TDR.'),
+    vineta('El ground truth del benchmark es sintético y no representa desempeño real.'),
+    vineta('Las reglas de calidad de negocio específicas de SIAF/SEACE dependen del diccionario institucional aprobado.'),
   ],
-  conclusiones: 'El preprocesamiento de favoritismo es reproducible, auditable y coherente con la semántica de contratación. Se recomienda conservar esta separación de modalidades y recalibrar el feature engineering cuando exista ground truth validado por auditores.',
+  conclusiones: 'La separación FIT/TRANSFORM y el uso de monto_capped permiten que la inferencia aplique exactamente el estado aprendido durante entrenamiento. Se recomienda conservar ese contrato al integrar fuentes institucionales.',
 });
 
 // -----------------------------------------------------------------------------
-// Producto 3 - Selección y desarrollo Favoritismo + Spark MLlib.
+// Producto 3 — Modelo Favoritismo
 // -----------------------------------------------------------------------------
 const p3 = informeProducto({
   numero: 3,
-  nombre: 'Selección del Algoritmo y Desarrollo del Modelo para Identificación de Proveedores Favoritos',
-  resumen: `Se compararon Regresión Logística, Random Forest y Gradient Boosting con las mismas predicciones out-of-fold. Random Forest obtuvo el mayor AUC-PR (${rf.auc_pr.toFixed(3)}). La evidencia histórica de Spark MLlib se reproduce en local[*], mientras que la ruta operacional vigente admite master configurable y spark_sql Spark-native sin toPandas().`,
-  introduccion: 'Este producto cubre patrones y tendencias, análisis estadístico, propuesta fundamentada de algoritmos, diseño/arquitectura, implementación Spark MLlib y parámetros de entrenamiento.',
-  tablas: ['Comparación de algoritmos candidatos para favoritismo', 'Implementación Spark MLlib para favoritismo'],
-  graficos: ['Concentración de proveedores por entidad', 'Diagrama del modelo de datos del PoC'],
+  nombre: 'Selección del Algoritmo y Modelo para Identificación de Proveedores Favoritos',
+  resumen: `El serving objetivo utiliza Apache Spark MLlib con RandomForestClassificationModel. La evaluación operacional reserva un holdout antes del FIT y selecciona hiperparámetros únicamente sobre desarrollo; el benchmark sklearn permanece como comparación metodológica y soporte SHAP.`,
+  introduccion: 'Este producto fundamenta la selección del algoritmo y diferencia explícitamente el modelo servido de los benchmarks de compatibilidad.',
+  tablas: ['Comparación metodológica sklearn', 'Modelo Spark MLlib servido'],
+  graficos: ['Concentración de proveedores por entidad', 'Importancia/explicabilidad de variables'],
   alcanzados: [
-    subtitulo('3.1 Patrones y tendencias identificadas'),
-    parrafo('El benchmark muestra concentración contractual por proveedor-entidad, diferencias entre modalidades y patrones temporales que justifican un enfoque de puntuación de riesgo a nivel agregado.'),
+    subtitulo('3.1 Patrones y unidad analítica'),
+    parrafo('El riesgo se prioriza a nivel proveedor-entidad mediante frecuencia, montos, diversidad de objetos, modalidad, temporalidad y relación con funcionarios disponibles.'),
     ...imagenConTitulo(1, 'Concentración de proveedores por entidad', '../outputs/charts/03_concentracion_proveedores.png', 610, 350),
-    subtitulo('3.2 Análisis estadístico de variables clave'),
-    parrafo(`El dataset contiene ${num(selFav.n_registros)} pares proveedor-entidad y ${num(selFav.positivos)} positivos sintéticos. Debido al fuerte desbalance, AUC-PR se adopta como criterio primario; AUC-ROC, precision, recall y F1 se conservan como métricas complementarias.`),
-    subtitulo('3.3 Propuesta fundamentada de algoritmos'),
-    ...tablaConTitulo(1, 'Comparación de algoritmos candidatos para favoritismo', ['Modelo', 'AUC-PR', 'AUC-ROC', 'Precision', 'Recall', 'F1'], [
-      ['Random Forest', rf.auc_pr.toFixed(3), rf.auc_roc.toFixed(3), pct(rf.precision), pct(rf.recall), rf.f1.toFixed(3)],
-      ['Regresión Logística', lr.auc_pr.toFixed(3), lr.auc_roc.toFixed(3), pct(lr.precision), pct(lr.recall), lr.f1.toFixed(3)],
-      ['Gradient Boosting', gb.auc_pr.toFixed(3), gb.auc_roc.toFixed(3), pct(gb.precision), pct(gb.recall), gb.f1.toFixed(3)],
+    subtitulo('3.2 Comparación metodológica'),
+    ...tablaConTitulo(1, 'Comparación metodológica sklearn', ['Modelo', 'AUC-PR', 'AUC-ROC', 'Precision', 'Recall', 'F1'], [
+      ['Random Forest', f3(rf.auc_pr), f3(rf.auc_roc), pct(rf.precision), pct(rf.recall), f3(rf.f1)],
+      ['Regresión Logística', f3(lr.auc_pr), f3(lr.auc_roc), pct(lr.precision), pct(lr.recall), f3(lr.f1)],
+      ['Gradient Boosting', f3(gb.auc_pr), f3(gb.auc_roc), pct(gb.precision), pct(gb.recall), f3(gb.f1)],
     ], [2200, 1300, 1300, 1300, 1300, 1300]),
-    parrafo('Random Forest se selecciona como candidato principal por AUC-PR y por su compatibilidad con explicabilidad basada en importancia de variables y SHAP.'),
-    subtitulo('3.4 Diseño y arquitectura del modelo'),
-    parrafo('El PoC conserva una ruta histórica fuente -> Bronce -> limpieza/feature engineering -> Plata -> benchmark -> Oro para reproducibilidad y una ruta operacional fuente canónica -> TRAIN/INFERENCE -> champion Spark -> scores. El serving operacional no depende de materializar la fuente spark_sql en pandas o en la Plata legacy.'),
-    ...imagenConTitulo(2, 'Diagrama del modelo de datos del PoC', '../outputs/charts/09_diagrama_modelo_datos.png', 610, 360),
-    subtitulo('3.5 Reporte de implementación usando Apache Spark MLlib'),
-    ...tablaConTitulo(2, 'Implementación Spark MLlib para favoritismo', ['Elemento', 'Evidencia'], [
-      ['Motor', sparkFav.motor || 'Apache Spark MLlib'],
-      ['Modo', sparkFav.modo || 'local[*]'],
-      ['Algoritmo', sparkFav.algoritmo || 'RandomForestClassifier'],
-      ['Dataset', sparkFav.dataset || 'lakehouse/plata/contratos_procesados.csv'],
-      ['Validación', sparkFav.cv || '3-fold estratificado determinístico'],
-      ['Métrica', sparkFav.metrica_seleccion || 'AUC-PR CV'],
-      ['AUC-PR CV del sanity check', sparkFav.auc_pr_cv === undefined ? 'N/D' : Number(sparkFav.auc_pr_cv).toFixed(3)],
-      ['Advertencia', sparkFav.advertencia || 'Benchmark sintético; clúster CGR pendiente.'],
-    ], [3300, 5500]),
-    subtitulo('3.6 Parámetros de entrenamiento y configuraciones'),
-    vineta(`sklearn Random Forest seleccionado: n_estimators=${tuneFav.mejor_configuracion.n_estimators}, max_depth=${tuneFav.mejor_configuracion.max_depth}, min_samples_leaf=${tuneFav.mejor_configuracion.min_samples_leaf}.`),
-    vineta(`Spark MLlib Random Forest: numTrees=${sparkFav.mejor_configuracion?.numTrees ?? 'N/D'}, maxDepth=${sparkFav.mejor_configuracion?.maxDepth ?? 'N/D'}.`),
-    vineta(`Versiones registradas en run_manifest.json: PySpark ${manifest.entorno?.pyspark || 'N/D'}; scikit-learn ${manifest.entorno?.['scikit-learn'] || 'N/D'}.`),
+    parrafo('AUC-PR se prioriza por el desbalance de la clase positiva. El benchmark sklearn permite comparar familias de modelos y producir SHAP, pero no define el champion activo.'),
+    subtitulo('3.3 Modelo operacional Apache Spark MLlib'),
+    ...tablaConTitulo(2, 'Modelo Spark MLlib servido', ['Elemento', 'Evidencia'], [
+      ['Framework', 'PySpark / Apache Spark MLlib'],
+      ['Algoritmo', sparkFavEval.algorithm || 'RandomForestClassificationModel'],
+      ['Pipeline', sparkFavEval.pipeline],
+      ['Monto', sparkFavEval.amount_source],
+      ['CV', sparkFavEval.cv],
+      ['Holdout', `${num(sparkFavEval.n_holdout)} pares; ${num(sparkFavEval.positivos_holdout)} positivos sintéticos`],
+      ['AUC-PR holdout', f3(favHoldout.auc_pr)],
+      ['Recall@K holdout', f3(favHoldout.recall_at_k)],
+      ['Configuración', `numTrees=${sparkFavEval.mejor_configuracion.numTrees}; maxDepth=${sparkFavEval.mejor_configuracion.maxDepth}`],
+    ], [3000, 5800]),
+    parrafo('Random Forest se utiliza porque representa relaciones no lineales, admite ponderación ante desbalance y proporciona Feature Importance directamente ligada al modelo Spark servido.'),
+    subtitulo('3.4 Interpretabilidad'),
+    parrafo('La Feature Importance del champion Spark constituye evidencia principal de variables utilizadas. SHAP sobre el benchmark sklearn se conserva como explicación complementaria y no sustituye la evidencia del modelo servido.'),
+    ...imagenConTitulo(2, 'Importancia de variables del benchmark de favoritismo', '../outputs/charts/05_importancia_favoritismo.png', 610, 350),
   ],
   actividades: [
-    vineta('Comparación ejecutable con las mismas particiones out-of-fold.'),
-    vineta('Grid search de Random Forest por AUC-PR.'),
-    vineta('Implementación y ejecución real de RandomForestClassifier con Spark MLlib.'),
-    vineta('Persistencia de rankings, configuración y resumen machine-readable en outputs/.'),
+    vineta('Comparación de Regresión Logística, Random Forest y Gradient Boosting.'),
+    vineta('Selección/tuning con AUC-PR en desarrollo.'),
+    vineta('Implementación RandomForestClassificationModel con Apache Spark MLlib.'),
+    vineta('Registro de Feature Importance y evidencia PySpark reproducible.'),
   ],
-  cumplimiento: 'Contenido exigido por el TDR implementado y verificado para el PoC, con benchmark MLlib local reproducible y contrato operacional Spark-native. La validación de escalabilidad, carga y rendimiento sobre infraestructura institucional queda pendiente de la CGR.',
+  cumplimiento: 'La selección, implementación MLlib y evaluación del pipeline servido son reproducibles. La aceptación productiva necesita ground truth, umbrales y pruebas institucionales.',
   dificultades: [
-    vineta(`El benchmark contiene solo ${num(fav.positivos_sembrados)} positivos sintéticos; la métrica Spark CV tiene alta varianza y no se interpreta como desempeño productivo.`),
-    vineta('La selección final en producción requiere datos internos y ground truth acordado con auditores.'),
+    vineta('El benchmark sintético puede ser más separable que un corpus institucional.'),
+    vineta('La estabilidad por periodo/segmento debe validarse con datos históricos CGR.'),
   ],
-  conclusiones: 'Random Forest es el candidato técnico preferido del PoC por AUC-PR e interpretabilidad. Spark MLlib forma parte tanto del benchmark histórico como del serving operacional; la validación de carga, rendimiento y umbrales productivos requiere el entorno CGR.',
+  conclusiones: 'Random Forest Spark es el modelo operacional del PoC para favoritismo; sklearn se mantiene como benchmark/explicabilidad. Las métricas sintéticas no deben extrapolarse como desempeño productivo.',
 });
 
 // -----------------------------------------------------------------------------
-// Producto 4 - Entrenamiento y validación Favoritismo.
+// Producto 4 — Entrenamiento y validación Favoritismo
 // -----------------------------------------------------------------------------
 const p4 = informeProducto({
   numero: 4,
-  nombre: 'Entrenamiento y Validación del Modelo para Identificación de Proveedores Favoritos',
-  resumen: `La validación vigente usa predicciones out-of-fold y tuning reproducible. Random Forest alcanza AUC-PR ${rf.auc_pr.toFixed(3)}, AUC-ROC ${rf.auc_roc.toFixed(3)}, precision ${pct(rf.precision)}, recall ${pct(rf.recall)} y F1 ${rf.f1.toFixed(3)} en el benchmark sintético.`,
-  introduccion: 'Este producto documenta métricas iniciales, registro de experimentos, validación cruzada, tuning, persistencia, comparación de escenarios y documentación técnica para un eventual pase a certificación.',
-  tablas: ['Métricas out-of-fold del modelo de favoritismo', 'Configuración de tuning del Random Forest'],
-  graficos: ['Importancia de variables del Random Forest', 'Resumen SHAP de favoritismo', 'Explicación SHAP de un caso priorizado'],
+  nombre: 'Entrenamiento y Validación del Modelo de Proveedores Favoritos',
+  resumen: `La evaluación Spark reserva ${num(sparkFavEval.n_holdout)} pares proveedor-entidad para holdout final antes de ajustar el preprocesador. El candidate TRAIN solo puede consumir evidencia del mismo fingerprint de corpus y no modifica el champion hasta una promoción explícita.`,
+  introduccion: 'Este producto documenta la separación entre selección, evaluación final, TRAIN, candidate y champion, evitando leakage y cambios silenciosos de serving.',
+  tablas: ['Métricas holdout del Random Forest Spark', 'Controles del ciclo de modelo'],
+  graficos: ['SHAP complementario de favoritismo'],
   alcanzados: [
-    subtitulo('3.1 Métricas de evaluación inicial'),
-    ...tablaConTitulo(1, 'Métricas out-of-fold del modelo de favoritismo', ['Métrica', 'Resultado'], [
-      ['AUC-PR', rf.auc_pr.toFixed(3)], ['AUC-ROC', rf.auc_roc.toFixed(3)],
-      ['Precision', pct(rf.precision)], ['Recall', pct(rf.recall)], ['F1', rf.f1.toFixed(3)],
+    subtitulo('3.1 Diseño de evaluación'),
+    parrafo(`Desarrollo: ${num(sparkFavEval.n_desarrollo)} pares con ${num(sparkFavEval.positivos_desarrollo)} positivos. Holdout: ${num(sparkFavEval.n_holdout)} pares con ${num(sparkFavEval.positivos_holdout)} positivos. El holdout se reserva antes del FIT y no participa en tuning.`),
+    ...tablaConTitulo(1, 'Métricas holdout del Random Forest Spark', ['Métrica', 'Resultado'], [
+      ['Accuracy', f3(favHoldout.accuracy)],
+      ['AUC-PR', f3(favHoldout.auc_pr)],
+      ['AUC-ROC', f3(favHoldout.auc_roc)],
+      ['Precision', f3(favHoldout.precision)],
+      ['Recall', f3(favHoldout.recall)],
+      ['F1', f3(favHoldout.f1)],
+      ['Recall@K', f3(favHoldout.recall_at_k)],
     ], [4400, 4400]),
-    subtitulo('3.2 Registro de experimentos y pruebas'),
-    parrafo('Los resultados de Regresión Logística, Random Forest y Gradient Boosting se almacenan en outputs/comparacion_modelos_favoritismo.json y .csv; la grilla de tuning y su resumen se almacenan en outputs/tuning_favoritismo_resultados.csv y outputs/tuning_favoritismo_resumen.json.'),
-    subtitulo('3.3 Validación cruzada y evaluación exhaustiva'),
-    parrafo(`${selFav.diseno}. La métrica primaria es ${selFav.criterio_primario}. La comparación usa exactamente las mismas particiones para todos los candidatos.`),
-    subtitulo('3.4 Ajuste de hiperparámetros'),
-    ...tablaConTitulo(2, 'Configuración de tuning del Random Forest', ['Elemento', 'Resultado'], [
-      ['Métrica de selección', tuneFav.metrica_seleccion],
-      ['Validación', tuneFav.cv],
-      ['n_estimators', String(tuneFav.mejor_configuracion.n_estimators)],
-      ['max_depth', String(tuneFav.mejor_configuracion.max_depth)],
-      ['min_samples_leaf', String(tuneFav.mejor_configuracion.min_samples_leaf)],
-      ['Mejor AUC-PR CV', tuneFav.mejor_auc_pr_cv.toFixed(3)],
-    ], [4000, 4800]),
-    subtitulo('3.5 Persistencia del modelo entrenado'),
-    parrafo('El modelo sklearn seleccionado se persiste en outputs/models/modelo_favoritismo_rf.joblib. Los modelos Spark se regeneran en runtime y se versionan mediante sus configuraciones, métricas y rankings reproducibles, evitando binarios Spark con metadata no determinística.'),
-    subtitulo('3.6 Análisis comparativo del rendimiento'),
-    parrafo('El benchmark deliberadamente incluye hard negatives. La reducción respecto de resultados perfectos antiguos se considera una mejora metodológica, porque hace visible la incertidumbre y reduce el riesgo de sobreinterpretación.'),
-    ...imagenConTitulo(1, 'Importancia de variables del Random Forest', '../outputs/charts/05_importancia_favoritismo.png', 610, 350),
-    subtitulo('3.7 Interpretabilidad y documentación técnica'),
-    ...imagenConTitulo(2, 'Resumen SHAP de favoritismo', '../outputs/charts/07_shap_summary_favoritismo.png', 610, 360),
-    ...imagenConTitulo(3, 'Explicación SHAP de un caso priorizado', '../outputs/charts/08_shap_waterfall_caso.png', 610, 360),
-    parrafo('La documentación para un eventual pase a certificación queda trazada mediante run_manifest.json, diccionario de datos, linaje, parámetros y métricas. La certificación formal depende de CGR.'),
+    parrafo('Los resultados corresponden al benchmark sintético/local de la evidencia vigente. Una métrica alta valida el escenario de prueba, no garantiza generalización institucional.'),
+    subtitulo('3.2 Candidate, champion y fingerprint'),
+    ...tablaConTitulo(2, 'Controles del ciclo de modelo', ['Control', 'Decisión'], [
+      ['Fingerprint', 'La evidencia y TRAIN deben corresponder al mismo corpus canónico.'],
+      ['Candidate', 'TRAIN genera artefactos candidatos y no cambia serving.'],
+      ['Promoción', 'Operación separada, explícita y con verificación SHA-256.'],
+      ['Champion', 'Se almacena/versiona como conjunto coherente de artefactos.'],
+      ['INFERENCE', 'No consume labels, FIT ni tuning.'],
+      ['Rollback', 'Vuelve a un champion histórico cuyos hashes sean válidos.'],
+    ], [3000, 5800]),
+    subtitulo('3.3 Explicabilidad complementaria'),
+    ...imagenConTitulo(1, 'Resumen SHAP del benchmark sklearn', '../outputs/charts/07_shap_summary_favoritismo.png', 610, 350),
   ],
   actividades: [
-    vineta('Generación de predicciones OOF y comparación de candidatos.'),
-    vineta('Tuning sistemático por AUC-PR y persistencia de configuración.'),
-    vineta('Entrenamiento final y persistencia del Random Forest sklearn.'),
-    vineta('Generación de importancia de variables y explicaciones SHAP globales e individuales.'),
+    vineta('Reserva del holdout antes del FIT del preprocesador.'),
+    vineta('CV/tuning únicamente sobre desarrollo.'),
+    vineta('Cálculo de métricas agregadas y recall@K.'),
+    vineta('Vinculación de evaluación y TRAIN mediante fingerprint SHA-256.'),
+    vineta('Persistencia candidate/champion con hashes y promoción explícita.'),
   ],
-  cumplimiento: 'Entrenamiento, validación, tuning, persistencia e interpretabilidad completados para el PoC. El pase por ambientes institucionales y la certificación funcional no pueden demostrarse fuera de CGR.',
+  cumplimiento: 'La metodología de evaluación y el contrato MLOps están implementados. Los umbrales productivos y la autoridad de promoción deben ser definidos institucionalmente.',
   dificultades: [
-    vineta('La clase positiva es pequeña y sintética; las métricas deben leerse como benchmark metodológico.'),
-    vineta('No existe todavía ground truth real validado por auditores para medir generalización productiva.'),
+    vineta('El holdout sintético no reemplaza validación temporal o por segmentos sobre casos CGR.'),
+    vineta('La aprobación de un modelo requiere criterios funcionales además de métricas estadísticas.'),
   ],
-  conclusiones: 'La validación es reproducible y metodológicamente más exigente. Se recomienda mantener AUC-PR como métrica primaria, conservar SHAP para explicabilidad y repetir la evaluación con particiones temporales o por entidad cuando exista ground truth institucional.',
+  conclusiones: 'El ciclo evita usar el holdout para selección y evita que TRAIN cambie el modelo servido. En una adopción CGR se debe mantener la misma separación y agregar gates institucionales.',
 });
 
 // -----------------------------------------------------------------------------
-// Producto 5 - Preprocesamiento Fraccionamiento.
+// Producto 5 — Preprocesamiento Fraccionamiento
 // -----------------------------------------------------------------------------
 const p5 = informeProducto({
   numero: 5,
-  nombre: 'Limpieza y Preprocesamiento de Datos para Detección de Fraccionamiento',
-  resumen: `Se construyeron ${num(frac.grupos_proveedor_entidad_objeto)} grupos proveedor-entidad-objeto con ${num(frac.positivos_sembrados)} positivos sintéticos. El feature engineering incorpora ventanas temporales y cuantías normativas dependientes de fecha y categoría, evitando un umbral fijo universal.`,
-  introduccion: 'Este producto documenta la preparación de datos específica para posibles patrones de fraccionamiento, incluidos limpieza, transformación, feature engineering y división independiente para validación.',
-  tablas: ['Features principales del dataset de fraccionamiento'],
+  nombre: 'Preprocesamiento para Detección de Posible Fraccionamiento',
+  resumen: `El feature engineering agrupa contratos por proveedor-entidad-objeto_familia y calcula cantidad y monto sobre una misma ventana de 15 días. Fraccionamiento conserva el monto original para mantener el significado de las comparaciones con cuantías normativas.`,
+  introduccion: 'Este producto documenta el contrato temporal, lexical y normativo previo al modelo de fraccionamiento.',
+  tablas: ['Features principales de fraccionamiento'],
   graficos: ['Serie temporal del benchmark de contratación'],
   alcanzados: [
-    subtitulo('3.1 Imputación, outliers y transformación'),
-    parrafo('El flujo reutiliza controles de calidad del dataset contractual y transforma montos y fechas en variables aptas para análisis temporal y detección de anomalías.'),
-    subtitulo('3.2 Feature engineering temporal y normativo'),
-    ...tablaConTitulo(1, 'Features principales del dataset de fraccionamiento', ['Feature', 'Interpretación'], [
-      ['n_contratos_grupo', 'Número de contratos del grupo proveedor-entidad-objeto.'],
-      ['max_contratos_ventana_15d', 'Máximo de contratos observados en una ventana móvil de 15 días.'],
-      ['monto_total_ventana_15d', 'Monto acumulado dentro de la ventana de máxima concentración.'],
-      ['pct_montos_bajo_umbral', 'Proporción de contratos bajo el 95% de la cuantía parametrizada para fecha/régimen/categoría.'],
+    subtitulo('3.1 Objeto-familia'),
+    parrafo('La firma objeto_familia aplica una normalización lexical conservadora y sinónimos controlados. Su propósito es agrupar variaciones menores sin depender de embeddings opacos y conservando trazabilidad reproducible.'),
+    subtitulo('3.2 Ventana coherente de 15 días'),
+    parrafo('max_contratos_ventana_15d y monto_total_ventana_15d proceden de la misma ventana seleccionada. Esto evita presentar dos indicadores como si describieran un mismo episodio cuando pertenecen a intervalos distintos.'),
+    subtitulo('3.3 Contexto normativo'),
+    parrafo('La categoría estructurada goods/services/works tiene prioridad cuando existe. El texto libre funciona como fallback conservador. Las cuantías se parametrizan por fecha/categoría y no se aproximan para periodos desconocidos.'),
+    ...tablaConTitulo(1, 'Features principales de fraccionamiento', ['Feature', 'Interpretación'], [
+      ['n_contratos_grupo', 'Cantidad total de contratos del grupo proveedor-entidad-familia.'],
+      ['max_contratos_ventana_15d', 'Mayor concentración de contratos dentro de una ventana de 15 días.'],
+      ['monto_total_ventana_15d', 'Monto acumulado de esa misma ventana seleccionada.'],
+      ['pct_montos_bajo_umbral', 'Proporción de montos cercanos por debajo de la cuantía parametrizada.'],
       ['monto_total_grupo', 'Monto acumulado del grupo analítico.'],
     ], [3300, 5500]),
-    parrafo('La categoría estructurada goods/services/works tiene prioridad sobre inferencias textuales para seleccionar el contexto normativo cuando está disponible.'),
     ...imagenConTitulo(1, 'Serie temporal del benchmark de contratación', '../outputs/charts/04_serie_temporal.png', 610, 350),
-    subtitulo('3.3 División de los datos'),
-    parrafo(`El diseño de evaluación separa un holdout final antes del tuning: ${tuneFrac.n_desarrollo} grupos quedan en desarrollo y ${hf.n_test} en holdout, impidiendo que el conjunto final participe en la selección de hiperparámetros.`),
-    subtitulo('3.4 Publicación de capa Plata'),
-    parrafo('El dataset resultante se publica en lakehouse/plata/dataset_fraccionamiento.csv y es consumido por la ruta sklearn y por la implementación Spark.'),
+    subtitulo('3.4 División para evaluación'),
+    parrafo(`El evaluador Spark reserva ${num(sparkFracEval.n_holdout)} grupos para holdout final y mantiene ${num(sparkFracEval.n_desarrollo)} en desarrollo. La unidad de split incluye proveedor, entidad y familia de objeto.`),
   ],
   actividades: [
-    vineta('Cálculo de ventanas temporales y agregados por proveedor-entidad-objeto.'),
-    vineta('Consulta del motor normativo parametrizado por fecha y categoría.'),
-    vineta('Separación desarrollo/holdout antes del tuning.'),
-    vineta('Pruebas de regresión para categorías, fechas, umbrales y semántica de señales.'),
+    vineta('Normalización determinística de objetos contractuales.'),
+    vineta('Cálculo de ventanas temporales con paridad pandas/Spark.'),
+    vineta('Consulta de umbrales por fecha y categoría.'),
+    vineta('Reserva de holdout antes del FIT del preprocesador.'),
   ],
-  cumplimiento: 'Feature engineering, división y publicación en Plata completados para el PoC. La validación jurídica de reglas y fuentes internas depende de especialistas y sistemas CGR.',
+  cumplimiento: 'El feature engineering temporal/normativo y la frontera pandas/Spark están implementados. La validación jurídica de cada caso requiere revisión funcional.',
   dificultades: [
-    vineta('La ventana de 15 días es una heurística analítica configurable y no constituye por sí sola una regla jurídica.'),
-    vineta('Las cuantías y regímenes deben mantenerse versionados frente a futuros cambios normativos.'),
+    vineta('La ventana de 15 días es una heurística analítica y no una determinación jurídica por sí sola.'),
+    vineta('La similitud lexical es deliberadamente conservadora; casos semánticos más complejos podrían requerir una estrategia institucional adicional.'),
   ],
-  conclusiones: 'El preprocesamiento combina dimensión temporal, objeto contractual y contexto normativo, lo que resulta más defendible que aplicar un único tope monetario a todo el período analizado.',
+  conclusiones: 'El preprocesamiento mantiene trazabilidad al agrupar variantes lexicales y garantiza que cantidad y monto describan el mismo intervalo. Esa coherencia debe preservarse en cualquier integración institucional.',
 });
 
 // -----------------------------------------------------------------------------
-// Producto 6 - Selección y desarrollo Fraccionamiento + Spark MLlib.
+// Producto 6 — Modelo Fraccionamiento
 // -----------------------------------------------------------------------------
 const p6 = informeProducto({
   numero: 6,
-  nombre: 'Selección del Algoritmo y Desarrollo del Modelo para Detección de Fraccionamiento',
-  resumen: `Isolation Forest se usa como detector no supervisado de referencia y Spark MLlib KMeans como implementación objetivo del TDR. El holdout independiente del benchmark sklearn muestra AUC-PR ${hf.auc_pr.toFixed(3)}, por lo que las salidas se tratan como priorización de revisión y no como clasificación de irregularidades.`,
-  introduccion: 'Este producto cubre patrones, análisis estadístico, propuesta de algoritmos, arquitectura, implementación Spark MLlib y parámetros para la detección de patrones de compras anómalos.',
-  tablas: ['Evaluación holdout de Isolation Forest', 'Implementación Spark MLlib para fraccionamiento'],
-  graficos: ['Detección de señales de posible fraccionamiento'],
+  nombre: 'Selección del Algoritmo y Modelo para Detección de Posible Fraccionamiento',
+  resumen: `El modelo servido utiliza Apache Spark MLlib con StandardScalerModel + KMeansModel y distancia al centroide. k se selecciona únicamente en desarrollo y el holdout final independiente obtiene AUC-PR ${f3(fracHoldout.auc_pr)}. Isolation Forest permanece como benchmark sklearn complementario y no define el champion.`,
+  introduccion: 'Este producto presenta como evidencia principal el KMeans Spark realmente utilizado por el perfil operacional y separa sus métricas del benchmark Isolation Forest.',
+  tablas: ['Evaluación holdout KMeans Spark', 'Benchmark Isolation Forest complementario'],
+  graficos: ['Señales de posible fraccionamiento'],
   alcanzados: [
-    subtitulo('3.1 Patrones y tendencias identificadas'),
-    parrafo('El caso de uso se caracteriza por grupos muy desbalanceados, concentración temporal y montos cercanos a cuantías de referencia. Estos patrones justifican combinar detección de anomalías con una señal interpretable de caja blanca.'),
-    ...imagenConTitulo(1, 'Detección de señales de posible fraccionamiento', '../outputs/charts/06_deteccion_fraccionamiento.png', 610, 350),
-    subtitulo('3.2 Análisis estadístico detallado'),
-    ...tablaConTitulo(1, 'Evaluación holdout de Isolation Forest', ['Métrica', 'Resultado'], [
-      ['Registros holdout', num(hf.n_test)],
-      ['Positivos holdout', num(hf.positivos_test)],
-      ['Anomalías predichas', num(hf.anomalias_predichas)],
-      ['AUC-ROC', hf.auc_roc.toFixed(3)],
-      ['AUC-PR', hf.auc_pr.toFixed(3)],
-      ['Precision', pct(hf.precision)],
-      ['Recall', pct(hf.recall)],
-      ['F1', hf.f1.toFixed(3)],
-      ['Recall@K', hf.recall_at_k.toFixed(3)],
+    subtitulo('3.1 Justificación del algoritmo'),
+    parrafo('Apache Spark MLlib no incorpora Isolation Forest nativo. KMeans permite una implementación distribuible: StandardScaler normaliza las features, KMeans aprende centroides sin labels y la distancia al centroide se transforma en score de anomalía para ranking.'),
+    subtitulo('3.2 Selección y holdout del KMeans servido'),
+    ...tablaConTitulo(1, 'Evaluación holdout KMeans Spark', ['Métrica', 'Resultado'], [
+      ['k seleccionado', String(sparkFracEval.mejor_configuracion.k)],
+      ['Grupos desarrollo', num(sparkFracEval.n_desarrollo)],
+      ['Positivos desarrollo', num(sparkFracEval.positivos_desarrollo)],
+      ['Grupos holdout', num(sparkFracEval.n_holdout)],
+      ['Positivos holdout', num(sparkFracEval.positivos_holdout)],
+      ['AUC-PR', f3(fracHoldout.auc_pr)],
+      ['AUC-ROC', f3(fracHoldout.auc_roc)],
+      ['Precision', f3(fracHoldout.precision)],
+      ['Recall', f3(fracHoldout.recall)],
+      ['F1', f3(fracHoldout.f1)],
+      ['Recall@K', f3(fracHoldout.recall_at_k)],
     ], [4400, 4400]),
-    subtitulo('3.3 Propuesta fundamentada de algoritmos'),
-    parrafo('Isolation Forest permite un ranking de anomalía sin requerir una clase positiva abundante. Spark KMeans aporta una implementación de clustering acorde al énfasis del TDR en Spark MLlib. La regla interpretable complementa ambos enfoques y facilita revisión humana.'),
-    subtitulo('3.4 Diseño y arquitectura'),
-    parrafo('Los features se calculan desde Plata; la ruta sklearn evalúa Isolation Forest con holdout independiente, mientras la ruta Spark construye ventanas mediante Spark SQL y aplica KMeans MLlib. Los rankings se publican en Oro.'),
-    subtitulo('3.5 Reporte de implementación usando Apache Spark MLlib'),
-    ...tablaConTitulo(2, 'Implementación Spark MLlib para fraccionamiento', ['Elemento', 'Evidencia'], [
-      ['Motor', sparkFrac.motor || 'Apache Spark MLlib'],
-      ['Modo', sparkFrac.modo || 'local[*]'],
-      ['Algoritmo', sparkFrac.algoritmo || 'KMeans + distancia al centroide'],
-      ['k', sparkFrac.k === undefined ? 'N/D' : String(sparkFrac.k)],
-      ['Dataset', sparkFrac.dataset || 'lakehouse/plata/contratos_procesados.csv'],
-      ['Top-K aciertos sintéticos', sparkFrac.sanity_sintetico?.top_k_aciertos === undefined ? 'N/D' : String(sparkFrac.sanity_sintetico.top_k_aciertos)],
-      ['Señal interpretable - positivos recuperados', sparkFrac.sanity_sintetico?.senal_interpretable_positivos === undefined ? 'N/D' : String(sparkFrac.sanity_sintetico.senal_interpretable_positivos)],
-      ['Advertencia', sparkFrac.advertencia || 'Sanity check sintético; clúster CGR pendiente.'],
-    ], [3300, 5500]),
-    subtitulo('3.6 Parámetros y configuraciones'),
-    vineta(`Isolation Forest: n_estimators=${tuneFrac.mejor_configuracion.n_estimators}, max_samples=${tuneFrac.mejor_configuracion.max_samples}, contamination=${tuneFrac.mejor_configuracion.contamination}.`),
-    vineta(`Spark KMeans: k=${sparkFrac.k ?? 'N/D'}; features=${(sparkFrac.features || []).join(', ') || 'registradas en spark_fraccionamiento_resumen.json'}.`),
+    parrafo('Las etiquetas no se utilizan para ajustar KMeans; se utilizan para seleccionar/evaluar el ranking en el benchmark. El holdout no participa en la selección de k.'),
+    subtitulo('3.3 Señal interpretable'),
+    parrafo('El score de anomalía se complementa con una regla de caja blanca basada en concentración temporal y montos respecto de cuantías parametrizadas. Esta señal facilita revisión humana, pero no declara fraccionamiento.'),
+    ...imagenConTitulo(1, 'Señales de posible fraccionamiento', '../outputs/charts/06_deteccion_fraccionamiento.png', 610, 350),
+    subtitulo('3.4 Benchmark complementario'),
+    ...tablaConTitulo(2, 'Benchmark Isolation Forest complementario', ['Elemento', 'Resultado'], [
+      ['Rol', 'Comparación metodológica sklearn; no es el serving activo.'],
+      ['AUC-PR holdout', f3(isoHoldout.auc_pr)],
+      ['AUC-ROC holdout', f3(isoHoldout.auc_roc)],
+      ['F1 holdout', f3(isoHoldout.f1)],
+      ['Recall@K holdout', f3(isoHoldout.recall_at_k)],
+    ], [4400, 4400]),
   ],
   actividades: [
-    vineta('Separación de holdout final antes del tuning.'),
-    vineta('Validaciones repetidas únicamente sobre desarrollo y selección por AUC-PR.'),
-    vineta('Implementación de ventanas Spark SQL y KMeans con Spark MLlib.'),
-    vineta('Publicación de ranking Spark y resumen JSON reproducible.'),
+    vineta('Evaluación de StandardScaler + KMeans + distancia al centroide.'),
+    vineta('Selección de k únicamente sobre desarrollo.'),
+    vineta('Evaluación final en holdout independiente.'),
+    vineta('Comparación complementaria con Isolation Forest sin confundir sus métricas con el champion.'),
   ],
-  cumplimiento: 'Selección y desarrollo completados en el PoC, incluida ejecución real con Spark MLlib. El rendimiento distribuido y la calibración sobre ground truth real requieren infraestructura y datos CGR.',
+  cumplimiento: 'El modelo KMeans Spark dispone de selección y holdout propios. La calibración con ground truth real y el rendimiento distribuido deben validarse en infraestructura CGR.',
   dificultades: [
-    vineta(`Solo existen ${num(tuneFrac.positivos_total)} positivos sintéticos y ${num(hf.positivos_test)} positivos en holdout; recall@K es especialmente inestable.`),
-    vineta('La baja AUC-PR y baja precision del detector estadístico muestran que aún hay falsos positivos relevantes.'),
+    vineta('El desbalance y el número limitado de positivos sintéticos hacen que las métricas sean variables.'),
+    vineta('Un score de anomalía prioriza rareza estadística; la interpretación de irregularidad requiere contexto documental y jurídico.'),
   ],
-  conclusiones: 'El resultado principal es una arquitectura híbrida y honesta: detector no supervisado, clustering Spark y regla interpretable para priorización. Ninguna de estas señales debe convertirse automáticamente en un hallazgo de fraccionamiento.',
+  conclusiones: 'KMeans Spark es el modelo operacional de fraccionamiento del PoC. Isolation Forest se conserva como benchmark secundario; la evidencia principal del entregable corresponde al pipeline servido.',
 });
 
 // -----------------------------------------------------------------------------
-// Producto 7 - Informe Final. Estructura literal del Anexo 1, II.3.
+// Producto 7 — Informe Final
 // -----------------------------------------------------------------------------
-const p7 = documento(7, 'Informe Final - Entrenamiento, Validación y Cierre Técnico', 'Informe Final - Entrenamiento, Validación y Cierre Técnico', [
+const p7 = documento(7, 'Informe Final', 'Informe Final de la Consultoría - Prototipo Independiente', [
   titulo('Resumen Ejecutivo'),
   parrafo(
-    `El cierre técnico del PoC integra validación de favoritismo y fraccionamiento, ejecución Spark MLlib, GraphFrames, Airflow, capas Bronce/Plata/Oro, trazabilidad y documentación automática. ` +
-    `La reconstrucción OCDS vigente contiene ${num(p0i.contratos_analiticos_validos)} contratos analíticos válidos a partir de ${num(p0i.contratos_crudos)} contratos crudos. ` +
-    'Las actividades que exigen ambientes CGR, certificación funcional, marcha blanca y transferencia efectiva se identifican expresamente como dependencias institucionales.'
+    'El prototipo integra datos mediante un esquema canónico, aplica quality gates, construye señales de posible favoritismo y fraccionamiento, ejecuta Random Forest y KMeans con Apache Spark MLlib, analiza vínculos con GraphFrames y separa evaluación, TRAIN, candidate, promoción, champion e INFERENCE. La documentación formal presenta como evidencia principal los modelos Spark servidos y conserva sklearn únicamente como benchmark/explicabilidad complementaria.'
   ),
   notaMetodologica(),
   ...frontMatter({
-    tablas: [
-      'Métricas finales del benchmark de fraccionamiento',
-      'Estado de los componentes de cierre del Séptimo Producto',
-      'Plan de monitoreo y mantenimiento',
-    ],
-    graficos: ['Red proveedor-funcionario del escenario sintético', 'DAG principal de orquestación del PoC'],
+    tablas: ['Resumen de modelos operacionales', 'Plan de monitoreo y mantenimiento', 'Cierre frente a dependencias institucionales'],
+    graficos: ['Diagrama del modelo de datos', 'Red proveedor-funcionario sintética'],
   }),
   titulo('1. Introducción'),
-  parrafo('El Séptimo Producto consolida entrenamiento y validación del caso de fraccionamiento y los documentos técnicos de cierre: implementación/despliegue, integración, pipeline, monitoreo, repositorio y transferencia. El presente documento mantiene separados los componentes ejecutables del PoC y aquellos que solo pueden completarse dentro de CGR.'),
+  parrafo('Este informe consolida el estado funcional de la herramienta y las decisiones técnicas que permiten reproducirla. La historia de correcciones se conserva en Git/PR y no forma parte de la descripción principal del sistema.'),
   titulo('2. Objetivo de Consultoría'),
   parrafo(OBJETIVO_TDR),
   titulo('3. Productos Alcanzados'),
-  subtitulo('3.1 Entrenamiento y validación del modelo de fraccionamiento'),
-  ...tablaConTitulo(1, 'Métricas finales del benchmark de fraccionamiento', ['Métrica', 'Resultado'], [
-    ['AUC-ROC holdout', hf.auc_roc.toFixed(3)],
-    ['AUC-PR holdout', hf.auc_pr.toFixed(3)],
-    ['Precision holdout', pct(hf.precision)],
-    ['Recall holdout', pct(hf.recall)],
-    ['F1 holdout', hf.f1.toFixed(3)],
-    ['Recall@K holdout', hf.recall_at_k.toFixed(3)],
-  ], [4400, 4400]),
-  parrafo(`La configuración seleccionada es n_estimators=${tuneFrac.mejor_configuracion.n_estimators}, max_samples=${tuneFrac.mejor_configuracion.max_samples}, contamination=${tuneFrac.mejor_configuracion.contamination}. El modelo se persiste junto con su scaler en outputs/models/.`),
-  subtitulo('3.2 Documentación técnica y manual de implementación/despliegue'),
-  vineta('Entorno Python reproducible mediante requirements.txt; Spark usa Java 17 y PySpark fijado por versión.'),
-  vineta('Ejecución de regresión: pytest -q.'),
-  vineta('Pipeline local: generación -> Bronce -> preprocesamiento -> Plata -> modelos sklearn/Spark/GraphFrames -> Oro -> manifiesto -> documentación.'),
-  vineta('Airflow usa CGR_PROJECT_PYTHON para separar el runtime del proyecto del entorno propio de Airflow.'),
-  vineta('Los modelos candidatos no se promocionan automáticamente; la promoción requiere revisión humana.'),
-  subtitulo('3.3 Pruebas de integración y validación del pipeline'),
-  ...tablaConTitulo(2, 'Estado de los componentes de cierre del Séptimo Producto', ['Componente solicitado', 'Estado verificable del PoC'], [
-    ['Registro de pruebas de integración', 'GitHub Actions ejecuta pytest y smoke end-to-end en cada push/PR.'],
-    ['Validación del pipeline completo', 'Ejecutado desde Bronce/Plata hasta Spark, Oro, linaje, manifiesto y DOCX.'],
-    ['Documentación para certificación/producción', 'Generada como PoC; certificación institucional pendiente.'],
-    ['Incidencias en certificación', 'No aplicable fuera de ambientes CGR; no se inventan incidencias.'],
-    ['Transferencia a usuarios técnicos/funcionales', 'Material y estructura disponibles; sesión efectiva pendiente de usuarios CGR.'],
-    ['Repositorio organizado', 'Código, datasets sintéticos, evidencias, reportes y CI versionados en GitHub.'],
-    ['Mejoras de marcha blanca', 'No existe marcha blanca institucional; se documentan mejoras derivadas de auditorías técnicas del PoC.'],
+  subtitulo('3.1 Arquitectura y modelos'),
+  ...tablaConTitulo(1, 'Resumen de modelos operacionales', ['Caso', 'Modelo servido', 'Evaluación principal'], [
+    ['Favoritismo', 'RandomForestClassificationModel - Spark MLlib', `AUC-PR holdout ${f3(favHoldout.auc_pr)}; recall@K ${f3(favHoldout.recall_at_k)}`],
+    ['Fraccionamiento', `StandardScaler + KMeans (k=${sparkFracEval.mejor_configuracion.k}) - Spark MLlib`, `AUC-PR holdout ${f3(fracHoldout.auc_pr)}; recall@K ${f3(fracHoldout.recall_at_k)}`],
+    ['Grafos', 'GraphFrames / NetworkX', 'Señales de vínculo para revisión humana.'],
+  ], [2200, 3300, 3300]),
+  parrafo('La ruta spark_sql mantiene DataFrames Spark en integración, validación, preprocesamiento, evaluación, TRAIN e INFERENCE y publica rankings distribuidos en Parquet.'),
+  ...imagenConTitulo(1, 'Diagrama del modelo de datos', '../outputs/charts/09_diagrama_modelo_datos.png', 610, 360),
+  subtitulo('3.2 Plan de monitoreo y mantenimiento'),
+  ...tablaConTitulo(2, 'Plan de monitoreo y mantenimiento', ['Control', 'Tratamiento'], [
+    ['Calidad de datos', 'Quality gates de esquema, unicidad, integridad referencial y rangos estructurales.'],
+    ['Drift', 'PSI sobre features y distribución de score de fraccionamiento.'],
+    ['Desempeño', 'Recall@K cuando existe ground truth nuevo y validado.'],
+    ['Reentrenamiento', 'Genera candidate; requiere evaluación y no se promueve automáticamente.'],
+    ['Integridad', 'SHA-256 antes/después de INFERENCE y promoción versionada.'],
+    ['Normativa', 'Cuantías versionadas por fecha/categoría y regresiones automáticas.'],
+  ], [3000, 5800]),
+  parrafo(`El monitor se liga al champion activo del registry. Promoción automática: ${monitorChampion.automatic_promotion === false ? 'deshabilitada' : 'no permitida por contrato'}.`),
+  subtitulo('3.3 Pruebas de integración y operación'),
+  parrafo('Las pruebas de integración del repositorio cubren CI, Spark MLlib, GraphFrames, candidate/champion, inference, calidad de datos, generación documental y reporting local. Las pruebas de integración DEV/QA/PROD, carga, concurrencia, skew, seguridad y operación real requieren infraestructura institucional.'),
+  subtitulo('3.4 Reporting y transferencia'),
+  parrafo('El contrato SQL Server/SSRS se entrega como DDL, vistas, roles de referencia y RDL con Shared Data Source. La Transferencia de conocimiento se apoya en README, documentación técnica, diccionario, linaje, manifests y Productos 1-7; las sesiones y actas formales requieren participantes CGR.'),
+  ...imagenConTitulo(2, 'Red proveedor-funcionario sintética', '../outputs/charts/10_grafo_vinculos.png', 610, 410),
+  subtitulo('3.5 Certificación y marcha blanca'),
+  parrafo('La certificación funcional, levantamiento de incidencias y marcha blanca no pueden acreditarse desde el repositorio público. Requieren usuarios, ambientes, fuentes y criterios de aceptación institucionales.'),
+  subtitulo('3.6 Dependencias institucionales'),
+  ...tablaConTitulo(3, 'Cierre frente a dependencias institucionales', ['Área', 'Estado'], [
+    ['Software reproducible', 'Implementado y validado por CI.'],
+    ['Ground truth real', 'Dependencia institucional.'],
+    ['Spark/almacenamiento CGR', 'Dependencia institucional para performance y robustez.'],
+    ['DEV/QA/PROD', 'Dependencia institucional.'],
+    ['SQL Server/SSRS institucional', 'Contrato preparado; ejecución institucional pendiente.'],
+    ['Certificación / marcha blanca', 'Dependencia institucional.'],
   ], [3600, 5200]),
-  ...imagenConTitulo(1, 'Red proveedor-funcionario del escenario sintético', '../outputs/charts/10_grafo_vinculos.png', 610, 420),
-  ...imagenConTitulo(2, 'DAG principal de orquestación del PoC', '../outputs/charts/11_dag_airflow.png', 610, 300),
-  subtitulo('3.4 Plan de monitoreo y mantenimiento'),
-  ...tablaConTitulo(3, 'Plan de monitoreo y mantenimiento', ['Control', 'Acción propuesta'], [
-    ['Calidad de datos', 'Validar esquema, nulos, rangos y conteos antes del scoring.'],
-    ['Drift', 'Calcular PSI sobre features clave y revisar cambios materiales.'],
-    ['Desempeño', 'Medir AUC-PR/recall cuando exista ground truth nuevo y validado.'],
-    ['Reentrenamiento', 'Generar modelo candidato; evaluar en holdout independiente; no promover automáticamente.'],
-    ['Trazabilidad', 'Registrar commit, versiones, hashes, parámetros y artefactos en run_manifest.json.'],
-    ['Normativa', 'Versionar cuantías y vigencias; ejecutar pruebas unitarias ante cada cambio.'],
-  ], [2800, 6000]),
-  subtitulo('3.5 Transferencia de conocimiento y mejoras'),
-  parrafo('La documentación, README, diccionario, linaje, manifiesto, código comentado y productos formales constituyen material base para transferencia. La realización y acta de sesiones con usuarios técnicos/funcionales requiere coordinación y participantes CGR.'),
-  vineta('Mejora aplicada: corrección de integridad OCDS Contract -> Award -> Supplier.'),
-  vineta('Mejora aplicada: separación de Contratación Directa y Comparación de Precios.'),
-  vineta('Mejora aplicada: holdout independiente para fraccionamiento y eliminación de leakage de tuning.'),
-  vineta('Mejora aplicada: Spark MLlib y GraphFrames incorporados al pipeline canónico y al CI.'),
-  vineta('Mejora aplicada: documentación regenerada automáticamente desde evidencia versionada.'),
   titulo('4. Conclusiones y Recomendaciones'),
-  parrafo('El PoC queda técnicamente reproducible y con las principales brechas de integridad, modelado, Spark y trazabilidad cerradas. Random Forest es el candidato principal del benchmark de favoritismo; en fraccionamiento la baja AUC-PR del holdout obliga a mantener una interpretación prudente y revisión humana. Como siguiente paso institucional se recomienda validar ground truth con auditores, desplegar en DEV/QA, medir rendimiento distribuido y ejecutar certificación, marcha blanca y transferencia formal.'),
+  parrafo('La herramienta queda documentada como un sistema de priorización reproducible: esquema canónico, preprocesador congelado, modelos Spark con evaluación propia, registry versionado, promoción explícita, inference sin retraining y monitoreo ligado al champion. El siguiente nivel de evidencia requiere ground truth, infraestructura y validación funcional CGR; no debe inferirse producción certificada a partir de los resultados sintéticos.'),
   titulo('5. Anexos'),
   ...anexosBase([
-    vineta(`GraphFrames ejecutado: ${graphframes.n_vertices ?? 'N/D'} vértices y ${graphframes.n_aristas ?? 'N/D'} aristas en escenario sintético.`),
-    vineta('Diccionario de datos: data/diccionario_datos.csv.'),
-    vineta('Diagrama del modelo: outputs/charts/09_diagrama_modelo_datos.png.'),
-    vineta('Artefactos SSRS PoC: directorio ssrs/.'),
+    vineta(`Validación OCDS: ${num(p0i.contratos_analiticos_validos)} contratos analíticos con award/supplier resoluble.`),
+    vineta(`GraphFrames: ${graphframes.n_vertices ?? 'N/D'} vértices y ${graphframes.n_aristas ?? 'N/D'} aristas en evidencia sintética.`),
+    vineta('Dependencias institucionales: docs/Dependencias_Institucionales_CGR.md.'),
   ]),
   ...referencias(),
 ]);
 
-async function guardar(doc, nombreArchivo) {
-  const buf = await Packer.toBuffer(doc);
-  fs.writeFileSync(`${OUT}/${nombreArchivo}`, buf);
-  console.log(`Generado: ${OUT}/${nombreArchivo}`);
+const PRODUCTOS = [
+  ['Producto_01_Plan_de_Trabajo.docx', p1],
+  ['Producto_02_Preprocesamiento_Favoritismo.docx', p2],
+  ['Producto_03_Modelo_Favoritismo.docx', p3],
+  ['Producto_04_Entrenamiento_Favoritismo.docx', p4],
+  ['Producto_05_Preprocesamiento_Fraccionamiento.docx', p5],
+  ['Producto_06_Modelo_Fraccionamiento.docx', p6],
+  ['Producto_07_Informe_Final.docx', p7],
+];
+
+async function main() {
+  for (const [filename, doc] of PRODUCTOS) {
+    const buffer = await Packer.toBuffer(doc);
+    fs.writeFileSync(`${OUT}/${filename}`, buffer);
+    console.log(`Generado: ${OUT}/${filename}`);
+  }
 }
 
-(async () => {
-  await guardar(p1, 'Producto_01_Plan_de_Trabajo.docx');
-  await guardar(p2, 'Producto_02_Preprocesamiento_Favoritismo.docx');
-  await guardar(p3, 'Producto_03_Modelo_Favoritismo.docx');
-  await guardar(p4, 'Producto_04_Entrenamiento_Favoritismo.docx');
-  await guardar(p5, 'Producto_05_Preprocesamiento_Fraccionamiento.docx');
-  await guardar(p6, 'Producto_06_Modelo_Fraccionamiento.docx');
-  await guardar(p7, 'Producto_07_Informe_Final.docx');
-  console.log('Los 7 productos fueron regenerados desde evidencia_documental.json con estructura del Anexo 1.');
-})();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
