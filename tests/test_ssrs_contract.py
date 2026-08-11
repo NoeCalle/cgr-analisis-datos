@@ -27,7 +27,9 @@ def test_rdl_son_xml_validos_y_consumen_vistas_del_contrato():
         ET.parse(path)
         texto = path.read_text(encoding="utf-8")
         assert vista in texto
-        assert "SRV-CGR-SQL" in texto
+        assert "<DataSourceReference>CGR_ModuloAnalisis</DataSourceReference>" in texto
+        assert "SRV-CGR-SQL" not in texto
+        assert "Initial Catalog=" not in texto
         assert "señal" in texto.lower() or "señales" in texto.lower()
 
 

@@ -29,8 +29,9 @@ MANIFEST = f"{CANDIDATE_BASE}/{RUN_TOKEN}/candidate_manifest.json"
 def comando_train():
     proyecto = shlex.quote(PROYECTO)
     python = shlex.quote(PY)
+    error_python = shlex.quote(f"Python de proyecto no encontrado: {PY}")
     return (
-        f"test -x {python} || (echo 'Python de proyecto no encontrado: {PY}' >&2; exit 2); "
+        f"test -x {python} || (echo {error_python} >&2; exit 2); "
         f"cd {proyecto} && {python} src/spark/entrenar_candidato_spark.py "
         f"--config {shlex.quote(CONFIG)} --manifest {shlex.quote(MANIFEST)}"
     )

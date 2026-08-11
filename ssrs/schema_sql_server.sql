@@ -57,7 +57,12 @@ CREATE INDEX IX_Fraccionamiento_Score
     INCLUDE (id_proveedor, id_entidad, objeto, senal_priorizacion);
 GO
 
--- Las vistas constituyen el contrato estable consumido por los RDL.
+CREATE INDEX IX_Vinculos_Compartidos
+    ON dbo.VinculosProveedorFuncionario (comparte_telefono DESC, comparte_direccion DESC)
+    INCLUDE (id_proveedor, id_funcionario, n_contratos);
+GO
+
+-- Las vistas constituyen el contrato estable consumido por reporting.
 CREATE OR ALTER VIEW dbo.vw_SSRS_Favoritismo
 AS
 SELECT
@@ -84,6 +89,18 @@ SELECT
     senal_priorizacion,
     fecha_calculo
 FROM dbo.PrediccionesFraccionamiento;
+GO
+
+CREATE OR ALTER VIEW dbo.vw_SSRS_VinculosProveedorFuncionario
+AS
+SELECT
+    id_proveedor,
+    id_funcionario,
+    n_contratos,
+    comparte_telefono,
+    comparte_direccion,
+    fecha_calculo
+FROM dbo.VinculosProveedorFuncionario;
 GO
 
 -- Dataset de referencia SSRS — Favoritismo:

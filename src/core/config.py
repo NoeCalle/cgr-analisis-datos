@@ -18,6 +18,7 @@ ALLOWED_SOURCE_TYPES = {"local_csv", "sqlserver", "spark_sql"}
 CANONICAL_SCHEMA_VERSION = 1
 SECRET_KEY_PATTERN = re.compile(r"(^|_)(password|passwd|pwd|token|secret|api_key|connection_string)($|_)", re.I)
 ENV_REFERENCE_SUFFIXES = ("_env", "env")
+ENV_VAR_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 def cargar_config(path: str | Path) -> dict[str, Any]:
@@ -119,6 +120,12 @@ def validar_config(config: dict[str, Any]) -> None:
         env_name = source.get("connection_env")
         if not isinstance(env_name, str) or not env_name.strip():
             raise ValueError("source.connection_env es obligatorio para sqlserver.")
+        env_name = env_name.strip()
+        if not ENV_VAR_NAME_PATTERN.fullmatch(env_name):
+            raise ValueError(
+                "source.connection_env debe contener solo el nombre de una variable de entorno "
+                "(por ejemplo CGR_SOURCE_DATABASE_URL), nunca una cadena de conexión ni un secreto."
+            )
 
 
 def _rechazar_secrets_inline(value: Any, path: tuple[str, ...] = ()) -> None:

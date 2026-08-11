@@ -33,14 +33,16 @@ VIAS = [
 def enriquecer_contacto(proveedores, funcionarios):
     proveedores = proveedores.copy()
     funcionarios = funcionarios.copy()
-    proveedores["telefono"] = [f"9{RNG.integers(10000000, 99999999)}" for _ in range(len(proveedores))]
+    # Se preservan las mismas llamadas RNG para mantener estable el benchmark,
+    # pero los prefijos SYN impiden confundir estos valores con datos reales.
+    proveedores["telefono"] = [f"SYN-TEL-9{RNG.integers(10000000, 99999999)}" for _ in range(len(proveedores))]
     proveedores["direccion"] = [
-        f"{RNG.choice(VIAS)} {RNG.integers(100,999)}, {RNG.choice(DISTRITOS)}"
+        f"SYN-DIR-{RNG.choice(VIAS)} {RNG.integers(100,999)}, {RNG.choice(DISTRITOS)}"
         for _ in range(len(proveedores))
     ]
-    funcionarios["telefono"] = [f"9{RNG.integers(10000000, 99999999)}" for _ in range(len(funcionarios))]
+    funcionarios["telefono"] = [f"SYN-TEL-9{RNG.integers(10000000, 99999999)}" for _ in range(len(funcionarios))]
     funcionarios["direccion"] = [
-        f"{RNG.choice(VIAS)} {RNG.integers(100,999)}, {RNG.choice(DISTRITOS)}"
+        f"SYN-DIR-{RNG.choice(VIAS)} {RNG.integers(100,999)}, {RNG.choice(DISTRITOS)}"
         for _ in range(len(funcionarios))
     ]
     return proveedores, funcionarios

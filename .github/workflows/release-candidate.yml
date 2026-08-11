@@ -5,16 +5,19 @@ on:
     workflows: ["audit-anexo3"]
     types: [completed]
 
+# El token privilegiado existe solo en el job y únicamente si la auditoría terminó OK.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   tag-release-candidate:
     if: github.event.workflow_run.conclusion == 'success'
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout latest main
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: main
           fetch-depth: 0
@@ -50,9 +53,9 @@ jobs:
             exit 1
           fi
 
-          # El workflow audit-anexo3 persiste su evidencia en un commit [skip ci].
-          # Por ello, para un main sin cambios posteriores, HEAD^ debe ser exactamente
-          # el SHA que audit-anexo3 evaluó y registró.
+          # audit-anexo3 persiste evidencia en un único commit [skip ci]. Para un
+          # main sin cambios posteriores, HEAD^ debe ser exactamente el SHA que
+          # audit-anexo3 recibió del workflow tests y registró como auditado.
           if [[ "$PARENT_SHA" != "$EVENT_SHA" || "$AUDITED_SHA" != "$EVENT_SHA" ]]; then
             echo "Main avanzó o la evidencia no corresponde a esta auditoría. Se omite el tag; una auditoría posterior lo reintentará."
             echo "tag_ok=false" >> "$GITHUB_OUTPUT"
@@ -106,4 +109,8 @@ jobs:
         if: steps.gate.outputs.tag_ok == 'true'
         shell: bash
         run: |
-          git push origin --delete noop-temp-do-not-use release-candidate-work main2 2>/dev/null || true
+          git push origin --delete \
+            noop-temp-do-not-use \
+            noop-temp-should-not-create \
+            release-candidate-work \
+            main2 2>/dev/null || true

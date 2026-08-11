@@ -23,6 +23,8 @@ import re
 import shutil
 import uuid
 
+from core.security_paths import validar_artefactos_dentro_del_candidate
+
 CANDIDATE_SCHEMA_VERSION = 2
 SUPPORTED_CANDIDATE_SCHEMA_VERSIONS = {1, 2}
 REGISTRY_SCHEMA_VERSION = 2
@@ -205,7 +207,9 @@ def cargar_manifest_candidato(path: str | Path) -> dict:
     _validar_schema_candidate(data, "sklearn")
     if data.get("status") != "candidate":
         raise ValueError("El manifest indicado no representa un modelo candidato.")
-    _validar_artefactos(data.get("artifacts", {}), SKLEARN_REQUERIDOS, "candidate/sklearn")
+    artefactos = data.get("artifacts", {})
+    validar_artefactos_dentro_del_candidate(path, artefactos)
+    _validar_artefactos(artefactos, SKLEARN_REQUERIDOS, "candidate/sklearn")
     return data
 
 
@@ -219,7 +223,9 @@ def cargar_manifest_candidato_spark(path: str | Path) -> dict:
         raise ValueError(
             "Candidate Spark pendiente de evaluación sobre su propio corpus; promoción bloqueada."
         )
-    _validar_artefactos(data.get("artifacts", {}), SPARK_REQUERIDOS, "candidate/spark_mllib")
+    artefactos = data.get("artifacts", {})
+    validar_artefactos_dentro_del_candidate(path, artefactos)
+    _validar_artefactos(artefactos, SPARK_REQUERIDOS, "candidate/spark_mllib")
     return data
 
 

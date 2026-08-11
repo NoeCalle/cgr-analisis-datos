@@ -2,16 +2,13 @@
 <!--
   RDL SSRS para señales de priorización de posible fraccionamiento.
   PoC independiente: requiere SQL Server/SSRS institucional para despliegue real.
+  El datasource se referencia por nombre y se vincula por ambiente en SSRS.
 -->
 <Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition"
         xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
   <DataSources>
     <DataSource Name="CGR_SQLServer">
-      <ConnectionProperties>
-        <DataProvider>SQL</DataProvider>
-        <ConnectString>Data Source=SRV-CGR-SQL;Initial Catalog=ModuloAnalisisDatos_1_8_2</ConnectString>
-      </ConnectionProperties>
-      <rd:SecurityType>Integrated</rd:SecurityType>
+      <DataSourceReference>CGR_ModuloAnalisis</DataSourceReference>
     </DataSource>
   </DataSources>
 

@@ -13,7 +13,6 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
-import shutil
 import sys
 
 from pyspark.ml.classification import RandomForestClassifier
@@ -24,6 +23,7 @@ sys.path.insert(0, str(SRC_DIR))
 
 from core.config import cargar_config
 from core.fingerprints import fingerprint_pandas_dataframe, fingerprint_spark_dataframe
+from core.security_paths import preparar_directorio_candidato
 from ingestar_canonico import integrar, integrar_spark
 from preprocesamiento import ajustar_estado_preprocesamiento
 from registro_modelos import guardar_json_determinista, sha256_ruta
@@ -139,11 +139,7 @@ def entrenar(
     if fav_params_override is not None and not inherited_from_champion:
         raise ValueError("Un override operacional debe identificar el champion del que hereda parámetros.")
 
-    manifest_path = Path(manifest_path)
-    candidate_dir = manifest_path.parent
-    if candidate_dir.exists():
-        shutil.rmtree(candidate_dir)
-    candidate_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path, candidate_dir = preparar_directorio_candidato(manifest_path)
 
     preprocessor_json = candidate_dir / "preprocesador_contratos.json"
     preprocessor_medians_dir = candidate_dir / "medianas_monto_por_objeto"

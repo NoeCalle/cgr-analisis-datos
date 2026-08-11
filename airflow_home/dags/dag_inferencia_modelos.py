@@ -30,8 +30,9 @@ OUTPUT_DIR = f"{OUTPUT_BASE}/{RUN_TOKEN}"
 def comando_inference():
     proyecto = shlex.quote(PROYECTO)
     python = shlex.quote(PY)
+    error_python = shlex.quote(f"Python de proyecto no encontrado: {PY}")
     return (
-        f"test -x {python} || (echo 'Python de proyecto no encontrado: {PY}' >&2; exit 2); "
+        f"test -x {python} || (echo {error_python} >&2; exit 2); "
         f"cd {proyecto} && {python} src/spark/score_inference_spark.py "
         f"--config {shlex.quote(CONFIG)} "
         f"--registry {shlex.quote(REGISTRY)} "

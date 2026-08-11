@@ -36,10 +36,12 @@ PY = os.environ.get("CGR_PROJECT_PYTHON", os.path.join(PROYECTO, ".venv", "bin",
 def comando(script, args=""):
     proyecto = shlex.quote(PROYECTO)
     python = shlex.quote(PY)
+    error_python = shlex.quote(
+        f"Python de proyecto no encontrado: {PY}. Crear .venv o definir CGR_PROJECT_PYTHON."
+    )
     script_args = f" {args}" if args else ""
     return (
-        f"test -x {python} || (echo 'Python de proyecto no encontrado: {PY}. "
-        "Crear .venv o definir CGR_PROJECT_PYTHON.' >&2; exit 2); "
+        f"test -x {python} || (echo {error_python} >&2; exit 2); "
         f"cd {proyecto} && {python} {shlex.quote(script)}{script_args}"
     )
 
