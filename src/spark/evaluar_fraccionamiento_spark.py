@@ -31,6 +31,7 @@ from spark.ajustar_preprocesamiento_spark import ajustar_estado_preprocesamiento
 from spark.modelo_favoritismo_spark import crear_sesion
 from spark.modelo_fraccionamiento_spark import (
     FEATURES,
+    _firma_objeto_spark,
     construir_features_ventana_desde_df,
     entrenar_modelos_kmeans,
     puntuar_con_modelos,
@@ -106,10 +107,9 @@ def _score_metrics(df, model, scaler):
 
 def _with_split_family(df):
     categoria = F.col("categoria_principal") if "categoria_principal" in df.columns else F.lit(None)
-    family_udf = F.udf(firma_objeto, "string")
     return df.withColumn(
         "_objeto_familia_split",
-        family_udf(F.col("objeto").cast("string"), categoria.cast("string")),
+        _firma_objeto_spark(F.col("objeto"), categoria),
     )
 
 
@@ -185,8 +185,6 @@ def _split_raw_pandas(contracts: pd.DataFrame):
         .max()
         .rename(columns={"label_fraccionamiento": "_label_split"})
     )
-    # El split de compatibilidad se hace con la misma regla determinística 1/4
-    # para que las dos fronteras compartan semántica aun cuando el motor difiera.
     groups = groups.sort_values(
         ["_label_split", "id_proveedor", "id_entidad", "_objeto_familia_split"]
     ).copy()
@@ -207,7 +205,6 @@ def evaluar(config_path: str = CONFIG_PATH):
     source_type = config["source"]["type"]
     spark = crear_sesion("cgr-evaluacion-fraccionamiento-spark", operational=True)
     spark.sparkContext.setLogLevel("ERROR")
-    spark.sparkContext.addPyFile(str(SRC_DIR / "core" / "objeto_similarity.py"))
     spark.sparkContext.addPyFile(str(SRC_DIR / "umbrales_normativos.py"))
     try:
         if source_type == "spark_sql":
