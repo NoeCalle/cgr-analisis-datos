@@ -9,24 +9,27 @@ concurrency:
   group: tests-${{ github.ref }}
   cancel-in-progress: true
 
+# CI no privilegiado: PRs y pushes ejecutan código con token read-only.
+# La persistencia verificada ocurre después en audit-anexo3, únicamente para
+# un workflow_run exitoso que provenga de push/main y del SHA exacto auditado.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   pytest-and-smoke:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Setup Java for Spark
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
           cache: pip
@@ -216,7 +219,7 @@ jobs:
         run: python src/ci_validar_pipeline.py
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
           cache: npm
@@ -268,7 +271,7 @@ jobs:
           python src/auditar_release.py
 
       - name: Upload reproducibility and serving evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: evidencia-reproducible
           path: |
@@ -314,7 +317,7 @@ jobs:
           retention-days: 14
 
       - name: Upload regenerated formal documentation
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: documentacion-formal-regenerada
           path: |
@@ -322,103 +325,88 @@ jobs:
             reporte/productos_formales/Producto_*.docx
           retention-days: 14
 
-      - name: Persist verified reproducible artifacts
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor != 'github-actions[bot]'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git rm -r --ignore-unmatch \
-            outputs/models/modelo_favoritismo_spark_rf \
-            outputs/models/modelo_fraccionamiento_spark_kmeans
-          git rm --ignore-unmatch outputs/models/modelo_favoritismo_rf_v2_con_drift.joblib
-          git rm --ignore-unmatch \
-            lakehouse/oro/dataset_favoritismo.csv \
-            lakehouse/oro/dataset_fraccionamiento.csv
-
-          git add \
-            data/contratos_siaf_seace.csv \
-            data/pagos_siaf_sintetico.csv \
-            data/contratos_procesados.csv \
-            data/dataset_favoritismo.csv \
-            data/dataset_fraccionamiento.csv \
-            data/diccionario_datos.csv \
-            data/proveedores.csv \
-            data/entidades.csv \
-            data/funcionarios.csv \
-            data/lote_nuevo_normal.csv \
-            data/lote_nuevo_con_drift.csv \
-            lakehouse/bronce/contratos_siaf_seace.csv \
-            lakehouse/bronce/pagos_siaf_sintetico.csv \
-            lakehouse/bronce/proveedores.csv \
-            lakehouse/bronce/entidades.csv \
-            lakehouse/bronce/funcionarios.csv \
-            lakehouse/plata/contratos_procesados.csv \
-            lakehouse/plata/dataset_favoritismo.csv \
-            lakehouse/plata/dataset_fraccionamiento.csv \
-            lakehouse/plata/proveedores.csv \
-            lakehouse/plata/entidades.csv \
-            lakehouse/plata/funcionarios.csv \
-            lakehouse/plata/proveedores_contacto.csv \
-            lakehouse/plata/funcionarios_contacto.csv \
-            outputs/ranking_riesgo_favoritismo.csv \
-            outputs/ranking_riesgo_fraccionamiento.csv \
-            outputs/ranking_vinculos_proveedor_funcionario.csv \
-            outputs/ranking_riesgo_favoritismo_spark.csv \
-            outputs/ranking_riesgo_fraccionamiento_spark.csv \
-            outputs/vinculos_graphframes_sospechosos.csv \
-            outputs/vinculos_graphframes_pagerank.csv \
-            outputs/extraccion_estandar_sql.csv \
-            outputs/analisis_pagos_modalidades.json \
-            outputs/resumen_pagos_contrato.csv \
-            outputs/resumen_modalidades_regimen.csv \
-            outputs/auditoria_tdr_completo.json \
-            docs/Auditoria_TDR_Completo.md \
-            outputs/checklist_anexo3.json \
-            docs/Checklist_Anexo_03.md \
-            outputs/dependencias_cgr.json \
-            docs/Dependencias_Institucionales_CGR.md \
-            outputs/auditoria_release.json \
-            docs/Auditoria_Final_Release.md \
-            outputs/spark_favoritismo_resumen.json \
-            outputs/spark_fraccionamiento_resumen.json \
-            outputs/graphframes_resumen.json \
-            outputs/comparacion_modelos_favoritismo.json \
-            outputs/comparacion_modelos_favoritismo.csv \
-            outputs/tuning_favoritismo_resumen.json \
-            outputs/tuning_favoritismo_resultados.csv \
-            outputs/tuning_favoritismo_spark_resumen.json \
-            outputs/tuning_favoritismo_spark_resultados.csv \
-            outputs/tuning_fraccionamiento_resumen.json \
-            outputs/tuning_fraccionamiento_resultados.csv \
-            outputs/tuning_fraccionamiento_spark_resumen.json \
-            outputs/tuning_fraccionamiento_spark_resultados.csv \
-            outputs/monitoreo_champion.json \
-            outputs/log_reentrenamiento_champion.csv \
-            outputs/linaje_datos.csv \
-            outputs/run_manifest.json \
-            outputs/evidencia_documental.json \
-            outputs/model_registry.json \
-            outputs/inference_smoke_summary.json \
-            outputs/inference_spark_smoke_summary.json \
-            outputs/champions \
-            outputs/champions_spark \
-            outputs/charts/*.png \
-            lakehouse/oro/ranking_riesgo_favoritismo.csv \
-            lakehouse/oro/ranking_riesgo_fraccionamiento.csv \
-            lakehouse/oro/ranking_vinculos_proveedor_funcionario.csv \
-            lakehouse/oro/ranking_riesgo_favoritismo_spark.csv \
-            lakehouse/oro/ranking_riesgo_fraccionamiento_spark.csv \
-            lakehouse/oro/vinculos_graphframes_sospechosos.csv \
-            lakehouse/oro/vinculos_graphframes_pagerank.csv \
-            lakehouse/oro/resumen_pagos_contrato.csv \
-            lakehouse/oro/resumen_modalidades_regimen.csv \
-            reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx \
+      - name: Upload persistable verified tree for privileged workflow
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: persistable-verified-tree
+          path: |
+            data/contratos_siaf_seace.csv
+            data/pagos_siaf_sintetico.csv
+            data/contratos_procesados.csv
+            data/dataset_favoritismo.csv
+            data/dataset_fraccionamiento.csv
+            data/diccionario_datos.csv
+            data/proveedores.csv
+            data/entidades.csv
+            data/funcionarios.csv
+            data/lote_nuevo_normal.csv
+            data/lote_nuevo_con_drift.csv
+            lakehouse/bronce/contratos_siaf_seace.csv
+            lakehouse/bronce/pagos_siaf_sintetico.csv
+            lakehouse/bronce/proveedores.csv
+            lakehouse/bronce/entidades.csv
+            lakehouse/bronce/funcionarios.csv
+            lakehouse/plata/contratos_procesados.csv
+            lakehouse/plata/dataset_favoritismo.csv
+            lakehouse/plata/dataset_fraccionamiento.csv
+            lakehouse/plata/proveedores.csv
+            lakehouse/plata/entidades.csv
+            lakehouse/plata/funcionarios.csv
+            lakehouse/plata/proveedores_contacto.csv
+            lakehouse/plata/funcionarios_contacto.csv
+            outputs/ranking_riesgo_favoritismo.csv
+            outputs/ranking_riesgo_fraccionamiento.csv
+            outputs/ranking_vinculos_proveedor_funcionario.csv
+            outputs/ranking_riesgo_favoritismo_spark.csv
+            outputs/ranking_riesgo_fraccionamiento_spark.csv
+            outputs/vinculos_graphframes_sospechosos.csv
+            outputs/vinculos_graphframes_pagerank.csv
+            outputs/extraccion_estandar_sql.csv
+            outputs/analisis_pagos_modalidades.json
+            outputs/resumen_pagos_contrato.csv
+            outputs/resumen_modalidades_regimen.csv
+            outputs/auditoria_tdr_completo.json
+            docs/Auditoria_TDR_Completo.md
+            outputs/checklist_anexo3.json
+            docs/Checklist_Anexo_03.md
+            outputs/dependencias_cgr.json
+            docs/Dependencias_Institucionales_CGR.md
+            outputs/auditoria_release.json
+            docs/Auditoria_Final_Release.md
+            outputs/spark_favoritismo_resumen.json
+            outputs/spark_fraccionamiento_resumen.json
+            outputs/graphframes_resumen.json
+            outputs/comparacion_modelos_favoritismo.json
+            outputs/comparacion_modelos_favoritismo.csv
+            outputs/tuning_favoritismo_resumen.json
+            outputs/tuning_favoritismo_resultados.csv
+            outputs/tuning_favoritismo_spark_resumen.json
+            outputs/tuning_favoritismo_spark_resultados.csv
+            outputs/tuning_fraccionamiento_resumen.json
+            outputs/tuning_fraccionamiento_resultados.csv
+            outputs/tuning_fraccionamiento_spark_resumen.json
+            outputs/tuning_fraccionamiento_spark_resultados.csv
+            outputs/monitoreo_champion.json
+            outputs/log_reentrenamiento_champion.csv
+            outputs/linaje_datos.csv
+            outputs/run_manifest.json
+            outputs/evidencia_documental.json
+            outputs/model_registry.json
+            outputs/inference_smoke_summary.json
+            outputs/inference_spark_smoke_summary.json
+            outputs/champions
+            outputs/champions_spark
+            outputs/charts/*.png
+            lakehouse/oro/ranking_riesgo_favoritismo.csv
+            lakehouse/oro/ranking_riesgo_fraccionamiento.csv
+            lakehouse/oro/ranking_vinculos_proveedor_funcionario.csv
+            lakehouse/oro/ranking_riesgo_favoritismo_spark.csv
+            lakehouse/oro/ranking_riesgo_fraccionamiento_spark.csv
+            lakehouse/oro/vinculos_graphframes_sospechosos.csv
+            lakehouse/oro/vinculos_graphframes_pagerank.csv
+            lakehouse/oro/resumen_pagos_contrato.csv
+            lakehouse/oro/resumen_modalidades_regimen.csv
+            reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx
             reporte/productos_formales/Producto_*.docx
-
-          if git diff --cached --quiet; then
-            echo "No hay artefactos verificados nuevos que persistir."
-          else
-            git commit -m "chore: regenerar artefactos verificados [skip ci]"
-            git push
-          fi
+          retention-days: 2
