@@ -54,10 +54,16 @@ def restaurar_serving_persistido_en_ci() -> None:
         ["git", "checkout", "--", *SERVING_TRACKED_PATHS],
         check=True,
     )
-    # Elimina únicamente residuos no versionados que una promoción de prueba
-    # pudiera haber creado dentro de los directorios de champion.
+    # Elimina únicamente residuos NO versionados de las promociones de smoke.
+    # `git clean` preserva cualquier champion_store que ya esté trackeado en
+    # HEAD, pero retira candidates inmutables creados solo en este workspace.
     subprocess.run(
-        ["git", "clean", "-fd", "--", "outputs/champions", "outputs/champions_spark"],
+        [
+            "git", "clean", "-fd", "--",
+            "outputs/champions",
+            "outputs/champions_spark",
+            "outputs/champion_store",
+        ],
         check=True,
     )
 
@@ -158,6 +164,7 @@ def main():
     assert fav_spark_tuning["pipeline"] == "spark_operational_features"
     assert fav_spark_tuning["amount_source"] == "monto_capped"
     assert fav_spark_tuning["positivos_holdout"] >= 4
+    assert fav_spark_tuning["training_data_fingerprint_sha256"]
     assert fav_spark_tuning["mejor_configuracion"]["numTrees"] in {100, 200, 300}
     assert fav_spark_tuning["mejor_configuracion"]["maxDepth"] in {3, 4, 6}
     assert set(fav_spark_tuning["feature_importances"]) == set(fav_spark_tuning["features"])
@@ -165,11 +172,12 @@ def main():
     assert frac_spark_tuning["algorithm"].startswith("StandardScalerModel + KMeansModel")
     assert frac_spark_tuning["labels_used_for_fit"] is False
     assert frac_spark_tuning["positivos_holdout"] >= 3
+    assert frac_spark_tuning["training_data_fingerprint_sha256"] == fav_spark_tuning[
+        "training_data_fingerprint_sha256"
+    ]
     assert frac_spark_tuning["mejor_configuracion"]["k"] in {2, 3, 4, 5, 6}
     for metric in ["accuracy", "auc_pr", "auc_roc", "precision", "recall", "f1", "recall_at_k"]:
         assert metric in frac_spark_tuning["metricas_holdout_final"]
-    # IsolationForest se conserva como benchmark de compatibilidad, no como
-    # evidencia del champion Spark.
     assert "metricas_holdout_final" in frac_compat
 
     registry = load_json("outputs/model_registry.json")
@@ -194,9 +202,11 @@ def main():
     monitor = load_json("outputs/monitoreo_champion.json")
     assert monitor["active_profile"] == "spark_mllib"
     assert monitor["champion_id"] == spark_profile["champion_id"]
+    assert monitor["baseline_matches_champion"] is True
     assert monitor["automatic_promotion"] is False
     assert {s["escenario"] for s in monitor["scenarios"]} == {"normal", "con_drift"}
     assert all(s["champion_id"] == spark_profile["champion_id"] for s in monitor["scenarios"])
+    assert all("favoritismo" in s and "fraccionamiento" in s for s in monitor["scenarios"])
 
     pagos = load_json("outputs/analisis_pagos_modalidades.json")
     pagos_csv = pd.read_csv("data/pagos_siaf_sintetico.csv")
@@ -218,14 +228,14 @@ def main():
     for obsoleto in ["pct_no_competitiva", "cumple_regla_fraccionamiento", "s/. 400,000"]:
         assert obsoleto not in texto_dic
 
+    restaurar_serving_persistido_en_ci()
+
     print(
-        "Pipeline metodológico 2B OK | "
+        "Pipeline metodológico 3B OK | "
         f"contratos={len(contracts)} fav+={int(fav['label_favoritismo_real'].sum())} "
         f"frac+={int(frac['label_fraccionamiento_real'].sum())} "
-        f"champion={spark_profile['champion_id']}"
+        f"champion_validado={spark_profile['champion_id']}"
     )
-
-    restaurar_serving_persistido_en_ci()
 
 
 if __name__ == "__main__":
