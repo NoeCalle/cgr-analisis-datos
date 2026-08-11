@@ -1,11 +1,9 @@
-"""Genera `outputs/run_manifest.json` con trazabilidad de la ejecución.
+"""Genera ``outputs/run_manifest.json`` con trazabilidad de la ejecución.
 
-Parámetros, versiones, hashes y resultados quedan en evidencia machine-readable
-para que la documentación no dependa de números copiados manualmente.
-
-Sprint 4 incorpora el análisis sintético de pagos/montos/modalidades y sus
-salidas Oro al manifiesto reproducible. Los pagos son demostrativos y no
-representan información SIAF institucional.
+Parámetros, versiones, hashes y resultados quedan en evidencia machine-readable.
+Etapa 5B separa la metadata variable de ejecución (timestamp/duración) de una
+huella reproducible estable basada en dependencias, configuración, código clave
+y datasets materializados del benchmark.
 """
 
 from __future__ import annotations
@@ -48,6 +46,28 @@ ARCHIVOS_TRAZADOS = [
     "data/diccionario_datos.csv",
     "outputs/linaje_datos.csv",
 ]
+
+# Solo entradas estables. No se incluyen timestamps, tiempos de ejecución ni
+# outputs que incorporen esos campos; así dos corridas equivalentes pueden
+# compararse mediante esta huella aunque se ejecuten en momentos distintos.
+REPRODUCIBILITY_INPUTS = [
+    "requirements.txt",
+    "reporte/package-lock.json",
+    "config/local.yaml",
+    "config/local-training.yaml",
+    "src/generar_datos.py",
+    "src/generar_pagos_sinteticos.py",
+    "src/preprocesamiento.py",
+    "src/core/objeto_similarity.py",
+    "src/core/fingerprints.py",
+    "src/spark/evaluar_favoritismo_spark.py",
+    "src/spark/evaluar_fraccionamiento_spark.py",
+    "src/spark/entrenar_candidato_spark.py",
+    "src/spark/score_inference_spark.py",
+    "data/contratos_siaf_seace.csv",
+    "data/pagos_siaf_sintetico.csv",
+]
+
 PAQUETES = [
     "pandas", "numpy", "scikit-learn", "shap", "pyspark", "delta-spark", "graphframes-py", "graphviz"
 ]
@@ -88,6 +108,35 @@ def cargar_json_relativo(ruta_relativa):
         return json.load(f)
 
 
+def construir_huella_reproducible(entorno: dict) -> dict:
+    archivos = {}
+    faltantes = []
+    for relativo in REPRODUCIBILITY_INPUTS:
+        ruta = ROOT / relativo
+        if not ruta.exists():
+            faltantes.append(relativo)
+            continue
+        archivos[relativo] = sha256(ruta)
+    if faltantes:
+        raise FileNotFoundError(
+            "Faltan entradas de reproducibilidad: " + ", ".join(sorted(faltantes))
+        )
+    payload = {
+        "schema_version": 1,
+        "environment": entorno,
+        "inputs_sha256": archivos,
+    }
+    canonical = json.dumps(
+        payload, sort_keys=True, ensure_ascii=False, separators=(",", ":")
+    ).encode("utf-8")
+    return {
+        **payload,
+        "algorithm": "sha256",
+        "fingerprint_sha256": hashlib.sha256(canonical).hexdigest(),
+        "excludes_execution_metadata": ["generado_utc", "duracion_s"],
+    }
+
+
 def main():
     artefactos = {}
     for relativo in ARCHIVOS_TRAZADOS:
@@ -98,11 +147,13 @@ def main():
             "bytes": ruta.stat().st_size if ruta.exists() else None,
         }
 
+    entorno = versiones()
     manifest = {
         "schema_version": 3,
         "generado_utc": datetime.now(timezone.utc).isoformat(),
         "git_commit": git_sha(),
-        "entorno": versiones(),
+        "entorno": entorno,
+        "reproducibility": construir_huella_reproducible(entorno),
         "arquitectura_datos": {
             "entrada_modelos": "lakehouse/plata",
             "salida_reporting": "lakehouse/oro",
@@ -126,7 +177,10 @@ def main():
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     with OUTPUT.open("w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
-    print(f"Manifest generado: {OUTPUT.relative_to(ROOT)}")
+    print(
+        f"Manifest generado: {OUTPUT.relative_to(ROOT)} | "
+        f"reproducibility={manifest['reproducibility']['fingerprint_sha256']}"
+    )
     return manifest
 
 
