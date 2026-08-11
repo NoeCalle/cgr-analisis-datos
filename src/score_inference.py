@@ -1,9 +1,12 @@
-"""INFERENCE sklearn de compatibilidad del Sprint 2/Sprint 4.
+"""INFERENCE sklearn de compatibilidad.
 
-Desde Sprint 3 el serving objetivo es Spark MLlib. Este módulo se conserva para
-benchmark/regresión y carga explícitamente el perfil ``sklearn`` del registry
-unificado. Sigue sin entrenar, tunear ni requerir labels. Sprint 4 aplica el
-mismo ``monto_capped`` congelado que vio el candidate operacional.
+Este módulo carga explícitamente el perfil ``sklearn`` del registry unificado y
+se conserva para benchmark/regresión. El serving objetivo del PoC es
+``spark_mllib``; esta ruta no define el perfil activo por sí misma.
+
+INFERENCE sklearn no entrena, no hace tuning ni requiere labels. Aplica el
+preprocesador congelado del champion y utiliza ``monto_capped`` para favoritismo,
+igual que el candidate sklearn del mismo perfil.
 """
 
 from __future__ import annotations
@@ -151,8 +154,8 @@ def ejecutar_inference(
             "fraccionamiento": frac_path.as_posix(),
         },
         "notice": (
-            "Perfil sklearn conservado como benchmark/compatibilidad. Desde Sprint 3 el serving objetivo "
-            "del TDR es spark_mllib."
+            "Perfil sklearn conservado como benchmark/compatibilidad; el serving objetivo "
+            "del PoC es spark_mllib."
         ),
     }
     if summary_path is None:
