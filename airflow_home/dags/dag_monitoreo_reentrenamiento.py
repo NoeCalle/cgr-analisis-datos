@@ -33,10 +33,11 @@ LOG = f"{MONITOR_BASE}/{RUN_TOKEN}/log_reentrenamiento_champion.csv"
 def comando_monitor():
     proyecto = shlex.quote(PROYECTO)
     python = shlex.quote(PY)
+    error_python = shlex.quote(f"Python de proyecto no encontrado: {PY}")
     batch = shlex.quote(BATCH_PATH)
     batch_arg = shlex.quote(f"{BATCH_NAME}={BATCH_PATH}")
     return (
-        f"test -x {python} || (echo 'Python de proyecto no encontrado: {PY}' >&2; exit 2); "
+        f"test -x {python} || (echo {error_python} >&2; exit 2); "
         f"test -n {batch} || (echo 'CGR_MONITOR_BATCH_PATH es obligatorio para el DAG operacional' >&2; exit 2); "
         f"cd {proyecto} && {python} src/autoevaluacion_champion.py "
         f"--registry {shlex.quote(REGISTRY)} "
