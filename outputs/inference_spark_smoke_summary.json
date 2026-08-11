@@ -4,9 +4,10 @@
   "champion_integrity_verified": true,
   "contracts_rows": 4296,
   "detail_outputs": {
-    "favoritismo": "outputs/runtime/inference_spark/ci/ranking_riesgo_favoritismo_spark.csv",
+    "favoritismo": "outputs/runtime/inference_spark/ci-persisted/ranking_riesgo_favoritismo_spark.csv",
     "format": "csv_single_file_compatibility",
-    "fraccionamiento": "outputs/runtime/inference_spark/ci/ranking_riesgo_fraccionamiento_spark.csv"
+    "fraccionamiento": "outputs/runtime/inference_spark/ci-persisted/ranking_riesgo_fraccionamiento_spark.csv",
+    "publication": "staging_then_atomic_directory_swap"
   },
   "engine": "Apache Spark MLlib",
   "favoritismo_amount_source": "monto_capped",
@@ -15,13 +16,19 @@
   "fraccionamiento_scored_rows": 265,
   "input_engine": "pandas_adapter",
   "institutional_approval": false,
+  "integrity_gate_before_publish": {
+    "favoritismo_model": true,
+    "fraccionamiento_model": true,
+    "fraccionamiento_scaler": true,
+    "preprocessor_json": true
+  },
   "labels_consumed": false,
   "mode": "inference",
   "notice": "Scores de priorización del PoC; no constituyen hallazgos de control ni decisión jurídica. Clúster/infraestructura CGR pendientes.",
   "pandas_materialization": true,
   "preprocessor_medians_external": false,
   "registry_schema_version": 2,
-  "schema_version": 2,
+  "schema_version": 3,
   "serving_profile": "spark_mllib",
   "sklearn_serving_dependency": false,
   "source_type": "local_csv",

@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "algorithm": "RandomForestClassificationModel",
   "pipeline": "spark_operational_features",
   "amount_source": "monto_capped",
@@ -16,6 +16,7 @@
     "contratos_por_mes",
     "monto_por_funcionario"
   ],
+  "training_data_fingerprint_sha256": "71419777a7e364091b16165b7489fb4e7c4ed19e7a997e892366904ba8d97e74",
   "design": "holdout final por proveedor-entidad reservado antes del FIT del preprocesador",
   "cv": "5-fold estratificado determinístico solo en desarrollo",
   "n_desarrollo": 1771,

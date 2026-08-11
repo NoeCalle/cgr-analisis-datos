@@ -1,9 +1,11 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "active_profile": "spark_mllib",
   "champion_id": "spark-poc-81b28cf92909acb2",
   "champion_framework": "Apache Spark MLlib",
-  "feature_source": "monto_capped + champion preprocessor",
+  "baseline_training_data_fingerprint_sha256": "71419777a7e364091b16165b7489fb4e7c4ed19e7a997e892366904ba8d97e74",
+  "baseline_matches_champion": true,
+  "feature_source": "champion preprocessor + ambos modelos Spark activos",
   "gates": {
     "psi_max": 0.25,
     "recall_at_k_min": 0.8
@@ -17,18 +19,51 @@
         "pct_comparacion_precios": 0.1456545383101751,
         "concentracion_objeto": 0.2304853386247846
       },
-      "psi_max": 0.2304853386247846,
+      "psi_max": 5.910622053260484,
       "recall_at_k_champion": null,
-      "trigger_drift": false,
+      "trigger_drift": true,
       "trigger_recall": false,
-      "retraining_required": false,
+      "retraining_required": true,
       "scored_groups": 633,
       "positivos": 0,
+      "labels_available_for_retraining": true,
+      "favoritismo": {
+        "psi": {
+          "monto_total": 0.20827796068326193,
+          "pct_contratacion_directa": 0.012560843575744707,
+          "pct_comparacion_precios": 0.1456545383101751,
+          "concentracion_objeto": 0.2304853386247846
+        },
+        "psi_max": 0.2304853386247846,
+        "recall_at_k_champion": null,
+        "trigger_drift": false,
+        "trigger_recall": false,
+        "scored_groups": 633,
+        "positivos": 0
+      },
+      "fraccionamiento": {
+        "psi_features": {
+          "n_contratos_grupo": 3.1826769262856125,
+          "max_contratos_ventana_15d": 0.9317784142466898,
+          "monto_total_ventana_15d": 4.878442043558692,
+          "pct_montos_bajo_umbral": 1.681162424953519,
+          "monto_total_grupo": 3.855239435138108
+        },
+        "psi_score_anomalia": 5.910622053260484,
+        "psi_max": 5.910622053260484,
+        "recall_at_k_champion": null,
+        "trigger_drift": true,
+        "trigger_recall": false,
+        "scored_groups": 6,
+        "positivos": 0
+      },
       "active_profile": "spark_mllib",
       "champion_id": "spark-poc-81b28cf92909acb2",
-      "candidate_generated": false,
-      "candidate_id": null,
-      "automatic_promotion": false
+      "candidate_generated": true,
+      "candidate_id": "spark-poc-f288ec6315c17f93",
+      "automatic_promotion": false,
+      "candidate_manifest": "outputs/runtime/retraining/normal/candidate/candidate_manifest.json",
+      "candidate_validation_state": "pending_candidate_evaluation"
     },
     {
       "escenario": "con_drift",
@@ -38,21 +73,53 @@
         "pct_comparacion_precios": 0.21731854340298254,
         "concentracion_objeto": 0.1434051254539516
       },
-      "psi_max": 0.8568249553902654,
+      "psi_max": 4.175218865919668,
       "recall_at_k_champion": 1.0,
       "trigger_drift": true,
       "trigger_recall": false,
       "retraining_required": true,
       "scored_groups": 658,
       "positivos": 6,
+      "labels_available_for_retraining": true,
+      "favoritismo": {
+        "psi": {
+          "monto_total": 0.13562884584200013,
+          "pct_contratacion_directa": 0.8568249553902654,
+          "pct_comparacion_precios": 0.21731854340298254,
+          "concentracion_objeto": 0.1434051254539516
+        },
+        "psi_max": 0.8568249553902654,
+        "recall_at_k_champion": 1.0,
+        "trigger_drift": true,
+        "trigger_recall": false,
+        "scored_groups": 658,
+        "positivos": 6
+      },
+      "fraccionamiento": {
+        "psi_features": {
+          "n_contratos_grupo": 3.208397270219284,
+          "max_contratos_ventana_15d": 0.9775751277678477,
+          "monto_total_ventana_15d": 4.057490455230351,
+          "pct_montos_bajo_umbral": 2.0645761432790577,
+          "monto_total_grupo": 4.175218865919668
+        },
+        "psi_score_anomalia": 4.057490455230351,
+        "psi_max": 4.175218865919668,
+        "recall_at_k_champion": null,
+        "trigger_drift": true,
+        "trigger_recall": false,
+        "scored_groups": 13,
+        "positivos": 0
+      },
       "active_profile": "spark_mllib",
       "champion_id": "spark-poc-81b28cf92909acb2",
       "candidate_generated": true,
-      "candidate_id": "spark-poc-0811fd49134d15ea",
+      "candidate_id": "spark-poc-59974801ee3d50fd",
       "automatic_promotion": false,
-      "candidate_manifest": "outputs/runtime/retraining/con_drift/candidate/candidate_manifest.json"
+      "candidate_manifest": "outputs/runtime/retraining/con_drift/candidate/candidate_manifest.json",
+      "candidate_validation_state": "pending_candidate_evaluation"
     }
   ],
   "automatic_promotion": false,
-  "notice": "Los candidates generados requieren revisión/promoción explícita; no existe autopromoción."
+  "notice": "Los candidates por drift heredan parámetros del champion y quedan pendientes de evaluación/promoción explícita; no existe autopromoción."
 }

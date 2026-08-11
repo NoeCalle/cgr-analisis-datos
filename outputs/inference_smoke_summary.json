@@ -4,8 +4,8 @@
   "champion_integrity_verified": true,
   "contracts_rows": 4296,
   "detail_outputs": {
-    "favoritismo": "outputs/runtime/inference/ci/ranking_riesgo_favoritismo.csv",
-    "fraccionamiento": "outputs/runtime/inference/ci/ranking_riesgo_fraccionamiento.csv"
+    "favoritismo": "outputs/runtime/inference/ci-persisted/ranking_riesgo_favoritismo.csv",
+    "fraccionamiento": "outputs/runtime/inference/ci-persisted/ranking_riesgo_fraccionamiento.csv"
   },
   "engine": "scikit-learn",
   "favoritismo_amount_source": "monto_capped",

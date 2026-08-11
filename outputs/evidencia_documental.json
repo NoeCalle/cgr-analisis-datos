@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
-  "generado_utc": "2026-08-10T23:29:38.813091+00:00",
-  "git_commit": "87c9d5706b3009c2e3e45717f8fbed8633c9b7a0",
+  "generado_utc": "2026-08-11T00:47:43.042960+00:00",
+  "git_commit": "fd37de3cdeb4d5b3b2f52494d5cce240b66a53e9",
   "naturaleza": "Prototipo independiente. Las métricas sintéticas evalúan el PoC y no estiman desempeño productivo. El análisis de pagos usa datos sintéticos y no representa SIAF real. Las salidas sobre datos públicos son señales de priorización para revisión y no constituyen hallazgos ni determinaciones de irregularidad.",
   "sintetico": {
     "contratos": 4296,
@@ -299,7 +299,7 @@
   "evaluacion_champion_spark": {
     "champion_id": "spark-poc-81b28cf92909acb2",
     "favoritismo": {
-      "schema_version": 1,
+      "schema_version": 2,
       "algorithm": "RandomForestClassificationModel",
       "pipeline": "spark_operational_features",
       "amount_source": "monto_capped",
@@ -316,6 +316,7 @@
         "contratos_por_mes",
         "monto_por_funcionario"
       ],
+      "training_data_fingerprint_sha256": "71419777a7e364091b16165b7489fb4e7c4ed19e7a997e892366904ba8d97e74",
       "design": "holdout final por proveedor-entidad reservado antes del FIT del preprocesador",
       "cv": "5-fold estratificado determinístico solo en desarrollo",
       "n_desarrollo": 1771,
@@ -354,7 +355,7 @@
       "advertencia": "benchmark sintético; holdout final no usado para tuning"
     },
     "fraccionamiento": {
-      "schema_version": 1,
+      "schema_version": 2,
       "algorithm": "StandardScalerModel + KMeansModel + distancia al centroide",
       "pipeline": "spark_operational_features",
       "features": [
@@ -364,6 +365,7 @@
         "pct_montos_bajo_umbral",
         "monto_total_grupo"
       ],
+      "training_data_fingerprint_sha256": "71419777a7e364091b16165b7489fb4e7c4ed19e7a997e892366904ba8d97e74",
       "design": "holdout final por proveedor-entidad-familia reservado antes del FIT del preprocesador; validación repetida solo en desarrollo",
       "selection_metric": "AUC-PR media de ranking",
       "k_values": [
@@ -453,11 +455,13 @@
     }
   },
   "monitoreo_champion": {
-    "schema_version": 1,
+    "schema_version": 2,
     "active_profile": "spark_mllib",
     "champion_id": "spark-poc-81b28cf92909acb2",
     "champion_framework": "Apache Spark MLlib",
-    "feature_source": "monto_capped + champion preprocessor",
+    "baseline_training_data_fingerprint_sha256": "71419777a7e364091b16165b7489fb4e7c4ed19e7a997e892366904ba8d97e74",
+    "baseline_matches_champion": true,
+    "feature_source": "champion preprocessor + ambos modelos Spark activos",
     "gates": {
       "psi_max": 0.25,
       "recall_at_k_min": 0.8
@@ -471,18 +475,51 @@
           "pct_comparacion_precios": 0.1456545383101751,
           "concentracion_objeto": 0.2304853386247846
         },
-        "psi_max": 0.2304853386247846,
+        "psi_max": 5.910622053260484,
         "recall_at_k_champion": null,
-        "trigger_drift": false,
+        "trigger_drift": true,
         "trigger_recall": false,
-        "retraining_required": false,
+        "retraining_required": true,
         "scored_groups": 633,
         "positivos": 0,
+        "labels_available_for_retraining": true,
+        "favoritismo": {
+          "psi": {
+            "monto_total": 0.20827796068326193,
+            "pct_contratacion_directa": 0.012560843575744707,
+            "pct_comparacion_precios": 0.1456545383101751,
+            "concentracion_objeto": 0.2304853386247846
+          },
+          "psi_max": 0.2304853386247846,
+          "recall_at_k_champion": null,
+          "trigger_drift": false,
+          "trigger_recall": false,
+          "scored_groups": 633,
+          "positivos": 0
+        },
+        "fraccionamiento": {
+          "psi_features": {
+            "n_contratos_grupo": 3.1826769262856125,
+            "max_contratos_ventana_15d": 0.9317784142466898,
+            "monto_total_ventana_15d": 4.878442043558692,
+            "pct_montos_bajo_umbral": 1.681162424953519,
+            "monto_total_grupo": 3.855239435138108
+          },
+          "psi_score_anomalia": 5.910622053260484,
+          "psi_max": 5.910622053260484,
+          "recall_at_k_champion": null,
+          "trigger_drift": true,
+          "trigger_recall": false,
+          "scored_groups": 6,
+          "positivos": 0
+        },
         "active_profile": "spark_mllib",
         "champion_id": "spark-poc-81b28cf92909acb2",
-        "candidate_generated": false,
-        "candidate_id": null,
-        "automatic_promotion": false
+        "candidate_generated": true,
+        "candidate_id": "spark-poc-f288ec6315c17f93",
+        "automatic_promotion": false,
+        "candidate_manifest": "outputs/runtime/retraining/normal/candidate/candidate_manifest.json",
+        "candidate_validation_state": "pending_candidate_evaluation"
       },
       {
         "escenario": "con_drift",
@@ -492,23 +529,55 @@
           "pct_comparacion_precios": 0.21731854340298254,
           "concentracion_objeto": 0.1434051254539516
         },
-        "psi_max": 0.8568249553902654,
+        "psi_max": 4.175218865919668,
         "recall_at_k_champion": 1.0,
         "trigger_drift": true,
         "trigger_recall": false,
         "retraining_required": true,
         "scored_groups": 658,
         "positivos": 6,
+        "labels_available_for_retraining": true,
+        "favoritismo": {
+          "psi": {
+            "monto_total": 0.13562884584200013,
+            "pct_contratacion_directa": 0.8568249553902654,
+            "pct_comparacion_precios": 0.21731854340298254,
+            "concentracion_objeto": 0.1434051254539516
+          },
+          "psi_max": 0.8568249553902654,
+          "recall_at_k_champion": 1.0,
+          "trigger_drift": true,
+          "trigger_recall": false,
+          "scored_groups": 658,
+          "positivos": 6
+        },
+        "fraccionamiento": {
+          "psi_features": {
+            "n_contratos_grupo": 3.208397270219284,
+            "max_contratos_ventana_15d": 0.9775751277678477,
+            "monto_total_ventana_15d": 4.057490455230351,
+            "pct_montos_bajo_umbral": 2.0645761432790577,
+            "monto_total_grupo": 4.175218865919668
+          },
+          "psi_score_anomalia": 4.057490455230351,
+          "psi_max": 4.175218865919668,
+          "recall_at_k_champion": null,
+          "trigger_drift": true,
+          "trigger_recall": false,
+          "scored_groups": 13,
+          "positivos": 0
+        },
         "active_profile": "spark_mllib",
         "champion_id": "spark-poc-81b28cf92909acb2",
         "candidate_generated": true,
-        "candidate_id": "spark-poc-0811fd49134d15ea",
+        "candidate_id": "spark-poc-59974801ee3d50fd",
         "automatic_promotion": false,
-        "candidate_manifest": "outputs/runtime/retraining/con_drift/candidate/candidate_manifest.json"
+        "candidate_manifest": "outputs/runtime/retraining/con_drift/candidate/candidate_manifest.json",
+        "candidate_validation_state": "pending_candidate_evaluation"
       }
     ],
     "automatic_promotion": false,
-    "notice": "Los candidates generados requieren revisión/promoción explícita; no existe autopromoción."
+    "notice": "Los candidates por drift heredan parámetros del champion y quedan pendientes de evaluación/promoción explícita; no existe autopromoción."
   },
   "validacion_datos_publicos": {
     "fecha_validacion": "2026-08-07",
@@ -571,8 +640,8 @@
   },
   "run_manifest": {
     "schema_version": 3,
-    "generado_utc": "2026-08-10T23:29:38.430875+00:00",
-    "git_commit": "87c9d5706b3009c2e3e45717f8fbed8633c9b7a0",
+    "generado_utc": "2026-08-11T00:47:42.661133+00:00",
+    "git_commit": "fd37de3cdeb4d5b3b2f52494d5cce240b66a53e9",
     "entorno": {
       "python": "3.12.13",
       "pandas": "3.0.2",
@@ -863,7 +932,7 @@
       "amount_source": "monto",
       "ranking": "outputs/ranking_riesgo_favoritismo_spark.csv",
       "modelo_runtime": "outputs/runtime/modelo_favoritismo_spark_rf",
-      "duracion_s": 49.244,
+      "duracion_s": 44.47,
       "advertencia": "Benchmark sintético con solo 6 positivos: la métrica CV es de alta varianza y no se usa como estimación de desempeño productivo. Ejecución Spark real local; clúster CGR pendiente."
     },
     "spark_fraccionamiento": {
@@ -893,7 +962,7 @@
       "ranking": "outputs/ranking_riesgo_fraccionamiento_spark.csv",
       "modelo_runtime": "outputs/runtime/modelo_fraccionamiento_spark_kmeans",
       "scaler_runtime": "outputs/runtime/modelo_fraccionamiento_spark_scaler",
-      "duracion_s": 26.054,
+      "duracion_s": 24.1,
       "advertencia": "Sanity check sobre benchmark sintético; la evidencia out-of-sample del KMeans se publica en tuning_fraccionamiento_spark_resumen.json. No estima desempeño productivo."
     },
     "graphframes": {
@@ -913,7 +982,7 @@
         "outputs/vinculos_graphframes_sospechosos.csv",
         "outputs/vinculos_graphframes_pagerank.csv"
       ],
-      "duracion_s": 22.215,
+      "duracion_s": 21.562,
       "advertencia": "Datos de contacto sintéticos; clúster y fuentes institucionales CGR pendientes."
     },
     "validacion_p0_datos_reales": {
@@ -1033,8 +1102,8 @@
       },
       "outputs/ranking_riesgo_favoritismo.csv": {
         "existe": true,
-        "sha256": "918e0d7c8b792c0466a6e7255a7b4e020252da98d639d3513eeafa915fe9bef8",
-        "bytes": 198420
+        "sha256": "83ad132c6cfa4b645743de9a8502481766c50761a1ab0a6a710f7261407b59e4",
+        "bytes": 198426
       },
       "outputs/ranking_riesgo_fraccionamiento.csv": {
         "existe": true,
@@ -1048,17 +1117,17 @@
       },
       "outputs/spark_favoritismo_resumen.json": {
         "existe": true,
-        "sha256": "f51ba6cb60b89daa0700eca7bc62a8ccd68c510d1e75c00df509b5d9cf1145ad",
-        "bytes": 1119
+        "sha256": "d3adf7937ca42a16eaa3c8e5f0bdd7ca3d4aed97d1f3589d9fd5de912acbf6fe",
+        "bytes": 1118
       },
       "outputs/spark_fraccionamiento_resumen.json": {
         "existe": true,
-        "sha256": "c4f06b767dc6ed5b0a3f765649bb2b753d909cf1502ea8378b1c315dc90e4267",
-        "bytes": 1249
+        "sha256": "53d022732b7197819cacc01ffa633fc98ff86ad89bdc4a8209ebbe262909babc",
+        "bytes": 1247
       },
       "outputs/graphframes_resumen.json": {
         "existe": true,
-        "sha256": "c9b03b7c081ce305935464cd1fc9aa0ef69bc0097fb21676f645399e72e0ddc4",
+        "sha256": "a329ab4e6db42d720188532947c180188e71b135ec85af192547a37316fb8ef3",
         "bytes": 603
       },
       "outputs/ranking_riesgo_favoritismo_spark.csv": {

@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "algorithm": "StandardScalerModel + KMeansModel + distancia al centroide",
   "pipeline": "spark_operational_features",
   "features": [
@@ -9,6 +9,7 @@
     "pct_montos_bajo_umbral",
     "monto_total_grupo"
   ],
+  "training_data_fingerprint_sha256": "71419777a7e364091b16165b7489fb4e7c4ed19e7a997e892366904ba8d97e74",
   "design": "holdout final por proveedor-entidad-familia reservado antes del FIT del preprocesador; validación repetida solo en desarrollo",
   "selection_metric": "AUC-PR media de ranking",
   "k_values": [
