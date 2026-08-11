@@ -17,7 +17,7 @@
   "institutional_approval": false,
   "labels_consumed": false,
   "mode": "inference",
-  "notice": "Perfil sklearn conservado como benchmark/compatibilidad. Desde Sprint 3 el serving objetivo del TDR es spark_mllib.",
+  "notice": "Perfil sklearn conservado como benchmark/compatibilidad; el serving objetivo del PoC es spark_mllib.",
   "schema_version": 1,
   "serving_profile": "sklearn",
   "source_type": "local_csv",

@@ -627,6 +627,24 @@ Referencias:
 
 ---
 
+<!-- RELEASE-CANDIDATE-START -->
+## Release candidate histórico
+
+Versión declarada del snapshot original del PoC independiente: **`v1.0.0-rc.1`**.
+
+Si el tag ya existe, permanece como snapshot histórico e inmutable y no se mueve con las mejoras posteriores de `main`. El estado funcional vigente de la herramienta se documenta en las secciones superiores de este README.
+
+Referencias del ecosistema de release:
+
+- `RELEASE_NOTES.md` — alcance histórico y límites de la versión;
+- `docs/Checklist_Anexo_03.md` — 11 criterios del Anexo 3;
+- `docs/Dependencias_Institucionales_CGR.md` — fuente única `CGR-DEP-01..08` de dependencias institucionales;
+- `docs/Auditoria_Final_Release.md` — gate de coherencia del estado actual de `main` frente a la VERSION declarada;
+- `outputs/auditoria_release.json` — resultado machine-readable del gate.
+
+El tag histórico no representa aprobación ni despliegue institucional de la CGR.
+<!-- RELEASE-CANDIDATE-END -->
+
 ## 18. Documentación técnica
 
 | Documento | Propósito |
