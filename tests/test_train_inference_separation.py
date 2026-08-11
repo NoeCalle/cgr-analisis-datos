@@ -28,6 +28,7 @@ from registro_modelos import (
     cargar_registry_unificado,
     promover_candidato,
     promover_candidato_spark,
+    rollback_champion,
     sha256_ruta,
 )
 
@@ -54,6 +55,34 @@ def _contracts_base():
             "categoria_principal": ["goods", "goods", "services", "services"],
         }
     )
+
+
+def _candidate_sklearn(tmp_path: Path, candidate_id: str, marker: str) -> Path:
+    base = tmp_path / f"candidate-{candidate_id}"
+    base.mkdir()
+    nombres = {
+        "preprocessor": "pre.joblib",
+        "preprocessor_json": "pre.json",
+        "favoritismo_model": "fav.joblib",
+        "fraccionamiento_model": "frac.joblib",
+        "fraccionamiento_scaler": "scaler.joblib",
+    }
+    artifacts = {}
+    for nombre, filename in nombres.items():
+        path = base / filename
+        path.write_text(f"{marker}-{nombre}", encoding="utf-8")
+        artifacts[nombre] = {"path": path.as_posix(), "sha256": sha256_ruta(path)}
+    manifest = {
+        "schema_version": 1,
+        "status": "candidate",
+        "candidate_id": candidate_id,
+        "training": {"ground_truth_required": True, "marker": marker},
+        "models": {"favoritismo": {"marker": marker}, "fraccionamiento": {"marker": marker}},
+        "artifacts": artifacts,
+    }
+    manifest_path = base / "candidate_manifest.json"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    return manifest_path
 
 
 def test_preprocesamiento_inference_usa_estado_train_y_no_recalcula():
@@ -215,6 +244,78 @@ def test_promocion_spark_exige_reconocimiento_explicito(tmp_path):
         )
 
 
+def test_promocion_versiona_artefactos_y_rollback_restaura_champion(tmp_path):
+    registry_path = tmp_path / "registry.json"
+    store_root = tmp_path / "champion_store"
+    manifest_a = _candidate_sklearn(tmp_path, "candidate-a", "A")
+    manifest_b = _candidate_sklearn(tmp_path, "candidate-b", "B")
+
+    a = promover_candidato(
+        manifest_a,
+        approved_by="tester-a",
+        acknowledge_poc_only=True,
+        registry_path=registry_path,
+        store_root=store_root,
+    )
+    a_path = Path(a["artifacts"]["favoritismo_model"]["path"])
+    assert a["champion_id"] == "candidate-a"
+    assert a["promotion"]["artifact_storage"] == "immutable_versioned"
+    assert a_path.exists()
+    assert "candidate-a" in a_path.parts
+
+    b = promover_candidato(
+        manifest_b,
+        approved_by="tester-b",
+        acknowledge_poc_only=True,
+        registry_path=registry_path,
+        store_root=store_root,
+    )
+    assert b["champion_id"] == "candidate-b"
+    assert a_path.exists(), "promover B no debe borrar los artefactos inmutables de A"
+
+    registry = cargar_registry_unificado(registry_path)
+    assert registry["serving_profiles"][SKLEARN_PROFILE]["champion_id"] == "candidate-b"
+    assert any(h["champion_id"] == "candidate-a" for h in registry["history"][SKLEARN_PROFILE])
+
+    restored = rollback_champion(
+        profile=SKLEARN_PROFILE,
+        champion_id="candidate-a",
+        approved_by="rollback-tester",
+        acknowledge_poc_only=True,
+        registry_path=registry_path,
+    )
+    assert restored["champion_id"] == "candidate-a"
+    assert restored["promotion"]["trigger"] == "explicit_rollback"
+    assert restored["promotion"]["rolled_back_from"] == "candidate-b"
+
+
+def test_promocion_no_modifica_registry_si_manifest_esta_corrupto(tmp_path):
+    registry_path = tmp_path / "registry.json"
+    store_root = tmp_path / "champion_store"
+    manifest_a = _candidate_sklearn(tmp_path, "candidate-ok", "OK")
+    promover_candidato(
+        manifest_a,
+        approved_by="tester",
+        acknowledge_poc_only=True,
+        registry_path=registry_path,
+        store_root=store_root,
+    )
+    before = registry_path.read_bytes()
+
+    manifest_bad = _candidate_sklearn(tmp_path, "candidate-bad", "BAD")
+    data = json.loads(manifest_bad.read_text(encoding="utf-8"))
+    Path(data["artifacts"]["favoritismo_model"]["path"]).write_text("CORRUPTO", encoding="utf-8")
+    with pytest.raises(ValueError, match="SHA-256 no coincide"):
+        promover_candidato(
+            manifest_bad,
+            approved_by="tester",
+            acknowledge_poc_only=True,
+            registry_path=registry_path,
+            store_root=store_root,
+        )
+    assert registry_path.read_bytes() == before
+
+
 def test_registry_v1_migra_en_memoria_a_perfil_sklearn(tmp_path):
     legacy = {
         "schema_version": 1,
@@ -231,6 +332,7 @@ def test_registry_v1_migra_en_memoria_a_perfil_sklearn(tmp_path):
     assert migrated["schema_version"] == REGISTRY_SCHEMA_VERSION == 2
     assert migrated["active_serving_profile"] == SKLEARN_PROFILE
     assert migrated["serving_profiles"][SKLEARN_PROFILE]["champion_id"] == "legacy-1"
+    assert migrated["history"] == {}
 
 
 def test_hash_directorio_spark_ignora_crc(tmp_path):
