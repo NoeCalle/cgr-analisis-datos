@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Auditoría estructural de los DOCX formales generados por el PoC."""
+"""Auditoría estructural y editorial de los DOCX formales generados por el PoC."""
 
 from __future__ import annotations
 
@@ -9,18 +9,30 @@ import zipfile
 from pathlib import Path
 
 from docx import Document
-from docx.shared import Pt
 
 ROOT = Path(__file__).resolve().parent
 REPORT = ROOT / "Reporte_Tecnico_Prototipo_CGR_1.8.2.docx"
 PRODUCTS = sorted((ROOT / "productos_formales").glob("Producto_*.docx"))
 FILES = [REPORT] + PRODUCTS
 
+# Estos tokens representan contratos obsoletos o narrativa interna de desarrollo
+# que no debe volver a aparecer en los entregables vigentes.
 BANNED = [
     "pct_no_competitiva",
     "S/. 400,000",
     "reentrenado automáticamente",
     "cumple_regla_fraccionamiento",
+    "Sprint 2",
+    "Sprint 3",
+    "Sprint 4",
+    "Etapa 2B",
+    "Etapa 3B",
+    "Etapa 4B",
+    "Etapa 5B",
+    "Correcciones P1",
+    "conteo antiguo",
+    "conteo anterior",
+    "adaptador Spark anterior",
 ]
 
 COMMON = [
@@ -150,11 +162,30 @@ def validar_estructura(ruta: Path, texto: str):
 
 def validar_contenido_especifico(nombre: str, texto: str):
     if nombre.startswith("Producto_03_"):
-        for token in ["Apache Spark MLlib", "RandomForestClassifier", "AUC-PR", "PySpark"]:
-            assert token in texto, f"{nombre}: falta evidencia Spark/TDR: {token}"
+        for token in [
+            "Apache Spark MLlib",
+            "RandomForestClassificationModel",
+            "AUC-PR",
+            "PySpark",
+            "benchmark sklearn",
+        ]:
+            assert token.lower() in texto.lower(), f"{nombre}: falta evidencia de modelo/rol: {token}"
+        assert "modelo servido" in texto.lower(), f"{nombre}: no identifica el modelo servido"
+
     if nombre.startswith("Producto_06_"):
-        for token in ["Apache Spark MLlib", "KMeans", "AUC-PR", "holdout"]:
-            assert token in texto, f"{nombre}: falta evidencia Spark/TDR: {token}"
+        for token in [
+            "Apache Spark MLlib",
+            "KMeans",
+            "AUC-PR",
+            "holdout",
+            "Evaluación holdout KMeans Spark",
+            "Benchmark Isolation Forest complementario",
+        ]:
+            assert token.lower() in texto.lower(), f"{nombre}: falta evidencia Spark/TDR: {token}"
+        assert "no es el serving activo" in texto.lower(), (
+            f"{nombre}: Isolation Forest no quedó inequívocamente como benchmark"
+        )
+
     if nombre.startswith("Producto_07_"):
         for token in [
             "Plan de monitoreo y mantenimiento",
@@ -162,10 +193,22 @@ def validar_contenido_especifico(nombre: str, texto: str):
             "Transferencia de conocimiento",
             "marcha blanca",
             "certificación",
+            "RandomForestClassificationModel",
+            "StandardScaler + KMeans",
         ]:
             assert token.lower() in texto.lower(), f"{nombre}: falta contenido de cierre: {token}"
+
     if nombre == REPORT.name:
-        for token in ["47,254", "AUC-PR", "Spark MLlib", "GraphFrames", "dependencias institucionales"]:
+        for token in [
+            "47,254",
+            "AUC-PR",
+            "Spark MLlib",
+            "GraphFrames",
+            "dependencias institucionales",
+            "Modelos operacionales y métricas holdout",
+            "benchmark metodológicos",
+            "promoción explícita",
+        ]:
             assert token.lower() in texto.lower(), f"{nombre}: falta evidencia consolidada: {token}"
 
 
@@ -178,7 +221,7 @@ def main() -> int:
         texto = all_text(doc)
         low = texto.lower()
         for token in BANNED:
-            assert token.lower() not in low, f"{ruta.name}: contiene texto obsoleto: {token}"
+            assert token.lower() not in low, f"{ruta.name}: contiene texto obsoleto/interno: {token}"
         validar_tipografia(doc, ruta)
         validar_ooxml(ruta)
         validar_estructura(ruta, texto)
