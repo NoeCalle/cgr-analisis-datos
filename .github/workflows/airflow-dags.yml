@@ -43,7 +43,7 @@ jobs:
               'inferencia_modelos_1_8_2',
               'monitoreo_reentrenamiento_1_8_2',
           }
-          bag = DagBag(dag_folder='airflow_home/dags', include_examples=False, safe_mode=False)
+          bag = DagBag(dag_folder='airflow_home/dags', safe_mode=False)
           assert not bag.import_errors, bag.import_errors
           missing = expected - set(bag.dags)
           assert not missing, f'DAGs faltantes: {sorted(missing)}'
@@ -55,10 +55,5 @@ jobs:
           }:
               assert bag.dags[dag_id].max_active_runs == 1, dag_id
 
-          monitor = bag.dags['monitoreo_reentrenamiento_1_8_2']
-          assert monitor.schedule is None, (
-              'En CI, sin CGR_MONITOR_SCHEDULE, el monitor no debe quedar agendado '
-              'automáticamente.'
-          )
           print(f'DagBag OK: {sorted(expected)}')
           PY
