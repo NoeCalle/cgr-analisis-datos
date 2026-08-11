@@ -1,12 +1,12 @@
-"""Evaluación del RandomForest Spark que corresponde al serving activo.
+"""Evaluación operacional del Random Forest Spark servido para favoritismo.
 
 Reserva un holdout por par proveedor-entidad antes del FIT del preprocesador,
-usa ``monto_capped`` y selecciona numTrees/maxDepth únicamente sobre desarrollo.
-El holdout final se consulta una sola vez después de elegir hiperparámetros.
+usa ``monto_capped`` y selecciona ``numTrees``/``maxDepth`` únicamente sobre
+desarrollo. El holdout final se consulta después de fijar la configuración.
 
-Etapa 5B permite ejecutar la evaluación directamente sobre ``spark_sql``: la
-integración, el split, el FIT/TRANSFORM y las métricas permanecen en Spark y el
-fingerprint es exactamente el mismo contrato distribuido que usa TRAIN.
+Con ``source.type=spark_sql``, integración, split, FIT/TRANSFORM, features y
+métricas permanecen en Spark. El fingerprint producido por esta evaluación es
+el mismo contrato de corpus que TRAIN exige antes de generar un candidate.
 """
 
 from __future__ import annotations
