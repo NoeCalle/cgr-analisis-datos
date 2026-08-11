@@ -1,0 +1,6 @@
+# Runtime separado para validar/importar los DAGs del PoC.
+# Instalar con las constraints oficiales de Apache Airflow, tal como hace
+# .github/workflows/airflow-dags.yml. No mezclar con requirements.txt del ML.
+# El provider 1.15.0 es el fijado por constraints-3.3.0/constraints-3.12.txt.
+apache-airflow==3.3.0
+apache-airflow-providers-standard==1.15.0

@@ -1,9 +1,8 @@
-"""DAG explícito de TRAIN operacional — Sprint 3.
+"""DAG explícito de TRAIN operacional.
 
-Genera un candidate Spark MLlib con el mismo preprocesamiento corregido que usa
-INFERENCE. Deliberadamente NO contiene ninguna tarea de promoción: pasar un
-candidate a champion es una operación separada y, en un entorno institucional,
-debe quedar detrás del gate de aprobación definido por la CGR.
+Genera un candidate Spark MLlib con el mismo preprocesamiento que usa INFERENCE.
+Deliberadamente NO contiene ninguna tarea de promoción. Cada run escribe en una
+ruta propia para que dos ejecuciones no compartan el directorio candidate.
 """
 
 from datetime import datetime
@@ -19,10 +18,12 @@ PROYECTO = os.environ.get(
 )
 PY = os.environ.get("CGR_PROJECT_PYTHON", os.path.join(PROYECTO, ".venv", "bin", "python"))
 CONFIG = os.environ.get("CGR_TRAIN_CONFIG", "config/local-training.yaml")
-MANIFEST = os.environ.get(
-    "CGR_SPARK_CANDIDATE_MANIFEST",
-    "outputs/runtime/spark_model_candidates/candidate_manifest.json",
+CANDIDATE_BASE = os.environ.get(
+    "CGR_SPARK_CANDIDATE_BASE",
+    "outputs/runtime/spark_model_candidates/airflow",
 )
+RUN_TOKEN = "{{ ts_nodash }}"
+MANIFEST = f"{CANDIDATE_BASE}/{RUN_TOKEN}/candidate_manifest.json"
 
 
 def comando_train():
@@ -37,10 +38,11 @@ def comando_train():
 
 with DAG(
     dag_id="entrenamiento_candidato_1_8_2",
-    description="TRAIN Spark separado: genera candidate y nunca lo promueve automáticamente",
+    description="TRAIN Spark separado: genera candidate por run y nunca lo promueve automáticamente",
     start_date=datetime(2026, 8, 8),
     schedule=None,
     catchup=False,
+    max_active_runs=1,
     default_args={"owner": "prototipo-independiente", "retries": 0},
     tags=["1.8.2", "training", "spark", "mllib", "candidate", "poc"],
 ) as dag:

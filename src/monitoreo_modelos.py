@@ -1,9 +1,8 @@
 """Monitor operacional de solo lectura para el PoC CGR 1.8.2.
 
 Consolida el estado del serving, la integridad declarada del champion y la
-última evidencia de deriva/reentrenamiento. No entrena modelos, no hace tuning y
-no promueve candidates. La operación institucional, alertamiento y aprobación
-siguen dependiendo de CGR.
+última evidencia de deriva/reentrenamiento del monitor Spark vigente. No entrena,
+no hace tuning y no promueve candidates.
 """
 
 from __future__ import annotations
@@ -18,7 +17,7 @@ from registro_modelos import guardar_json_determinista
 
 DEFAULT_REGISTRY = Path("outputs/model_registry.json")
 DEFAULT_INFERENCE = Path("outputs/inference_spark_smoke_summary.json")
-DEFAULT_LOG = Path("outputs/log_reentrenamiento.csv")
+DEFAULT_LOG = Path("outputs/log_reentrenamiento_champion.csv")
 DEFAULT_OUTPUT = Path("outputs/monitoreo_modelos_resumen.json")
 
 
@@ -86,14 +85,18 @@ def construir_resumen(
             alertas.append("dependencia_sklearn_en_serving")
         if inference.get("favoritismo_amount_source") != "monto_capped":
             alertas.append("favoritismo_no_usa_monto_capped")
+        if active and inference.get("champion_id") != active.get("champion_id"):
+            alertas.append("smoke_inference_no_corresponde_al_champion_activo")
 
-    # El log histórico de autoevaluación es evidencia metodológica del PoC. Su
-    # candidate no se considera aprobación ni se activa automáticamente.
-    if ultima and bool(ultima.get("promocion_automatica")):
-        alertas.append("promocion_automatica_detectada")
+    if ultima:
+        auto = ultima.get("automatic_promotion", ultima.get("promocion_automatica"))
+        if bool(auto):
+            alertas.append("promocion_automatica_detectada")
+        if active and ultima.get("champion_id") not in {None, active.get("champion_id")}:
+            alertas.append("log_monitor_no_corresponde_al_champion_activo")
 
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "mode": "monitoring_read_only",
         "nature": "PoC independiente; no constituye monitoreo productivo CGR",
         "active_serving_profile": active_profile,

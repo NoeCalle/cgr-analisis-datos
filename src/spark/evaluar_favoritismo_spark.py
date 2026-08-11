@@ -3,6 +3,8 @@
 Reserva un holdout por par proveedor-entidad antes del FIT del preprocesador,
 usa ``monto_capped`` y selecciona numTrees/maxDepth únicamente sobre desarrollo.
 El holdout final se consulta una sola vez después de elegir hiperparámetros.
+La evidencia registra el fingerprint del corpus canónico completo para que TRAIN
+no pueda reutilizarla silenciosamente sobre otro dataset.
 """
 
 from __future__ import annotations
@@ -32,6 +34,7 @@ SRC_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SRC_DIR))
 
 from core.config import cargar_config
+from core.fingerprints import fingerprint_pandas_dataframe
 from evaluar_favoritismo_operacional import _split_raw_contracts
 from ingestar_canonico import integrar
 from preprocesamiento import aplicar_estado_preprocesamiento, ajustar_estado_preprocesamiento
@@ -66,6 +69,7 @@ def evaluar(config_path: str = CONFIG_PATH):
     config = cargar_config(config_path)
     datasets, _ = integrar(config)
     contracts = datasets["contracts"]
+    corpus_fingerprint = fingerprint_pandas_dataframe(contracts)
     dev_raw, holdout_raw = _split_raw_contracts(contracts)
     estado = ajustar_estado_preprocesamiento(dev_raw)
     dev_proc = aplicar_estado_preprocesamiento(dev_raw, estado)
@@ -159,11 +163,12 @@ def evaluar(config_path: str = CONFIG_PATH):
             for feature, value in zip(FEATURES, final_model.featureImportances.toArray())
         }
         resumen = {
-            "schema_version": 1,
+            "schema_version": 2,
             "algorithm": "RandomForestClassificationModel",
             "pipeline": "spark_operational_features",
             "amount_source": AMOUNT_SOURCE,
             "features": FEATURES,
+            "training_data_fingerprint_sha256": corpus_fingerprint,
             "design": "holdout final por proveedor-entidad reservado antes del FIT del preprocesador",
             "cv": f"{n_folds}-fold estratificado determinístico solo en desarrollo",
             "n_desarrollo": int(dev.count()),

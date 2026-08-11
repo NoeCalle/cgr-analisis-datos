@@ -1,9 +1,8 @@
-"""DAG operacional de INFERENCE — Sprint 3.
+"""DAG operacional de INFERENCE.
 
-El serving objetivo carga el champion ``spark_mllib`` del registry unificado.
-No genera datos, no ejecuta tuning, no ajusta preprocesamiento y no entrena.
-En CGR las rutas/configuración reales se suministrarían mediante gestión de
-secretos y variables institucionales.
+El serving carga el champion ``spark_mllib`` del registry unificado. No genera
+datos, no ejecuta tuning, no ajusta preprocesamiento y no entrena. Cada run usa
+un directorio de salida propio para evitar colisiones entre ejecuciones.
 """
 
 from datetime import datetime
@@ -20,7 +19,12 @@ PROYECTO = os.environ.get(
 PY = os.environ.get("CGR_PROJECT_PYTHON", os.path.join(PROYECTO, ".venv", "bin", "python"))
 CONFIG = os.environ.get("CGR_DATA_CONFIG", "config/local.yaml")
 REGISTRY = os.environ.get("CGR_MODEL_REGISTRY", "outputs/model_registry.json")
-OUTPUT_DIR = os.environ.get("CGR_INFERENCE_OUTPUT_DIR", "outputs/runtime/inference_spark/airflow")
+OUTPUT_BASE = os.environ.get(
+    "CGR_INFERENCE_OUTPUT_BASE",
+    "outputs/runtime/inference_spark/airflow",
+)
+RUN_TOKEN = "{{ ts_nodash }}"
+OUTPUT_DIR = f"{OUTPUT_BASE}/{RUN_TOKEN}"
 
 
 def comando_inference():
@@ -37,10 +41,11 @@ def comando_inference():
 
 with DAG(
     dag_id="inferencia_modelos_1_8_2",
-    description="Scoring Spark MLlib con champion sin labels, tuning ni reentrenamiento",
+    description="Scoring Spark MLlib con champion, salida aislada por run y sin reentrenar",
     start_date=datetime(2026, 8, 8),
     schedule=None,
     catchup=False,
+    max_active_runs=1,
     default_args={"owner": "prototipo-independiente", "retries": 1},
     tags=["1.8.2", "inference", "spark", "mllib", "serving", "poc"],
 ) as dag:

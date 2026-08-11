@@ -2,7 +2,9 @@
 
 Evalúa exactamente StandardScalerModel + KMeansModel + distancia al centroide,
 que es el algoritmo del serving Spark. Las etiquetas sintéticas se usan solo
-para estratificar/evaluar; KMeans se ajusta sin labels.
+para estratificar/evaluar; KMeans se ajusta sin labels. La evidencia registra
+el fingerprint del corpus canónico completo para que TRAIN solo consuma tuning
+producido sobre el mismo conjunto de datos.
 """
 
 from __future__ import annotations
@@ -28,6 +30,7 @@ SRC_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SRC_DIR))
 
 from core.config import cargar_config
+from core.fingerprints import fingerprint_pandas_dataframe
 from core.objeto_similarity import firma_objeto
 from ingestar_canonico import integrar
 from preprocesamiento import aplicar_estado_preprocesamiento, ajustar_estado_preprocesamiento
@@ -115,6 +118,7 @@ def evaluar(config_path: str = CONFIG_PATH):
     config = cargar_config(config_path)
     datasets, _ = integrar(config)
     contracts = datasets["contracts"]
+    corpus_fingerprint = fingerprint_pandas_dataframe(contracts)
     dev_raw, holdout_raw = _split_raw(contracts)
 
     estado = ajustar_estado_preprocesamiento(dev_raw)
@@ -170,10 +174,11 @@ def evaluar(config_path: str = CONFIG_PATH):
         holdout_metrics = _score_df(holdout_feat, final_model, final_scaler)
 
         resumen = {
-            "schema_version": 1,
+            "schema_version": 2,
             "algorithm": "StandardScalerModel + KMeansModel + distancia al centroide",
             "pipeline": "spark_operational_features",
             "features": FEATURES,
+            "training_data_fingerprint_sha256": corpus_fingerprint,
             "design": "holdout final por proveedor-entidad-familia reservado antes del FIT del preprocesador; validación repetida solo en desarrollo",
             "selection_metric": "AUC-PR media de ranking",
             "k_values": K_VALUES,

@@ -5,16 +5,19 @@ hasta el scoring y escribe rankings distribuidos en Parquet. CSV/SQL Server
 mantienen un adaptador pandas->Spark y CSV único por compatibilidad local.
 
 No contiene fit, tuning ni requiere labels. Los artefactos champion se verifican
-por SHA-256 antes y después del scoring.
+por SHA-256 al cargar y nuevamente antes de publicar. Las salidas se escriben en
+staging y solo se hacen visibles en el directorio final después del gate.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 import shutil
 import sys
+import uuid
 
 from pyspark.ml.classification import RandomForestClassificationModel
 from pyspark.ml.clustering import KMeansModel
@@ -68,27 +71,69 @@ def _write_single_csv_spark(df, target: Path) -> None:
 
 
 def _write_rankings(ranking_fav, ranking_frac, output_dir: Path, *, spark_native: bool) -> dict:
+    """Materializa rankings en un directorio nuevo o ya existente pero vacío.
+
+    Mantiene el contrato histórico del helper —aceptar ``tmp_path`` vacío— sin
+    permitir que staging sobrescriba contenido preexistente.
+    """
+    output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    if any(output_dir.iterdir()):
+        raise FileExistsError(f"Directorio de staging no vacío: {output_dir}")
+
     if spark_native:
-        fav_path = output_dir / "ranking_riesgo_favoritismo_spark.parquet"
-        frac_path = output_dir / "ranking_riesgo_fraccionamiento_spark.parquet"
-        ranking_fav.write.mode("overwrite").parquet(str(fav_path))
-        ranking_frac.write.mode("overwrite").parquet(str(frac_path))
+        fav_name = "ranking_riesgo_favoritismo_spark.parquet"
+        frac_name = "ranking_riesgo_fraccionamiento_spark.parquet"
+        fav_path = output_dir / fav_name
+        frac_path = output_dir / frac_name
+        ranking_fav.write.mode("errorifexists").parquet(str(fav_path))
+        ranking_frac.write.mode("errorifexists").parquet(str(frac_path))
         return {
             "format": "parquet_distributed",
+            "favoritismo_name": fav_name,
+            "fraccionamiento_name": frac_name,
             "favoritismo": fav_path.as_posix(),
             "fraccionamiento": frac_path.as_posix(),
         }
 
-    fav_path = output_dir / "ranking_riesgo_favoritismo_spark.csv"
-    frac_path = output_dir / "ranking_riesgo_fraccionamiento_spark.csv"
+    fav_name = "ranking_riesgo_favoritismo_spark.csv"
+    frac_name = "ranking_riesgo_fraccionamiento_spark.csv"
+    fav_path = output_dir / fav_name
+    frac_path = output_dir / frac_name
     _write_single_csv_spark(ranking_fav, fav_path)
     _write_single_csv_spark(ranking_frac, frac_path)
     return {
         "format": "csv_single_file_compatibility",
+        "favoritismo_name": fav_name,
+        "fraccionamiento_name": frac_name,
         "favoritismo": fav_path.as_posix(),
         "fraccionamiento": frac_path.as_posix(),
     }
+
+
+def _integridad_champion(registry: dict) -> dict[str, bool]:
+    return {
+        nombre: sha256_ruta(spec["path"]) == spec["sha256"]
+        for nombre, spec in registry["artifacts"].items()
+    }
+
+
+def _publicar_directorio_staging(staging: Path, final: Path) -> None:
+    """Sustituye el directorio final con rollback local si falla el rename."""
+    final.parent.mkdir(parents=True, exist_ok=True)
+    backup = final.parent / f".{final.name}.backup-{uuid.uuid4().hex}"
+    had_previous = final.exists()
+    if had_previous:
+        os.replace(final, backup)
+    try:
+        os.replace(staging, final)
+    except Exception:
+        if had_previous and backup.exists() and not final.exists():
+            os.replace(backup, final)
+        raise
+    else:
+        if backup.exists():
+            shutil.rmtree(backup, ignore_errors=True)
 
 
 def ejecutar_inference_spark(
@@ -117,6 +162,7 @@ def ejecutar_inference_spark(
 
     source_type = config["source"]["type"]
     spark_native = source_type == "spark_sql"
+    staging = None
     try:
         if spark_native:
             datasets, integration_summary = integrar_spark(config, spark=spark)
@@ -193,23 +239,35 @@ def ejecutar_inference_spark(
             .orderBy(F.desc("score_anomalia"))
         )
 
+        # Fuerza el scoring antes de cualquier publicación externa.
         fav_rows = int(ranking_fav.count())
         frac_rows = int(ranking_frac.count())
+        integrity_pre_publish = _integridad_champion(registry)
+        if not all(integrity_pre_publish.values()):
+            raise RuntimeError("Un champion Spark cambió durante scoring; no se publica salida.")
 
         output_dir = Path(output_dir)
-        detail_outputs = _write_rankings(
-            ranking_fav, ranking_frac, output_dir, spark_native=spark_native
+        staging = output_dir.parent / f".{output_dir.name}.staging-{uuid.uuid4().hex}"
+        if staging.exists():
+            shutil.rmtree(staging)
+        detail_staging = _write_rankings(
+            ranking_fav, ranking_frac, staging, spark_native=spark_native
         )
 
-        integrity_after = {
-            nombre: sha256_ruta(spec["path"]) == spec["sha256"]
-            for nombre, spec in registry["artifacts"].items()
-        }
-        if not all(integrity_after.values()):
-            raise RuntimeError("Un champion Spark cambió durante inference.")
+        # Segundo gate después de materializar la salida en staging. Si falla,
+        # el directorio final anterior permanece intacto.
+        integrity_after_staging = _integridad_champion(registry)
+        if not all(integrity_after_staging.values()):
+            raise RuntimeError("Un champion Spark cambió antes de publicar; staging descartado.")
 
+        detail_outputs = {
+            "format": detail_staging["format"],
+            "favoritismo": (output_dir / detail_staging["favoritismo_name"]).as_posix(),
+            "fraccionamiento": (output_dir / detail_staging["fraccionamiento_name"]).as_posix(),
+            "publication": "staging_then_atomic_directory_swap",
+        }
         summary = {
-            "schema_version": 2,
+            "schema_version": 3,
             "mode": "inference",
             "engine": "Apache Spark MLlib",
             "spark_mode": spark_mode,
@@ -232,19 +290,32 @@ def ejecutar_inference_spark(
             "training_invoked": False,
             "tuning_invoked": False,
             "sklearn_serving_dependency": False,
-            "champion_integrity_verified": bool(all(integrity_after.values())),
+            "champion_integrity_verified": True,
+            "integrity_gate_before_publish": integrity_after_staging,
             "detail_outputs": detail_outputs,
             "notice": (
                 "Scores de priorización del PoC; no constituyen hallazgos de control "
                 "ni decisión jurídica. Clúster/infraestructura CGR pendientes."
             ),
         }
-        if summary_path is None:
-            summary_path = output_dir / "inference_summary.json"
-        guardar_json_determinista(summary_path, summary)
+
+        # Si el summary pertenece al output, entra en el mismo staging. Si se
+        # solicita una ruta externa (CI), se escribe atómicamente después de
+        # publicar los rankings ya verificados.
+        external_summary = summary_path is not None
+        if not external_summary:
+            guardar_json_determinista(staging / "inference_summary.json", summary)
+
+        _publicar_directorio_staging(staging, output_dir)
+        staging = None
+        if external_summary:
+            guardar_json_determinista(summary_path, summary)
+
         print(json.dumps(summary, ensure_ascii=False, indent=2))
         return summary
     finally:
+        if staging is not None and staging.exists():
+            shutil.rmtree(staging, ignore_errors=True)
         spark.stop()
 
 
