@@ -11,8 +11,12 @@ from __future__ import annotations
 import argparse
 import json
 import statistics
+import sys
 import time
 from pathlib import Path
+
+SRC_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(SRC_DIR))
 
 from core.config import cargar_config
 from core.fingerprints import fingerprint_pandas_dataframe, fingerprint_spark_dataframe
@@ -43,8 +47,7 @@ def ejecutar(config_path: str, repetitions: int = 3, output_path: str | Path = D
     source_type = config["source"]["type"]
     spark = crear_sesion("cgr-benchmark-operacional", operational=True)
     spark.sparkContext.setLogLevel("ERROR")
-    spark.sparkContext.addPyFile(str(Path(__file__).resolve().parents[1] / "core" / "objeto_similarity.py"))
-    spark.sparkContext.addPyFile(str(Path(__file__).resolve().parents[1] / "umbrales_normativos.py"))
+    spark.sparkContext.addPyFile(str(SRC_DIR / "umbrales_normativos.py"))
     try:
         t0 = time.perf_counter()
         if source_type == "spark_sql":
