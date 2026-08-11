@@ -5,22 +5,54 @@ on:
     workflows: ["tests"]
     types: [completed]
 
+# Este workflow es deliberadamente privilegiado: persiste únicamente artefactos
+# producidos por un push exitoso de main y anclados al SHA exacto auditado.
 permissions:
   contents: write
+  actions: read
 
 jobs:
   ssrs-and-checklist:
-    if: github.event.workflow_run.conclusion == 'success'
+    if: >-
+      ${{
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'main'
+      }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout latest main
-        uses: actions/checkout@v4
+      - name: Checkout exact tested main SHA
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: main
+          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
 
+      - name: Verify triggering SHA is still current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          EVENT_SHA='${{ github.event.workflow_run.head_sha }}'
+          CHECKED_SHA=$(git rev-parse HEAD)
+          REMOTE_MAIN=$(git rev-parse origin/main)
+          echo "event_sha=$EVENT_SHA"
+          echo "checked_sha=$CHECKED_SHA"
+          echo "remote_main=$REMOTE_MAIN"
+          if [[ "$CHECKED_SHA" != "$EVENT_SHA" || "$REMOTE_MAIN" != "$EVENT_SHA" ]]; then
+            echo "El workflow tests ya no corresponde al main vigente; se aborta persistencia privilegiada."
+            exit 1
+          fi
+
+      - name: Download persistable tree from exact tests run
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: persistable-verified-tree
+          path: .
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
 
@@ -135,7 +167,7 @@ jobs:
           PY
 
       - name: Upload release and full TDR audit evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: evidencia-release-candidate
           path: |
@@ -151,24 +183,33 @@ jobs:
             README.md
           retention-days: 30
 
-      - name: Persist final audit evidence in main
+      - name: Persist verified artifacts and final audit evidence in main
+        shell: bash
         run: |
+          set -euo pipefail
+          EVENT_SHA='${{ github.event.workflow_run.head_sha }}'
+          git fetch origin main
+          if [[ "$(git rev-parse origin/main)" != "$EVENT_SHA" ]]; then
+            echo "main avanzó antes del commit; se aborta para no mezclar evidencia de distintos SHA."
+            exit 1
+          fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            README.md \
-            outputs/ssrs_publicacion_manifest.json \
-            outputs/checklist_anexo3.json \
-            outputs/dependencias_cgr.json \
-            outputs/auditoria_tdr_completo.json \
-            outputs/auditoria_release.json \
-            docs/Checklist_Anexo_03.md \
-            docs/Dependencias_Institucionales_CGR.md \
-            docs/Auditoria_TDR_Completo.md \
-            docs/Auditoria_Final_Release.md
+
+          git rm -r --ignore-unmatch \
+            outputs/models/modelo_favoritismo_spark_rf \
+            outputs/models/modelo_fraccionamiento_spark_kmeans
+          git rm --ignore-unmatch outputs/models/modelo_favoritismo_rf_v2_con_drift.joblib
+          git rm --ignore-unmatch \
+            lakehouse/oro/dataset_favoritismo.csv \
+            lakehouse/oro/dataset_fraccionamiento.csv
+
+          git add -A README.md data lakehouse outputs docs reporte
+
           if git diff --cached --quiet; then
-            echo "Auditorías finales sin cambios."
+            echo "Artefactos y auditorías sin cambios."
           else
-            git commit -m "chore: persistir auditorías Anexo 3 y TDR completo [skip ci]"
-            git push
+            git commit -m "chore: persistir artefactos y auditorías verificados [skip ci]"
+            git push origin HEAD:main
           fi
