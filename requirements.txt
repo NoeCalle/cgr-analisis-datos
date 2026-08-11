@@ -5,7 +5,7 @@
 
 # --- Núcleo de datos y modelos ---
 pandas==3.0.2
-numpy==2.4.4
+numpy==2.5.1
 scikit-learn==1.8.0
 scipy==1.17.1
 matplotlib==3.10.8
