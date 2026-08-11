@@ -1,29 +1,29 @@
 {
   "schema_version": 1,
-  "fecha_ejecucion": "2026-08-10T18:23:18.401019+00:00",
-  "git_commit_evidencia": "47226e0495146294dbd181fc9bfafd50db168fb2",
+  "fecha_ejecucion": "2026-08-11T01:01:28.927747+00:00",
+  "git_commit_evidencia": "a67fbd582a71997ee08d1677be628ef884c03688",
   "naturaleza": "stand-in SQLite para validar contrato SSRS; SQL Server/SSRS CGR no ejecutado",
   "fuentes_oro": {
     "favoritismo": {
       "ruta": "lakehouse/oro/ranking_riesgo_favoritismo.csv",
-      "sha256": "5b06159eba0df7db27b2d28b6a58fb142d1aa0653145edaddf4196bde4156c82"
+      "sha256": "a834dd59fff183298ff92ad3ce02839cf36be366facf3dd57fe3b8bc8fc67be4"
     },
     "fraccionamiento": {
       "ruta": "lakehouse/oro/ranking_riesgo_fraccionamiento.csv",
-      "sha256": "d87318d9447ee9d63496562f7a743c76d4db34838c50b2060c6729b7b8dbad30"
+      "sha256": "4d3d3e7221b616f5f84befa07462f09098c13b07c14e4eebb00e37494fceab78"
     },
     "vinculos": {
       "ruta": "lakehouse/oro/ranking_vinculos_proveedor_funcionario.csv",
-      "sha256": "800dfae46978faaa6d504c8feb7e4ad5b3e0e823e6be67ca4331e2768ad8ccca"
+      "sha256": "73f2e8535110752e496e93976b6d1a01ae77e81f516e11c4edfe419eb7d550a0"
     }
   },
   "validacion": {
     "conteos_tablas": {
-      "PrediccionesFavoritismo": 2328,
-      "PrediccionesFraccionamiento": 180,
-      "VinculosProveedorFuncionario": 2995
+      "PrediccionesFavoritismo": 2362,
+      "PrediccionesFraccionamiento": 265,
+      "VinculosProveedorFuncionario": 3130
     },
-    "consulta_smoke_favoritismo_umbral_0_5": 6,
+    "consulta_smoke_favoritismo_umbral_0_5": 30,
     "consulta_smoke_fraccionamiento_top_25": 25
   },
   "artefactos_sql_server": [

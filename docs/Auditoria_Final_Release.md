@@ -4,7 +4,7 @@
 
 `release_ready=true` significa que los gates técnicos del repositorio están coherentes; **no significa conformidad, aprobación ni despliegue institucional de la CGR**.
 
-- Commit auditado: `a67fbd582a71997ee08d1677be628ef884c03688`
+- Commit auditado: `fc0691d063cba9dce1ac589de8732049ed29d2be`
 - Checks: **19/19 OK**
 - Resultado del gate: **READY**
 
@@ -17,7 +17,7 @@
 | ✅ | distribución esperada del checklist | 6 ✅ / 4 🟡 / 1 🔵 |
 | ✅ | checklist enlazado al catálogo CGR | referencias=['CGR-DEP-01', 'CGR-DEP-02', 'CGR-DEP-03', 'CGR-DEP-04', 'CGR-DEP-05', 'CGR-DEP-06'] |
 | ✅ | catálogo institucional único | 8 dependencias canónicas CGR-DEP-01..08 |
-| ✅ | contrato SSRS local verificado | {'PrediccionesFavoritismo': 2328, 'PrediccionesFraccionamiento': 180, 'VinculosProveedorFuncionario': 2995} |
+| ✅ | contrato SSRS local verificado | {'PrediccionesFavoritismo': 2362, 'PrediccionesFraccionamiento': 265, 'VinculosProveedorFuncionario': 3130} |
 | ✅ | dos RDL de riesgo presentes | favoritismo + fraccionamiento + DDL T-SQL |
 | ✅ | Accuracy/F1/AUC-ROC reportados en favoritismo | Accuracy se reporta sin desplazar AUC-PR como criterio primario |
 | ✅ | Accuracy/F1/AUC-ROC reportados en fraccionamiento | holdout final independiente |

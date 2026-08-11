@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "version_declarada": "1.0.0-rc.1",
-  "git_commit_auditado": "a67fbd582a71997ee08d1677be628ef884c03688",
+  "git_commit_auditado": "fc0691d063cba9dce1ac589de8732049ed29d2be",
   "naturaleza": "gate de coherencia del estado actual de main; la versión declarada puede corresponder a un snapshot histórico y no implica que el tag se mueva con cambios posteriores",
   "total_checks": 19,
   "checks_ok": 19,
@@ -46,7 +46,7 @@
     {
       "check": "contrato SSRS local verificado",
       "ok": true,
-      "detalle": "{'PrediccionesFavoritismo': 2328, 'PrediccionesFraccionamiento': 180, 'VinculosProveedorFuncionario': 2995}"
+      "detalle": "{'PrediccionesFavoritismo': 2362, 'PrediccionesFraccionamiento': 265, 'VinculosProveedorFuncionario': 3130}"
     },
     {
       "check": "dos RDL de riesgo presentes",
