@@ -50,9 +50,15 @@ def _feature_id_expr():
 
 def _metricas_spark(scored) -> dict:
     """Métricas de ranking/holdout sin colectar observaciones al driver."""
+    tie_expr = (
+        F.col("_tie_id").cast("string")
+        if "_tie_id" in scored.columns
+        else F.monotonically_increasing_id().cast("string")
+    )
     prepared = scored.select(
         F.col("label").cast("int").alias("label"),
         F.col("score_anomalia").cast("double").alias("score"),
+        tie_expr.alias("_tie_id"),
     ).cache()
     try:
         base = prepared.agg(
@@ -66,7 +72,7 @@ def _metricas_spark(scored) -> dict:
 
         ranking = prepared.withColumn(
             "_rn_score",
-            F.row_number().over(Window.orderBy(F.desc("score"), F.desc("label"))),
+            F.row_number().over(Window.orderBy(F.desc("score"), F.asc("_tie_id"))),
         ).withColumn("pred", (F.col("_rn_score") <= F.lit(n_pos)).cast("int"))
         row = ranking.agg(
             F.sum(F.when((F.col("label") == 1) & (F.col("pred") == 1), 1).otherwise(0)).alias("tp"),
@@ -100,7 +106,9 @@ def _metricas_spark(scored) -> dict:
 
 def _score_metrics(df, model, scaler):
     scored = puntuar_con_modelos(df, model, scaler).select(
-        "label", "score_anomalia"
+        "label",
+        _feature_id_expr().alias("_tie_id"),
+        "score_anomalia",
     )
     return _metricas_spark(scored)
 
