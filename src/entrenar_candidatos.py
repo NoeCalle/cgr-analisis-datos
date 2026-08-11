@@ -15,7 +15,6 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
-import shutil
 
 import joblib
 import pandas as pd
@@ -23,6 +22,7 @@ from sklearn.ensemble import IsolationForest, RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 
 from core.config import cargar_config
+from core.security_paths import preparar_directorio_candidato
 from ingestar_canonico import integrar
 from modelo_favoritismo import DEFAULT_PARAMS as FAV_DEFAULT_PARAMS
 from modelo_favoritismo import FEATURES as FAV_FEATURES
@@ -106,11 +106,7 @@ def entrenar(config_path: str | Path, manifest_path: str | Path = DEFAULT_MANIFE
     frac_model = IsolationForest(**params_frac, random_state=42)
     frac_model.fit(frac_scaled)
 
-    manifest_path = Path(manifest_path)
-    candidate_dir = manifest_path.parent
-    if candidate_dir.exists():
-        shutil.rmtree(candidate_dir)
-    candidate_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path, candidate_dir = preparar_directorio_candidato(manifest_path)
 
     artifact_paths = {
         "preprocessor": candidate_dir / "preprocesador_contratos.joblib",
