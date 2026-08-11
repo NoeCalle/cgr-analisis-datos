@@ -42,10 +42,16 @@ SPARK_MEDIANS_PATH = Path("outputs/runtime/evaluation/favoritismo/medianas_monto
 
 def _metricas_holdout_spark(scored) -> dict:
     """Calcula métricas agregadas sin colectar filas de scoring al driver."""
+    tie_expr = (
+        F.col("_tie_id").cast("string")
+        if "_tie_id" in scored.columns
+        else F.monotonically_increasing_id().cast("string")
+    )
     prepared = (
         scored.select(
             F.col("label").cast("int").alias("label"),
             F.col("score").cast("double").alias("score"),
+            tie_expr.alias("_tie_id"),
         )
         .withColumn("pred", (F.col("score") >= F.lit(0.5)).cast("int"))
         .cache()
@@ -80,7 +86,7 @@ def _metricas_holdout_spark(scored) -> dict:
         auc_roc = float(evaluator_roc.evaluate(prepared))
 
         top_hits_row = (
-            prepared.orderBy(F.desc("score"), F.desc("label"))
+            prepared.orderBy(F.desc("score"), F.asc("_tie_id"))
             .limit(n_pos)
             .agg(F.sum("label").alias("hits"))
             .first()
@@ -236,7 +242,9 @@ def evaluar(config_path: str = CONFIG_PATH):
         holdout_vec = VectorAssembler(inputCols=FEATURES, outputCol="features").transform(holdout)
         prob_udf = F.udf(lambda v: float(v[1]), "double")
         scored = final_model.transform(holdout_vec).select(
-            "label", prob_udf("probability").alias("score")
+            "label",
+            F.concat_ws("§", "id_proveedor", "id_entidad").alias("_tie_id"),
+            prob_udf("probability").alias("score"),
         )
         metrics = _metricas_holdout_spark(scored)
         importances = {
