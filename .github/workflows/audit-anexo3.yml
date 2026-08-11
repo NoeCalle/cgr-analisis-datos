@@ -5,13 +5,25 @@ on:
     workflows: ["tests"]
     types: [completed]
 
-# Este workflow es deliberadamente privilegiado: persiste únicamente artefactos
-# producidos por un push exitoso de main y anclados al SHA exacto auditado.
+# Por defecto, incluso un workflow_run originado por PR solo dispone de lectura.
 permissions:
-  contents: write
+  contents: read
   actions: read
 
 jobs:
+  reject-untrusted-source:
+    if: >-
+      ${{
+        github.event.workflow_run.conclusion == 'success' &&
+        (github.event.workflow_run.event != 'push' || github.event.workflow_run.head_branch != 'main')
+      }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject non push/main source
+        run: |
+          echo "audit-anexo3 privilegiado solo acepta tests exitosos originados por push a main."
+          exit 1
+
   ssrs-and-checklist:
     if: >-
       ${{
@@ -19,6 +31,9 @@ jobs:
         github.event.workflow_run.event == 'push' &&
         github.event.workflow_run.head_branch == 'main'
       }}
+    permissions:
+      contents: write
+      actions: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout exact tested main SHA
