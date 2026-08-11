@@ -1,10 +1,9 @@
-"""Compatibilidad CLI para el tuning de favoritismo.
+"""Punto de entrada de compatibilidad para tuning de favoritismo.
 
-Desde la Etapa 2B la única fuente válida de selección es
-``evaluar_favoritismo_operacional``: separa holdout antes del FIT del
-preprocesador y usa ``monto_capped``, igual que TRAIN/INFERENCE. Este wrapper se
-mantiene para no romper comandos/documentación históricos sin permitir que la
-ruta legacy vuelva a sobrescribir evidencia metodológica vigente.
+Delega en ``evaluar_favoritismo_operacional``, que centraliza la selección de
+hiperparámetros con holdout reservado antes del FIT del preprocesador y usa
+``monto_capped`` igual que el contrato operacional. Mantener un único evaluador
+evita divergencias entre comparación, tuning, TRAIN e INFERENCE.
 """
 
 from evaluar_favoritismo_operacional import evaluar
