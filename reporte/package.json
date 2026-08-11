@@ -9,6 +9,6 @@
     "all": "npm run productos && npm run reporte"
   },
   "dependencies": {
-    "docx": "9.6.1"
+    "docx": "9.7.1"
   }
 }
