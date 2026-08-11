@@ -108,7 +108,7 @@ jobs:
               if c['estado'] in {'🟡', '🔵'}
           )
 
-          assert full_tdr['schema_version'] == 1
+          assert full_tdr['schema_version'] == 2
           assert full_tdr['total_criterios'] == 25
           assert full_tdr['repo_closable_gaps'] == 0
           assert full_tdr['resumen'].get('🔴', 0) == 0
