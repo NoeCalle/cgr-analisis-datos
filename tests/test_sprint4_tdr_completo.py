@@ -88,15 +88,22 @@ def test_favoritismo_puede_consumir_monto_capado_sin_cambiar_nombres_de_features
     assert set(raw.columns) == set(robusto.columns)
 
 
-def test_rutas_operacionales_declaran_monto_capado_y_legacy_no_se_reescribe():
+def test_rutas_operacionales_declaran_monto_capado_y_benchmark_queda_separado():
     root = Path(__file__).resolve().parents[1]
     sklearn_train = (root / "src/entrenar_candidatos.py").read_text(encoding="utf-8")
     sklearn_score = (root / "src/score_inference.py").read_text(encoding="utf-8")
     spark_train = (root / "src/spark/entrenar_candidato_spark.py").read_text(encoding="utf-8")
     spark_score = (root / "src/spark/score_inference_spark.py").read_text(encoding="utf-8")
-    legacy = (root / "src/preprocesamiento.py").read_text(encoding="utf-8")
+    preprocesamiento = (root / "src/preprocesamiento.py").read_text(encoding="utf-8")
 
-    for texto in [sklearn_train, sklearn_score, spark_train, spark_score]:
+    rutas_operacionales = [sklearn_train, sklearn_score, spark_train, spark_score]
+    for texto in rutas_operacionales:
         assert 'FAVORITISMO_MONTO_OPERACIONAL = "monto_capped"' in texto
-    assert "Reconstrucción legacy exacta" in legacy
-    assert 'monto_col: str = "monto"' in legacy
+        assert "limpiar_e_imputar" not in texto
+
+    # El helper del benchmark sigue disponible para reproducibilidad, pero las
+    # rutas operacionales usan el contrato FIT/TRANSFORM explícito.
+    assert "def limpiar_e_imputar" in preprocesamiento
+    assert "def preparar_para_features_entrenamiento" in preprocesamiento
+    assert "def preparar_para_features_inferencia" in preprocesamiento
+    assert 'monto_col: str = "monto"' in preprocesamiento
