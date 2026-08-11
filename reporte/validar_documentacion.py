@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import re
-import sys
 import zipfile
 from pathlib import Path
 
@@ -206,7 +205,7 @@ def validar_contenido_especifico(nombre: str, texto: str):
             "GraphFrames",
             "dependencias institucionales",
             "Modelos operacionales y métricas holdout",
-            "benchmark metodológicos",
+            "benchmarks metodológicos",
             "promoción explícita",
         ]:
             assert token.lower() in texto.lower(), f"{nombre}: falta evidencia consolidada: {token}"
