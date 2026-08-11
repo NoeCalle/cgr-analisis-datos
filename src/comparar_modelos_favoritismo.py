@@ -1,9 +1,9 @@
-"""Compatibilidad CLI para comparar candidatos de favoritismo.
+"""Punto de entrada de compatibilidad para comparar modelos de favoritismo.
 
-La comparación vigente se ejecuta en ``evaluar_favoritismo_operacional`` con
-split proveedor-entidad, preprocesador ajustado solo en desarrollo y
-``monto_capped``. Este wrapper conserva el comando histórico sin permitir que
-la ruta Plata/legacy sobrescriba la evidencia operacional.
+Delega en ``evaluar_favoritismo_operacional``, que aplica el split por
+proveedor-entidad, ajusta el preprocesador únicamente sobre desarrollo y usa
+``monto_capped``. Centralizar la comparación en el mismo evaluador evita que un
+comando alternativo genere evidencia metodológica incompatible con TRAIN.
 """
 
 from evaluar_favoritismo_operacional import evaluar
