@@ -1,10 +1,11 @@
 """Tuning y holdout del modelo Spark activo de fraccionamiento.
 
-Evalúa exactamente StandardScalerModel + KMeansModel + distancia al centroide,
-que es el algoritmo del serving Spark. Las etiquetas sintéticas se usan solo
-para estratificar/evaluar; KMeans se ajusta sin labels. La evidencia registra
-el fingerprint del corpus canónico completo para que TRAIN solo consuma tuning
-producido sobre el mismo conjunto de datos.
+Evalúa exactamente StandardScalerModel + KMeansModel + distancia al centroide.
+Las etiquetas se usan para estratificar/evaluar; KMeans se ajusta sin labels.
+
+Etapa 5B incorpora una ruta ``spark_sql`` completamente distribuida: split de
+holdout, validación repetida, FIT/TRANSFORM y métricas se ejecutan en Spark sin
+listas de IDs ni materialización del dataset en pandas.
 """
 
 from __future__ import annotations
@@ -13,27 +14,20 @@ import json
 import sys
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
-from sklearn.metrics import (
-    accuracy_score,
-    average_precision_score,
-    f1_score,
-    precision_score,
-    recall_score,
-    roc_auc_score,
-)
-from sklearn.model_selection import train_test_split
+from pyspark.ml.evaluation import BinaryClassificationEvaluator
+from pyspark.sql import Window
 from pyspark.sql import functions as F
 
 SRC_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SRC_DIR))
 
 from core.config import cargar_config
-from core.fingerprints import fingerprint_pandas_dataframe
+from core.fingerprints import fingerprint_pandas_dataframe, fingerprint_spark_dataframe
 from core.objeto_similarity import firma_objeto
-from ingestar_canonico import integrar
+from ingestar_canonico import integrar, integrar_spark
 from preprocesamiento import aplicar_estado_preprocesamiento, ajustar_estado_preprocesamiento
+from spark.ajustar_preprocesamiento_spark import ajustar_estado_preprocesamiento_spark
 from spark.modelo_favoritismo_spark import crear_sesion
 from spark.modelo_fraccionamiento_spark import (
     FEATURES,
@@ -41,127 +35,227 @@ from spark.modelo_fraccionamiento_spark import (
     entrenar_modelos_kmeans,
     puntuar_con_modelos,
 )
-from spark.preprocesamiento_serving_spark import pandas_a_spark
+from spark.preprocesamiento_serving_spark import aplicar_preprocesamiento_congelado, pandas_a_spark
 
 CONFIG_PATH = "config/local-training.yaml"
 K_VALUES = [2, 3, 4, 5, 6]
-HOLDOUT_SIZE = 0.25
-VALIDATION_SIZE = 0.30
 VALIDATION_SEEDS = [11, 23, 37]
-
-
-def _metricas(y, scores, pred_binary):
-    y = np.asarray(y).astype(int)
-    scores = np.asarray(scores, dtype=float)
-    pred_binary = np.asarray(pred_binary).astype(int)
-    n_pos = int(y.sum())
-    recall_at_k = None
-    if n_pos:
-        idx = np.argsort(-scores)[:n_pos]
-        recall_at_k = float(y[idx].sum() / n_pos)
-    return {
-        "accuracy": float(accuracy_score(y, pred_binary)),
-        "auc_roc": float(roc_auc_score(y, scores)),
-        "auc_pr": float(average_precision_score(y, scores)),
-        "precision": float(precision_score(y, pred_binary, zero_division=0)),
-        "recall": float(recall_score(y, pred_binary, zero_division=0)),
-        "f1": float(f1_score(y, pred_binary, zero_division=0)),
-        "recall_at_k": recall_at_k,
-    }
-
-
-def _split_raw(contracts: pd.DataFrame):
-    base = contracts.copy()
-    cats = base["categoria_principal"] if "categoria_principal" in base else pd.Series([None] * len(base))
-    base["objeto_familia"] = [firma_objeto(o, c) for o, c in zip(base["objeto"], cats)]
-    grupos = (
-        base.groupby(["id_proveedor", "id_entidad", "objeto_familia"], as_index=False)["label_fraccionamiento"]
-        .max()
-        .rename(columns={"label_fraccionamiento": "label"})
-    )
-    y = grupos["label"].astype(int)
-    if y.nunique() != 2 or y.value_counts().min() < 6:
-        raise ValueError(f"Benchmark fraccionamiento insuficiente: {y.value_counts().to_dict()}")
-    dev_groups, holdout_groups = train_test_split(
-        grupos,
-        test_size=HOLDOUT_SIZE,
-        random_state=2026,
-        stratify=y,
-    )
-    dev_keys = set(zip(dev_groups.id_proveedor, dev_groups.id_entidad, dev_groups.objeto_familia))
-    test_keys = set(zip(holdout_groups.id_proveedor, holdout_groups.id_entidad, holdout_groups.objeto_familia))
-    keys = list(zip(base.id_proveedor, base.id_entidad, base.objeto_familia))
-    dev = contracts.loc[[k in dev_keys for k in keys]].copy()
-    test = contracts.loc[[k in test_keys for k in keys]].copy()
-    return dev, test
+SPARK_MEDIANS_PATH = Path("outputs/runtime/evaluation/fraccionamiento/medianas_monto_por_objeto")
 
 
 def _feature_id_expr():
     return F.concat_ws("§", "id_proveedor", "id_entidad", "objeto_familia")
 
 
-def _score_df(df, model, scaler):
+def _metricas_spark(scored) -> dict:
+    """Métricas de ranking/holdout sin colectar observaciones al driver."""
+    prepared = scored.select(
+        F.col("label").cast("int").alias("label"),
+        F.col("score_anomalia").cast("double").alias("score"),
+    ).cache()
+    try:
+        base = prepared.agg(
+            F.count(F.lit(1)).alias("n"),
+            F.sum("label").alias("positivos"),
+        ).first()
+        n = int(base["n"] or 0)
+        n_pos = int(base["positivos"] or 0)
+        if n == 0 or n_pos == 0 or n_pos == n:
+            raise ValueError("Evaluación Spark de fraccionamiento requiere ambas clases.")
+
+        ranking = prepared.withColumn(
+            "_rn_score",
+            F.row_number().over(Window.orderBy(F.desc("score"), F.desc("label"))),
+        ).withColumn("pred", (F.col("_rn_score") <= F.lit(n_pos)).cast("int"))
+        row = ranking.agg(
+            F.sum(F.when((F.col("label") == 1) & (F.col("pred") == 1), 1).otherwise(0)).alias("tp"),
+            F.sum(F.when((F.col("label") == 0) & (F.col("pred") == 1), 1).otherwise(0)).alias("fp"),
+            F.sum(F.when((F.col("label") == 0) & (F.col("pred") == 0), 1).otherwise(0)).alias("tn"),
+            F.sum(F.when((F.col("label") == 1) & (F.col("pred") == 0), 1).otherwise(0)).alias("fn"),
+        ).first()
+        tp, fp, tn, fn = (int(row[k] or 0) for k in ["tp", "fp", "tn", "fn"])
+        precision = tp / (tp + fp) if tp + fp else 0.0
+        recall = tp / (tp + fn) if tp + fn else 0.0
+        f1 = (2 * precision * recall / (precision + recall)) if precision + recall else 0.0
+        accuracy = (tp + tn) / n
+        auc_pr = float(BinaryClassificationEvaluator(
+            labelCol="label", rawPredictionCol="score", metricName="areaUnderPR"
+        ).evaluate(prepared))
+        auc_roc = float(BinaryClassificationEvaluator(
+            labelCol="label", rawPredictionCol="score", metricName="areaUnderROC"
+        ).evaluate(prepared))
+        return {
+            "accuracy": float(accuracy),
+            "auc_roc": auc_roc,
+            "auc_pr": auc_pr,
+            "precision": float(precision),
+            "recall": float(recall),
+            "f1": float(f1),
+            "recall_at_k": float(recall),
+        }
+    finally:
+        prepared.unpersist()
+
+
+def _score_metrics(df, model, scaler):
     scored = puntuar_con_modelos(df, model, scaler).select(
-        _feature_id_expr().alias("gid"), "label", "score_anomalia"
+        "label", "score_anomalia"
     )
-    pdf = scored.toPandas()
-    # Para evaluación binaria usamos top-K como umbral operacional de ranking;
-    # contamination no forma parte del KMeans Spark.
-    n_pos = int(pdf["label"].sum())
-    pred = np.zeros(len(pdf), dtype=int)
-    if n_pos:
-        pred[np.argsort(-pdf["score_anomalia"].to_numpy())[:n_pos]] = 1
-    return _metricas(pdf["label"], pdf["score_anomalia"], pred)
+    return _metricas_spark(scored)
+
+
+def _with_split_family(df):
+    categoria = F.col("categoria_principal") if "categoria_principal" in df.columns else F.lit(None)
+    family_udf = F.udf(firma_objeto, "string")
+    return df.withColumn(
+        "_objeto_familia_split",
+        family_udf(F.col("objeto").cast("string"), categoria.cast("string")),
+    )
+
+
+def _split_raw_spark(contracts):
+    """Holdout 25% estratificado por proveedor-entidad-familia en Spark."""
+    base = _with_split_family(contracts)
+    groups = base.groupBy(
+        "id_proveedor", "id_entidad", "_objeto_familia_split"
+    ).agg(F.max(F.col("label_fraccionamiento").cast("int")).alias("_label_split"))
+    counts = {int(r["_label_split"]): int(r["count"]) for r in groups.groupBy("_label_split").count().collect()}
+    if set(counts) != {0, 1} or min(counts.values()) < 6:
+        raise ValueError(f"Benchmark fraccionamiento Spark insuficiente: {counts}")
+
+    w = Window.partitionBy("_label_split").orderBy(
+        F.xxhash64(
+            "id_proveedor", "id_entidad", "_objeto_familia_split",
+            F.lit("cgr-frac-holdout-v2"),
+        )
+    )
+    assigned = (
+        groups.withColumn("_rn_split", F.row_number().over(w) - F.lit(1))
+        .withColumn("_is_holdout", F.pmod(F.col("_rn_split"), F.lit(4)) == 0)
+        .select("id_proveedor", "id_entidad", "_objeto_familia_split", "_is_holdout")
+    )
+    keyed = base.join(
+        assigned,
+        on=["id_proveedor", "id_entidad", "_objeto_familia_split"],
+        how="inner",
+    )
+    dev = keyed.where(~F.col("_is_holdout")).drop("_is_holdout", "_objeto_familia_split")
+    holdout = keyed.where(F.col("_is_holdout")).drop("_is_holdout", "_objeto_familia_split")
+    return dev, holdout
+
+
+def _preprocesar_spark(dev_raw, holdout_raw):
+    estado = ajustar_estado_preprocesamiento_spark(
+        dev_raw, medians_output_path=SPARK_MEDIANS_PATH
+    )
+    medianas_df = dev_raw.sparkSession.read.parquet(str(SPARK_MEDIANS_PATH))
+    return (
+        aplicar_preprocesamiento_congelado(dev_raw, estado, medianas_df=medianas_df),
+        aplicar_preprocesamiento_congelado(holdout_raw, estado, medianas_df=medianas_df),
+        estado,
+    )
+
+
+def _validation_split_spark(dev_feat, seed: int):
+    """Split repetido estratificado sin recolectar IDs ni usar ``isin`` local."""
+    with_gid = dev_feat.withColumn("_gid", _feature_id_expr())
+    w = Window.partitionBy("label").orderBy(
+        F.xxhash64("_gid", F.lit(int(seed)), F.lit("cgr-frac-validation-v2"))
+    )
+    assigned = (
+        with_gid.withColumn("_rn_validation", F.row_number().over(w) - F.lit(1))
+        .withColumn("_is_validation", F.pmod(F.col("_rn_validation"), F.lit(3)) == 0)
+    )
+    train_df = assigned.where(~F.col("_is_validation")).drop(
+        "_gid", "_rn_validation", "_is_validation"
+    )
+    val_df = assigned.where(F.col("_is_validation")).drop(
+        "_gid", "_rn_validation", "_is_validation"
+    )
+    return train_df, val_df
+
+
+def _split_raw_pandas(contracts: pd.DataFrame):
+    """Compatibilidad local: mismo criterio de familia, sin afectar spark_sql."""
+    base = contracts.copy()
+    cats = base["categoria_principal"] if "categoria_principal" in base else pd.Series([None] * len(base))
+    base["_objeto_familia_split"] = [firma_objeto(o, c) for o, c in zip(base["objeto"], cats)]
+    groups = (
+        base.groupby(["id_proveedor", "id_entidad", "_objeto_familia_split"], as_index=False)["label_fraccionamiento"]
+        .max()
+        .rename(columns={"label_fraccionamiento": "_label_split"})
+    )
+    # El split de compatibilidad se hace con la misma regla determinística 1/4
+    # para que las dos fronteras compartan semántica aun cuando el motor difiera.
+    groups = groups.sort_values(
+        ["_label_split", "id_proveedor", "id_entidad", "_objeto_familia_split"]
+    ).copy()
+    groups["_rn"] = groups.groupby("_label_split").cumcount()
+    groups["_is_holdout"] = (groups["_rn"] % 4) == 0
+    keyed = base.merge(
+        groups[["id_proveedor", "id_entidad", "_objeto_familia_split", "_is_holdout"]],
+        on=["id_proveedor", "id_entidad", "_objeto_familia_split"],
+        how="inner",
+    )
+    dev = keyed.loc[~keyed["_is_holdout"]].drop(columns=["_is_holdout", "_objeto_familia_split"])
+    holdout = keyed.loc[keyed["_is_holdout"]].drop(columns=["_is_holdout", "_objeto_familia_split"])
+    return dev, holdout
 
 
 def evaluar(config_path: str = CONFIG_PATH):
     config = cargar_config(config_path)
-    datasets, _ = integrar(config)
-    contracts = datasets["contracts"]
-    corpus_fingerprint = fingerprint_pandas_dataframe(contracts)
-    dev_raw, holdout_raw = _split_raw(contracts)
-
-    estado = ajustar_estado_preprocesamiento(dev_raw)
-    dev_proc = aplicar_estado_preprocesamiento(dev_raw, estado)
-    holdout_proc = aplicar_estado_preprocesamiento(holdout_raw, estado)
-
+    source_type = config["source"]["type"]
     spark = crear_sesion("cgr-evaluacion-fraccionamiento-spark", operational=True)
     spark.sparkContext.setLogLevel("ERROR")
     spark.sparkContext.addPyFile(str(SRC_DIR / "core" / "objeto_similarity.py"))
     spark.sparkContext.addPyFile(str(SRC_DIR / "umbrales_normativos.py"))
     try:
+        if source_type == "spark_sql":
+            datasets, integration_summary = integrar_spark(config, spark=spark)
+            contracts_spark = datasets["contracts"]
+            corpus_fingerprint = fingerprint_spark_dataframe(contracts_spark)
+            dev_raw, holdout_raw = _split_raw_spark(contracts_spark)
+            dev_proc, holdout_proc, estado = _preprocesar_spark(dev_raw, holdout_raw)
+            input_engine = "spark_native"
+        else:
+            datasets, integration_summary = integrar(config)
+            contracts = datasets["contracts"]
+            corpus_fingerprint = fingerprint_pandas_dataframe(contracts)
+            dev_pdf, holdout_pdf = _split_raw_pandas(contracts)
+            estado = ajustar_estado_preprocesamiento(dev_pdf)
+            dev_proc = pandas_a_spark(spark, aplicar_estado_preprocesamiento(dev_pdf, estado))
+            holdout_proc = pandas_a_spark(spark, aplicar_estado_preprocesamiento(holdout_pdf, estado))
+            input_engine = "pandas_adapter"
+
         dev_feat = construir_features_ventana_desde_df(
-            pandas_a_spark(spark, dev_proc), label_col="label_fraccionamiento"
+            dev_proc, label_col="label_fraccionamiento"
         ).cache()
         holdout_feat = construir_features_ventana_desde_df(
-            pandas_a_spark(spark, holdout_proc), label_col="label_fraccionamiento"
+            holdout_proc, label_col="label_fraccionamiento"
         ).cache()
 
-        dev_keys = dev_feat.select(_feature_id_expr().alias("gid"), "label").toPandas()
+        counts_dev = {int(r["label"]): int(r["count"]) for r in dev_feat.groupBy("label").count().collect()}
+        counts_holdout = {int(r["label"]): int(r["count"]) for r in holdout_feat.groupBy("label").count().collect()}
+        if set(counts_dev) != {0, 1} or set(counts_holdout) != {0, 1}:
+            raise ValueError(
+                f"Split fraccionamiento sin ambas clases: dev={counts_dev}, holdout={counts_holdout}"
+            )
+
         filas = []
         for k in K_VALUES:
             aucs, recalls = [], []
             for seed in VALIDATION_SEEDS:
-                train_keys, val_keys = train_test_split(
-                    dev_keys,
-                    test_size=VALIDATION_SIZE,
-                    random_state=seed,
-                    stratify=dev_keys["label"].astype(int),
-                )
-                train_ids = train_keys["gid"].tolist()
-                val_ids = val_keys["gid"].tolist()
-                train_df = dev_feat.withColumn("gid", _feature_id_expr()).filter(F.col("gid").isin(train_ids)).drop("gid")
-                val_df = dev_feat.withColumn("gid", _feature_id_expr()).filter(F.col("gid").isin(val_ids)).drop("gid")
+                train_df, val_df = _validation_split_spark(dev_feat, seed)
                 _, model, scaler = entrenar_modelos_kmeans(train_df, k=k)
-                m = _score_df(val_df, model, scaler)
-                aucs.append(m["auc_pr"])
-                recalls.append(m["recall_at_k"] or 0.0)
+                metrics = _score_metrics(val_df, model, scaler)
+                aucs.append(metrics["auc_pr"])
+                recalls.append(metrics["recall_at_k"])
             filas.append({
                 "k": k,
-                "auc_pr_validacion_medio": float(np.mean(aucs)),
-                "auc_pr_validacion_min": float(np.min(aucs)),
-                "auc_pr_validacion_max": float(np.max(aucs)),
-                "recall_at_k_validacion_medio": float(np.mean(recalls)),
+                "auc_pr_validacion_medio": float(sum(aucs) / len(aucs)),
+                "auc_pr_validacion_min": float(min(aucs)),
+                "auc_pr_validacion_max": float(max(aucs)),
+                "recall_at_k_validacion_medio": float(sum(recalls) / len(recalls)),
             })
 
         tabla = pd.DataFrame(filas).sort_values(
@@ -171,21 +265,25 @@ def evaluar(config_path: str = CONFIG_PATH):
         tabla.to_csv("outputs/tuning_fraccionamiento_spark_resultados.csv", index=False)
         best_k = int(tabla.iloc[0]["k"])
         _, final_model, final_scaler = entrenar_modelos_kmeans(dev_feat, k=best_k)
-        holdout_metrics = _score_df(holdout_feat, final_model, final_scaler)
+        holdout_metrics = _score_metrics(holdout_feat, final_model, final_scaler)
 
         resumen = {
-            "schema_version": 2,
+            "schema_version": 3,
             "algorithm": "StandardScalerModel + KMeansModel + distancia al centroide",
             "pipeline": "spark_operational_features",
+            "source_type": source_type,
+            "input_engine": input_engine,
+            "spark_native_evaluation": source_type == "spark_sql",
+            "pandas_materialization": False if source_type == "spark_sql" else True,
             "features": FEATURES,
             "training_data_fingerprint_sha256": corpus_fingerprint,
-            "design": "holdout final por proveedor-entidad-familia reservado antes del FIT del preprocesador; validación repetida solo en desarrollo",
+            "design": "holdout final por proveedor-entidad-familia reservado antes del FIT; validación repetida estratificada y distribuida solo en desarrollo",
             "selection_metric": "AUC-PR media de ranking",
             "k_values": K_VALUES,
             "n_desarrollo": int(dev_feat.count()),
-            "positivos_desarrollo": int(dev_feat.filter(F.col("label") == 1).count()),
+            "positivos_desarrollo": int(counts_dev[1]),
             "n_holdout": int(holdout_feat.count()),
-            "positivos_holdout": int(holdout_feat.filter(F.col("label") == 1).count()),
+            "positivos_holdout": int(counts_holdout[1]),
             "mejor_configuracion": {
                 "k": best_k,
                 "auc_pr_validacion_medio": float(tabla.iloc[0]["auc_pr_validacion_medio"]),
@@ -193,8 +291,10 @@ def evaluar(config_path: str = CONFIG_PATH):
             },
             "metricas_holdout_final": holdout_metrics,
             "preprocessor_fit_scope": "development_only",
+            "preprocessor_fit_engine": estado.get("fit_engine", "pandas"),
             "labels_used_for_fit": False,
-            "advertencia": "benchmark sintético; el holdout no se usa para seleccionar k",
+            "integration_rows": int(integration_summary["domains"]["contracts"]["rows"]),
+            "advertencia": "benchmark sintético/local salvo que la configuración apunte a un corpus institucional; holdout no usado para seleccionar k",
         }
         Path("outputs/tuning_fraccionamiento_spark_resumen.json").write_text(
             json.dumps(resumen, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -202,6 +302,10 @@ def evaluar(config_path: str = CONFIG_PATH):
         print(json.dumps(resumen, ensure_ascii=False, indent=2))
         return resumen
     finally:
+        for name in ["dev_feat", "holdout_feat"]:
+            obj = locals().get(name)
+            if obj is not None:
+                obj.unpersist()
         spark.stop()
 
 
