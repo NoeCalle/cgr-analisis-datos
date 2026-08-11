@@ -1,12 +1,13 @@
-"""
-Autoevaluación y autoentrenamiento — objetivo específico 3.2.c del TDR.
+"""Simulador sklearn de autoevaluación/reentrenamiento para el benchmark reproducible.
 
-Correcciones P1:
-- Contratación Directa y Comparación de Precios son features separadas.
-- El disparador de desempeño usa recall mínimo absoluto (0.80).
-- El candidato se evalúa en un holdout del lote nuevo no usado al entrenarlo.
-- El candidato NO reemplaza automáticamente al modelo vigente.
-- El baseline histórico para PSI/reentrenamiento se consume desde Plata.
+Este módulo no es el monitor operacional del champion. Se conserva para probar
+en local el cálculo de PSI, un disparador de desempeño y la generación de un
+candidate sklearn sin promoción automática.
+
+El monitoreo vigente del modelo servido está en ``autoevaluacion_champion.py``:
+lee el model registry, evalúa el champion ``spark_mllib`` y vigila favoritismo y
+fraccionamiento. Mantener ambos módulos separados permite reproducir el benchmark
+sin confundirlo con el contrato MLOps activo.
 """
 
 from datetime import datetime, timezone
