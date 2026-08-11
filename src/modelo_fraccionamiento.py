@@ -1,10 +1,14 @@
-"""
-Modelo de detección de posible Fraccionamiento — Producto 6/7 del TDR.
+"""Benchmark sklearn de fraccionamiento basado en Isolation Forest.
 
-Isolation Forest + regla interpretable. La salida es una señal de priorización,
-no una determinación jurídica. Consume Plata y lee la configuración elegida por
-`src/tuning_fraccionamiento.py` sin usar el holdout final para reconfigurar el
-modelo después de observarlo.
+Esta implementación no define el serving activo. Se conserva como detector
+comparativo no supervisado, regresión reproducible y apoyo visual/interpretable.
+El perfil operacional usa ``StandardScalerModel + KMeansModel`` en Spark MLlib
+y dispone de tuning/holdout propios ligados al model registry.
+
+El benchmark consume la capa Plata y la configuración publicada en
+``outputs/tuning_fraccionamiento_resumen.json``. Sus scores son señales de
+priorización, no determinaciones jurídicas, y no deben presentarse como métricas
+del champion Spark servido.
 """
 
 import json

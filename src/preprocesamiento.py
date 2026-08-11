@@ -1,16 +1,17 @@
-"""
-Preprocesamiento y Feature Engineering — Segundo/Quinto Producto del TDR.
+"""Preprocesamiento y feature engineering compartido por benchmarks y serving.
 
-La ruta operacional separa explícitamente FIT (solo TRAIN) de TRANSFORM
-(TRAIN/INFERENCE), congela estadísticas aprendidas y mantiene Contratación
+El contrato operacional separa FIT (solo TRAIN) de TRANSFORM
+(TRAIN/INFERENCE), congela las estadísticas aprendidas y mantiene Contratación
 Directa y Comparación de Precios como variables distintas.
 
-Favoritismo operacional usa ``monto_capped`` (P99 aprendido únicamente en
-TRAIN). Fraccionamiento conserva el monto sin capar porque compara cuantías con
-umbrales normativos.
+Favoritismo usa ``monto_capped`` con P99 aprendido únicamente en TRAIN para
+limitar la influencia de montos extremos. Fraccionamiento conserva el monto
+original porque sus características comparan cuantías contractuales con
+referencias normativas.
 
-La ruta ``limpiar_e_imputar`` se conserva exclusivamente para reproducibilidad
-histórica. Los flujos TRAIN/INFERENCE nuevos usan el contrato corregido.
+``limpiar_e_imputar`` y ``codificar_y_normalizar`` pertenecen al benchmark
+reproducible y no deben utilizarse como preprocesador de serving. Las rutas
+operacionales usan el estado explícito FIT/TRANSFORM definido en este módulo.
 """
 
 from __future__ import annotations
@@ -100,7 +101,7 @@ def preparar_para_features_inferencia(df: pd.DataFrame, estado: dict) -> pd.Data
 
 
 def limpiar_e_imputar(df):
-    """Reconstrucción legacy exacta del benchmark anterior al TRAIN explícito."""
+    """Preprocesamiento del benchmark reproducible; no pertenece al serving."""
     out = df.copy()
     n_antes = int(out.isnull().sum().sum())
 
@@ -119,7 +120,7 @@ def limpiar_e_imputar(df):
 
 
 def codificar_y_normalizar(df):
-    """Transformaciones exploratorias históricas; no son requeridas por serving."""
+    """Transformaciones exploratorias del benchmark; no son requeridas por serving."""
     df = df.copy()
     df["monto_norm"] = StandardScaler().fit_transform(df[["monto_capped"]])
     ohe = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
@@ -253,8 +254,8 @@ def _moda_o_error(series: pd.Series, campo: str):
 
 
 def main():
-    # Reproduce artefactos legacy para trazabilidad histórica; TRAIN/INFERENCE
-    # modernos usan las funciones FIT/TRANSFORM anteriores.
+    # Reconstruye los datasets del benchmark reproducible. TRAIN/INFERENCE usan
+    # el contrato FIT/TRANSFORM explícito definido al inicio del módulo.
     df = codificar_y_normalizar(limpiar_e_imputar(cargar()))
     df.to_csv("data/contratos_procesados.csv", index=False)
     fav = features_favoritismo(

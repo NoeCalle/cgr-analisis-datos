@@ -1,120 +1,175 @@
-# Datos reales de SEACE (OCDS)
+# Prueba con datos abiertos SEACE / OCDS
 
-Este pipeline corresponde al Anexo A del reporte técnico y a la Sección 10
-del Producto 7 (Informe Final). Es una prueba adicional del PoC público sobre
-datos abiertos reales para observar cómo se comporta la metodología fuera del
-benchmark sintético usado para reproducibilidad. El TDR de referencia no exige
-datos sintéticos: prevé integración de fuentes reales SIAF/SEACE dentro del
-entorno institucional CGR, cuyo acceso no está disponible en este repositorio.
+Esta ruta permite ejecutar una prueba adicional del PoC sobre **datos abiertos reales** para observar la portabilidad de la metodología fuera del benchmark sintético. No sustituye la integración institucional prevista por el TDR y no valida el champion operativo porque la publicación abierta no contiene ground truth aprobado de favoritismo/fraccionamiento.
 
-## Estado de integridad — regenerado 2026-08-07
+Los resultados deben interpretarse como **señales estadísticas para priorización de revisión**. No constituyen hallazgos ni determinaciones de irregularidad.
 
-El pipeline fue corregido y ejecutado nuevamente respetando la relación OCDS:
+## 1. Contrato relacional OCDS utilizado
 
-`Contract(main_ocid, awardID) -> Award(main_ocid, id) -> awards_suppliers(main_ocid, awards_id)`
+La asociación contrato–adjudicación–proveedor se resuelve mediante:
 
-Resultado de la ejecución P0:
+```text
+Contract(main_ocid, awardID)
+        |
+        v
+Award(main_ocid, id)
+        |
+        v
+awards_suppliers(main_ocid, awards_id)
+```
 
-- contratos crudos: **47,510**
-- contratos con adjudicación y supplier resolubles: **47,254**
-- contratos excluidos por no poder resolver su adjudicación/supplier: **256**
-- adjudicatarios distintos presentes en contratos: **25,861**
-- entidades distintas: **2,732**
-- categorías OCDS: 23,630 `goods`, 18,584 `services`, 5,040 `works`
-- rango de fecha de firma encontrado: 2018-09-18 a 2024-11-08
+La clave analítica del contrato es:
 
-La ejecución anterior reportaba 47,442 contratos y usaba una asociación
-supplier-proceso que podía mezclar proveedores de adjudicaciones distintas.
-Esos artefactos fueron retirados del repositorio. El resumen agregado,
-hashes de las fuentes y resultados de validación se conservan en
-`outputs/validacion_p0_datos_reales.json`.
+```text
+OCID::contract.id
+```
 
-## Política de publicación de datos reales
+### Por qué se usa esta relación
 
-Los archivos crudos y los derivados identificables **no se versionan** en este
-repositorio público. Se excluyen vía `.gitignore`:
+El proveedor debe asociarse a la **adjudicación específica vinculada al contrato**. Vincular suppliers únicamente a nivel general del OCID puede mezclar adjudicatarios pertenecientes a awards distintos del mismo proceso.
 
-- `main.csv`
-- `contracts.csv`
-- `awards.csv`
-- `awards_suppliers.csv`
-- `parties.csv`
-- `sources.csv`
-- `contratos_reales.csv`
-- `proveedores_reales.csv`
-- `entidades_reales.csv`
-- rankings `*_REAL.csv`
+Los contratos cuyo award/supplier no puede resolverse se excluyen de análisis que dependan de proveedor y se contabilizan explícitamente.
 
-Esto permite reproducir localmente la prueba sin publicar rankings que asocien
-RUC/proveedores reales con señales de riesgo fuera de su contexto metodológico.
-Las señales generadas por el prototipo **no constituyen hallazgos ni
-acusaciones de irregularidad**.
+## 2. Integridad de la corrida publicada
 
-## Fuente
+La evidencia agregada versionada registra:
 
-Portal de Datos Abiertos de la OECE (Perú), estándar OCDS.
-Licencia de datos: Creative Commons Attribution 4.0 International (CC BY 4.0).
-Descarga utilizada: https://data.open-contracting.org/en/publication/135
+- contratos crudos: **47,510**;
+- contratos con adjudicación y supplier resolubles: **47,254**;
+- contratos excluidos por no poder resolver adjudicación/supplier: **256**;
+- adjudicatarios distintos presentes en contratos: **25,861**;
+- entidades distintas: **2,732**;
+- categorías OCDS: 23,630 `goods`, 18,584 `services`, 5,040 `works`;
+- rango de fecha de firma: 2018-09-18 a 2024-11-08.
 
-## Cómo reproducir
+El resumen completo, hashes de fuentes y validaciones se conserva en:
 
-1. Descargar y descomprimir el paquete OCDS.
-2. Colocar en `data_real/` como mínimo:
-   - `main.csv`
-   - `contracts.csv`
-   - `awards.csv`
-   - `awards_suppliers.csv`
-   - `parties.csv`
-3. Ejecutar `python3 src/cargar_datos_reales_seace.py`.
-4. La clave analítica del contrato será `OCID::contract.id`; no se asume que
-   `contract.id` sea una clave global fuera de su proceso OCDS.
-5. Los contratos cuyo award/supplier no pueda resolverse se excluyen del
-   análisis proveedor-dependiente y se contabilizan explícitamente.
-6. Ejecutar `pytest -q` para validar las pruebas de integridad y normativa.
-7. Ejecutar `python3 src/modelo_real.py` para producir localmente los rankings.
+```text
+outputs/validacion_p0_datos_reales.json
+```
 
-## Adjudicatarios y consorcios
+## 3. Política de publicación
 
-En el archivo `awards_suppliers.csv` de esta publicación hay normalmente un
-supplier por adjudicación. Muchos consorcios aparecen como **una entidad
-adjudicataria propia**, por ejemplo con razón social `CONSORCIO ...`; por eso
-no se deben reconstruir agrupando todas las parties supplier de un OCID.
+Los archivos crudos y derivados identificables **no se versionan** en este repositorio público.
 
-El loader conserva directamente la identidad publicada por
-`awards_suppliers`. Si otra publicación OCDS trajera realmente más de un
-supplier para una misma adjudicación, el código genera una identidad compuesta
-determinística para ese award sin mezclar suppliers de adjudicaciones distintas.
+Se excluyen, entre otros:
 
-## Categoría contractual y motor normativo
+```text
+main.csv
+contracts.csv
+awards.csv
+awards_suppliers.csv
+parties.csv
+sources.csv
+contratos_reales.csv
+proveedores_reales.csv
+entidades_reales.csv
+*_REAL.csv
+```
 
-Se conserva `tender_mainProcurementCategory` como `categoria_principal` y se
-prioriza esa clasificación estructurada (`goods`, `services`, `works`) para el
-motor normativo. El texto libre es solo un fallback conservador.
+### Por qué
 
-Aunque la publicación analizada es principalmente 2022, los contratos que
-contiene tienen fechas de firma desde 2018 hasta 2024. Por ello
-`src/umbrales_normativos.py` incluye también los topes históricos 2018-2021 y
-falla explícitamente ante un año no parametrizado en vez de aproximarlo.
+Aunque la fuente sea pública, publicar un ranking que asocie un proveedor real con una señal de riesgo generada por un prototipo sin ground truth puede inducir a una interpretación incorrecta fuera de su contexto metodológico. El repositorio conserva evidencia agregada y reproducible, no rankings identificables.
 
-En fraccionamiento, `src/modelo_real.py` reutiliza el contrato de features
-canónico del pipeline: `objeto_familia`, la misma semántica de ventana de 15
-días y los mismos umbrales normativos. Esto permite probar **portabilidad de las
-features** sobre datos abiertos reales sin presentar esa corrida como una
-validación del champion.
+## 4. Fuente
 
-## Limitaciones documentadas
+Portal de Datos Abiertos de la OECE (Perú), publicación OCDS utilizada por el proyecto.
 
-- OCDS abierto no incluye funcionarios públicos individuales; el análisis real
-  de vínculos solo puede adaptarse a nivel proveedor-entidad con esta fuente.
-- No existen etiquetas reales de favoritismo/fraccionamiento. Los rankings son
-  señales estadísticas de priorización y no permiten estimar precisión real ni
-  afirmar la existencia de una irregularidad.
-- Precisamente por faltar ground truth, esta prueba **no valida ni recalibra el
-  champion Spark activo**. La validación supervisada/productiva del champion
-  requiere etiquetas, criterios de aceptación y casos revisados por la CGR.
-- El análisis de favoritismo de este anexo continúa siendo una señal no
-  supervisada independiente destinada a probar portabilidad, no el modelo de
-  serving del registry.
-- Los datos de contacto dependen de la completitud publicada por la fuente.
-- La categoría temática `objeto` se deriva de texto libre para EDA; no sustituye
-  `categoria_principal` para decidir `works` frente a `goods/services`.
+Licencia de datos de la publicación: Creative Commons Attribution 4.0 International (CC BY 4.0).
+
+La referencia de descarga está documentada en los artefactos de validación del proyecto.
+
+## 5. Cómo reproducir localmente
+
+1. descargar y descomprimir la publicación OCDS;
+2. colocar en `data_real/` como mínimo:
+   - `main.csv`;
+   - `contracts.csv`;
+   - `awards.csv`;
+   - `awards_suppliers.csv`;
+   - `parties.csv`;
+3. ejecutar:
+
+```bash
+python src/cargar_datos_reales_seace.py
+```
+
+4. verificar la evidencia de integridad;
+5. ejecutar las pruebas de regresión:
+
+```bash
+pytest -q
+```
+
+6. ejecutar el análisis exploratorio sobre datos reales:
+
+```bash
+python src/modelo_real.py
+```
+
+Los rankings resultantes deben permanecer fuera del repositorio público.
+
+## 6. Adjudicatarios y consorcios
+
+La identidad del proveedor se toma de `awards_suppliers` respecto del award correspondiente.
+
+Muchos consorcios aparecen como una **entidad adjudicataria propia** (`CONSORCIO ...`). No deben reconstruirse agrupando indiscriminadamente todas las parties supplier del OCID.
+
+Si una publicación OCDS contiene realmente más de un supplier para una misma adjudicación, el loader genera una identidad compuesta determinística para ese award sin mezclar proveedores de adjudicaciones distintas.
+
+### Por qué
+
+El nivel correcto de asociación es la adjudicación. El proceso puede contener varios awards y cada uno puede tener proveedores diferentes.
+
+## 7. Categoría contractual y motor normativo
+
+Se conserva `tender_mainProcurementCategory` como `categoria_principal`.
+
+Cuando existe, esta categoría estructurada (`goods`, `services`, `works`) tiene prioridad para resolver el contexto normativo. El texto libre del objeto se utiliza únicamente como fallback conservador.
+
+### Por qué
+
+Distinguir bienes/servicios/obras mediante una variable estructurada es más reproducible y menos ambiguo que inferir siempre la categoría desde descripciones libres.
+
+El corpus contiene contratos con fechas de firma entre 2018 y 2024; por ello el motor normativo incorpora las vigencias necesarias dentro de ese intervalo y falla explícitamente para años no parametrizados en vez de aproximar una cuantía.
+
+## 8. Portabilidad del feature engineering
+
+Fraccionamiento reutiliza el mismo contrato de features canónico que el pipeline principal:
+
+- `objeto_familia`;
+- semántica de ventana de 15 días;
+- cuantías normativas por fecha/categoría;
+- agregación proveedor–entidad–familia.
+
+### Por qué
+
+La prueba con datos públicos debe comprobar si **las mismas transformaciones** pueden aplicarse sobre otra distribución, no crear una metodología distinta solo para producir resultados visualmente favorables.
+
+## 9. Favoritismo sobre datos abiertos
+
+La ruta de datos reales utiliza una señal no supervisada independiente para explorar concentración proveedor–entidad.
+
+Esta señal **no es el champion Spark del model registry** y no lo recalibra.
+
+### Por qué
+
+La publicación abierta no contiene labels institucionales de favoritismo. Sin ground truth no es posible estimar precision/recall del champion ni justificar una nueva versión supervisada.
+
+## 10. Vínculos
+
+OCDS abierto no contiene funcionarios públicos individuales con el contrato requerido por el modelo de vínculos. La prueba real se limita a relaciones organizacionales proveedor–entidad y coincidencias de información publicada cuando existen.
+
+No debe interpretarse esa adaptación como equivalente al análisis institucional proveedor–funcionario previsto por el módulo completo.
+
+## 11. Limitaciones
+
+- no existe ground truth real de favoritismo/fraccionamiento;
+- los rankings no permiten estimar precisión productiva;
+- la señal de favoritismo de esta ruta es exploratoria/no supervisada;
+- no se valida ni recalibra el champion servido;
+- la disponibilidad de contactos depende de la completitud de la publicación;
+- el texto libre utilizado para EDA no sustituye `categoria_principal` para contexto normativo;
+- el corpus abierto no representa necesariamente la distribución, variables o calidad de las fuentes internas CGR.
+
+La validación productiva requiere datos institucionales, definición de ground truth, revisión funcional y criterios de aceptación aprobados.

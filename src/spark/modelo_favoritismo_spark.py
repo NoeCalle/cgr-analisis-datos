@@ -1,13 +1,13 @@
-"""
-Modelo de Favoritismo con Apache Spark MLlib — implementación objetivo del PoC.
+"""Implementación Spark MLlib de favoritismo compartida por benchmark y serving.
 
-Consume la capa Plata para la corrida reproducible. Sprint 3 reutiliza el mismo
-feature engineering en serving. Sprint 4 parametriza la columna monetaria:
-legacy conserva ``monto`` y TRAIN/INFERENCE operacional usan ``monto_capped``.
+El módulo define el feature engineering y utilidades Spark del modelo de
+favoritismo. La corrida reproducible sobre Plata usa ``monto`` para conservar su
+benchmark, mientras TRAIN/INFERENCE del perfil operacional parametrizan la
+columna monetaria y utilizan ``monto_capped``.
 
-La reproducción histórica conserva ``local[*]``. Las rutas operacionales pueden
-definir ``CGR_SPARK_MASTER`` y ``CGR_SPARK_SHUFFLE_PARTITIONS`` para no quedar
-acopladas al master local del PoC.
+Las rutas operacionales pueden definir ``CGR_SPARK_MASTER`` y
+``CGR_SPARK_SHUFFLE_PARTITIONS``. La ejecución reproducible local mantiene un
+master fijo para que el benchmark pueda reconstruirse de forma determinista.
 """
 
 from __future__ import annotations
@@ -44,13 +44,13 @@ def crear_sesion(
     *,
     operational: bool = False,
 ):
-    """Crea SparkSession preservando local[*] solo como default del PoC.
+    """Crea una SparkSession para benchmark local o ejecución operacional.
 
-    La ruta legacy fija ``local[*]`` y 4 particiones para reproducibilidad. En
-    TRAIN/INFERENCE operacional el master puede inyectarse con
-    ``CGR_SPARK_MASTER``. Si la variable no existe se usa ``local[*]`` como
-    fallback local. ``CGR_SPARK_SHUFFLE_PARTITIONS`` es opcional; cuando no se
-    define y el master es local se conserva el valor 4 del PoC.
+    El benchmark fija ``local[*]`` y 4 particiones para reproducibilidad. En
+    TRAIN/INFERENCE el master puede inyectarse mediante ``CGR_SPARK_MASTER``;
+    ``CGR_SPARK_SHUFFLE_PARTITIONS`` permite ajustar el particionamiento del
+    entorno. Si no se proporciona master operacional se usa ``local[*]`` como
+    fallback de demostración.
     """
     builder = (
         SparkSession.builder.appName(app_name)
@@ -223,8 +223,8 @@ def guardar_resumen(modelo, auc_pr_cv, n_pos, n_total, duracion_s):
         "modelo_runtime": str(MODEL_DIR),
         "duracion_s": round(float(duracion_s), 3),
         "advertencia": (
-            "Benchmark sintético con solo 6 positivos: la métrica CV es de alta varianza y no se usa "
-            "como estimación de desempeño productivo. Ejecución Spark real local; clúster CGR pendiente."
+            "Benchmark sintético/reproducible: la métrica CV valida la ejecución del pipeline y no se "
+            "usa como estimación de desempeño productivo. Ejecución Spark local; clúster CGR pendiente."
         ),
     }
     OUTPUT_RESUMEN.parent.mkdir(parents=True, exist_ok=True)
@@ -237,7 +237,8 @@ def main():
     spark = crear_sesion()
     spark.sparkContext.setLogLevel("ERROR")
     try:
-        # Ruta legacy: monto bruto/imputado para reproducir las métricas históricas.
+        # Reconstruye el benchmark Spark sobre Plata; el serving operacional
+        # parametriza la fuente monetaria mediante las mismas funciones.
         modelo, predicciones, auc_pr_cv, n_pos, n_total = entrenar(
             construir_features_favoritismo(cargar_plata(spark))
         )

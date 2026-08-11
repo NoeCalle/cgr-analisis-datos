@@ -1,12 +1,13 @@
-"""TRAIN explícito del Sprint 2/Sprint 3/Sprint 4.
+"""TRAIN sklearn de compatibilidad para generar candidates reproducibles.
 
-Lee una fuente configurada en `mode: training`, ajusta el preprocesador una sola
-vez y entrena artefactos candidatos sklearn. No escribe el registry champion y
-no puede habilitar serving por sí mismo.
+Lee una fuente configurada en ``mode: training``, ajusta el preprocesador una sola
+vez y entrena artefactos candidatos del perfil sklearn. Este módulo no define el
+serving objetivo: existe para regresión/compatibilidad y para comprobar el mismo
+contrato candidate/champion con una implementación local.
 
-Sprint 3 añade una copia JSON del estado de preprocesamiento. Sprint 4 hace que
-el favoritismo operacional consuma ``monto_capped`` (P99 aprendido en TRAIN),
-mientras la ruta legacy permanece separada para reproducir RC1.
+Favoritismo utiliza ``monto_capped`` con P99 aprendido en TRAIN. Fraccionamiento
+utiliza el monto original. El resultado siempre queda como candidate; este flujo
+no escribe el champion ni puede habilitar serving por sí mismo.
 """
 
 from __future__ import annotations

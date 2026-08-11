@@ -1,14 +1,13 @@
-"""Enriquece los DOCX formales con pagos/modalidades y arquitectura operacional vigente.
+"""Enriquece los DOCX formales con pagos/modalidades y arquitectura operacional.
 
 El bloque de pagos se deriva de ``outputs/analisis_pagos_modalidades.json`` y
 mantiene explícitamente su naturaleza sintética. El mismo anexo documenta el
-contrato Spark-native vigente para evitar que los Productos formales queden
-anclados únicamente a la evidencia histórica ``local[*]``.
+contrato Spark-native para que todos los entregables describan la frontera de
+datos y serving vigente.
 
 Los DOCX base son generados por la librería JS ``docx``. Para evitar depender de
 nombres de estilos de python-docx, los headings y bordes se aplican en OOXML.
-El enriquecimiento se aplica al Informe Técnico y a los siete Productos para que
-ningún entregable formal quede rezagado respecto de la arquitectura operacional.
+El enriquecimiento se aplica al Informe Técnico y a los siete Productos.
 """
 
 from __future__ import annotations
@@ -160,7 +159,7 @@ def enriquecer(ruta: Path, evidencia: dict):
     marcador = _agregar_heading(doc, MARCADOR, 1)
     _agregar_texto(
         doc,
-        "Este anexo cubre el análisis estadístico/exploratorio de pagos, montos contractuales y modalidades y actualiza la descripción de la arquitectura operacional. La evidencia de pagos usa datos sintéticos vinculados a contratos sintéticos; no representa información SIAF real ni determina la legalidad de una modalidad.",
+        "Este anexo cubre el análisis estadístico/exploratorio de pagos, montos contractuales y modalidades y documenta la arquitectura operacional asociada. La evidencia de pagos usa datos sintéticos vinculados a contratos sintéticos; no representa información SIAF real ni determina la legalidad de una modalidad.",
     )
     _agregar_heading(doc, "Resultados reproducibles de pagos y modalidades", 2)
     _agregar_tabla(doc, pagos, modalidades)
@@ -185,11 +184,11 @@ def enriquecer(ruta: Path, evidencia: dict):
     _agregar_heading(doc, "Arquitectura operacional Spark-native", 2)
     _agregar_texto(
         doc,
-        "La evidencia histórica de modelado Spark se conserva en modo local[*] para reproducibilidad. En paralelo, la ruta operacional TRAIN/INFERENCE admite un master Spark configurable. Cuando source.type=spark_sql, el conector devuelve un Spark DataFrame y el mapping, validación, preprocesamiento, feature engineering y MLlib permanecen en Spark sin toPandas(). Las medianas por objeto aprendidas en TRAIN se persisten como Parquet distribuido y los rankings de INFERENCE se escriben también como Parquet distribuido.",
+        "TRAIN/INFERENCE admiten un master Spark configurable. Cuando source.type=spark_sql, el conector devuelve un Spark DataFrame y el mapping, validación, preprocesamiento, feature engineering y MLlib permanecen en Spark sin toPandas(). Las medianas por objeto aprendidas en TRAIN se persisten como Parquet distribuido y los rankings de INFERENCE se escriben también como Parquet distribuido.",
     )
     _agregar_texto(
         doc,
-        "Esta capacidad elimina el cuello de botella pandas del adaptador Spark anterior, pero no sustituye las pruebas de carga, particionamiento, seguridad, rendimiento y robustez que deben ejecutarse con el clúster y volumen institucionales reales.",
+        "Esta frontera mantiene el corpus contractual distribuido y evita materializarlo en pandas o en la memoria del driver. No sustituye las pruebas de carga, particionamiento, seguridad, rendimiento y robustez que deben ejecutarse con el clúster y volumen institucionales reales.",
     )
 
     _agregar_heading(doc, "Limitación institucional", 2)

@@ -1,9 +1,14 @@
-"""
-Modelo de detección de Favoritismo — Tercer/Cuarto Producto del TDR.
+"""Benchmark sklearn de favoritismo y explicabilidad complementaria.
 
-Random Forest con validación cruzada y explicabilidad SHAP. Consume la capa
-Plata del PoC y, cuando existe, usa la configuración seleccionada por
-`src/tuning_favoritismo.py` en `outputs/tuning_favoritismo_resumen.json`.
+Esta implementación no define el serving activo. Se conserva para comparación
+metodológica, regresión reproducible y generación de evidencia SHAP. El perfil
+operacional se gestiona mediante ``spark_mllib`` en el model registry y utiliza
+su propia evaluación Spark/holdout.
+
+El benchmark consume la capa Plata reproducible y usa la configuración publicada
+en ``outputs/tuning_favoritismo_resumen.json``. Mantenerlo separado permite
+comparar familias de modelos y producir explicaciones sin confundir esa evidencia
+con el champion realmente servido.
 """
 
 import json
