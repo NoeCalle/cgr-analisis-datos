@@ -27,7 +27,7 @@ pyarrow==25.0.0
 # PyPI no incluye el core JVM de GraphFrames, por eso ambos JARs continúan
 # versionados en jars/ para el entorno local sin resolución Maven.
 delta-spark==4.3.0
-graphframes-py==0.10.0
+graphframes-py==0.12.1
 
 # --- Verificación de documentos ya generados ---
 python-docx==1.2.0
