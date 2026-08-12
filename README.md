@@ -567,6 +567,28 @@ En Windows, usar los ejecutables equivalentes de `.venv\Scripts\`.
   --config config/local-tdr.yaml
 ```
 
+### Probar con datos propios o datos abiertos
+
+No es necesario pertenecer a la CGR para probar el módulo. Un investigador, entidad pública, universidad o desarrollador puede usar **datos abiertos de contratación o datos propios** siempre que los adapte al esquema canónico descrito en [`docs/Integracion_Datos.md`](docs/Integracion_Datos.md).
+
+La ruta más simple es:
+
+```text
+CSV / SQL Server / tablas Spark propias
+                ↓
+          mapping YAML
+                ↓
+        esquema canónico
+                ↓
+        mode: inference
+                ↓
+       scores / rankings
+```
+
+Para una primera exploración no se necesitan `label_favoritismo` ni `label_fraccionamiento`: esos campos solo son obligatorios al entrenar o validar modelos con ground truth. Si la fuente original es PostgreSQL, MySQL, una API, JSON u otro formato no soportado directamente, puede transformarse previamente a CSV o incorporarse mediante un connector que entregue el mismo contrato canónico.
+
+Los resultados deben interpretarse como **señales de priorización para revisión**, no como confirmación automática de irregularidad.
+
 ---
 
 ## 16. Integración institucional
