@@ -4,7 +4,7 @@
 
 `release_ready=true` significa que los gates técnicos del repositorio están coherentes; **no significa conformidad, aprobación ni despliegue institucional de la CGR**.
 
-- Commit auditado: `f26ca59a2d3a3390048df3118be920e7b7441e28`
+- Commit auditado: `ffd7f45b8187beaddf9fb40212348105202706a8`
 - Checks: **19/19 OK**
 - Resultado del gate: **READY**
 
@@ -26,7 +26,7 @@
 | ✅ | Oro sin datasets intermedios | artefactos Oro=9 |
 | ✅ | sin derivados reales identificables versionados | raw/derivados reales identificables permanecen fuera del repositorio |
 | ✅ | documentación formal completa | 8 DOCX (7 productos + informe final) |
-| ✅ | manifiesto reproducible Spark/GraphFrames | commit evidencia=f26ca59a2d3a3390048df3118be920e7b7441e28 |
+| ✅ | manifiesto reproducible Spark/GraphFrames | commit evidencia=ffd7f45b8187beaddf9fb40212348105202706a8 |
 | ✅ | sin residuos de nomenclatura obsoleta en artefactos canónicos | nomenclatura y conteos vigentes |
 | ✅ | licencia presente | MIT para el código del PoC |
 
