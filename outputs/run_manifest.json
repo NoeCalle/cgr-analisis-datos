@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
-  "generado_utc": "2026-08-12T00:26:20.348566+00:00",
-  "git_commit": "8c01a8135e7b13862ca043f36f630f1902b69457",
+  "generado_utc": "2026-08-12T01:12:52.303696+00:00",
+  "git_commit": "f26ca59a2d3a3390048df3118be920e7b7441e28",
   "entorno": {
     "python": "3.12.13",
     "pandas": "3.0.2",
@@ -329,7 +329,7 @@
     "amount_source": "monto",
     "ranking": "outputs/ranking_riesgo_favoritismo_spark.csv",
     "modelo_runtime": "outputs/runtime/modelo_favoritismo_spark_rf",
-    "duracion_s": 46.928,
+    "duracion_s": 47.034,
     "advertencia": "Benchmark sintético/reproducible: la métrica CV valida la ejecución del pipeline y no se usa como estimación de desempeño productivo. Ejecución Spark local; clúster CGR pendiente."
   },
   "spark_fraccionamiento": {
@@ -359,7 +359,7 @@
     "ranking": "outputs/ranking_riesgo_fraccionamiento_spark.csv",
     "modelo_runtime": "outputs/runtime/modelo_fraccionamiento_spark_kmeans",
     "scaler_runtime": "outputs/runtime/modelo_fraccionamiento_spark_scaler",
-    "duracion_s": 25.554,
+    "duracion_s": 25.502,
     "advertencia": "Sanity check sobre benchmark sintético; la evidencia out-of-sample del KMeans se publica en tuning_fraccionamiento_spark_resumen.json. No estima desempeño productivo."
   },
   "graphframes": {
@@ -379,7 +379,7 @@
       "outputs/vinculos_graphframes_sospechosos.csv",
       "outputs/vinculos_graphframes_pagerank.csv"
     ],
-    "duracion_s": 21.527,
+    "duracion_s": 20.834,
     "advertencia": "Datos de contacto sintéticos; clúster y fuentes institucionales CGR pendientes."
   },
   "validacion_p0_datos_reales": {
@@ -499,7 +499,7 @@
     },
     "outputs/ranking_riesgo_favoritismo.csv": {
       "existe": true,
-      "sha256": "9edca42bb5228f1618ff564c0d0eacb149fbaf578911108576dbb99f80506100",
+      "sha256": "16f15e460c5d0f2c6248106ca9205a4cef3d5de906326b8fd4ffe17536a2f497",
       "bytes": 198425
     },
     "outputs/ranking_riesgo_fraccionamiento.csv": {
@@ -514,17 +514,17 @@
     },
     "outputs/spark_favoritismo_resumen.json": {
       "existe": true,
-      "sha256": "ec3847eb7898228d383f4c1ace6a40b7724044d580504c42b506c2e6c4093776",
+      "sha256": "f042f4f51d71e35ddb4d94d7ead3dfb15d274d21c561a6344d2aba2b4239bf96",
       "bytes": 1120
     },
     "outputs/spark_fraccionamiento_resumen.json": {
       "existe": true,
-      "sha256": "ebdbf098760dc2f43859bfcf0c28b06143952c4b34ef28ab014c6c225a6c513e",
+      "sha256": "725b562e4fb8d992474c9756d48c9212b6723dcc100927b179e0c0b85dfda0c4",
       "bytes": 1248
     },
     "outputs/graphframes_resumen.json": {
       "existe": true,
-      "sha256": "d83b6d55f52d60f15874a162082ddfd00ded7ab7af1957746a98949ed0c9e8df",
+      "sha256": "a7eaa2b2675605fb3f965166d7e2ed9b139047f67be1d47c951088376f8ea276",
       "bytes": 603
     },
     "outputs/ranking_riesgo_favoritismo_spark.csv": {
