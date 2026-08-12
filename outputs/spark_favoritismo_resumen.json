@@ -29,6 +29,6 @@
   "amount_source": "monto",
   "ranking": "outputs/ranking_riesgo_favoritismo_spark.csv",
   "modelo_runtime": "outputs/runtime/modelo_favoritismo_spark_rf",
-  "duracion_s": 48.852,
+  "duracion_s": 46.928,
   "advertencia": "Benchmark sintético/reproducible: la métrica CV valida la ejecución del pipeline y no se usa como estimación de desempeño productivo. Ejecución Spark local; clúster CGR pendiente."
 }
