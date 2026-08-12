@@ -104,13 +104,3 @@ jobs:
               --notes-file RELEASE_NOTES.md \
               --prerelease
           fi
-
-      - name: Remove temporary development branches
-        if: steps.gate.outputs.tag_ok == 'true'
-        shell: bash
-        run: |
-          git push origin --delete \
-            noop-temp-do-not-use \
-            noop-temp-should-not-create \
-            release-candidate-work \
-            main2 2>/dev/null || true
