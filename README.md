@@ -589,6 +589,12 @@ Para una primera exploración no se necesitan `label_favoritismo` ni `label_frac
 
 Los resultados deben interpretarse como **señales de priorización para revisión**, no como confirmación automática de irregularidad.
 
+### Entregables formales del TDR
+
+Los **siete productos formales alineados al TDR** están versionados en [`reporte/productos_formales/`](reporte/productos_formales/): Plan de Trabajo, preprocesamiento/modelo/entrenamiento de favoritismo, preprocesamiento/modelo de fraccionamiento e Informe Final.
+
+Además, [`reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx`](reporte/Reporte_Tecnico_Prototipo_CGR_1.8.2.docx) reúne la evidencia técnica del prototipo en un documento consolidado. Los DOCX se regeneran desde evidencia machine-readable y el CI valida su estructura y render antes de persistirlos.
+
 ---
 
 ## 16. Integración institucional
