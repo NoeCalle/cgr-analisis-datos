@@ -502,7 +502,7 @@ La identidad reproducible del experimento se calcula con entradas estables y se 
 ### Requisitos
 
 - Python 3.12 recomendado;
-- Java 17 para Spark;
+- Java 17 o superior para Spark (validado con Java 17 en CI y Java 21 en entorno local);
 - Graphviz para artefactos gráficos;
 - Airflow solo para ejecutar/cargar DAGs;
 - LibreOffice solo para materializar/QA de los DOCX formales;
@@ -717,3 +717,11 @@ GitHub Actions valida, entre otros:
 ## 20. Principio de uso responsable
 
 Un score alto significa **prioridad analítica para revisión**, no culpabilidad ni confirmación de irregularidad. La interpretación final requiere contexto contractual, normativa aplicable, documentación de sustento y juicio profesional del auditor o especialista responsable.
+
+---
+
+## 21. Contribuciones, reporte de problemas y seguridad
+
+El módulo puede ser clonado y probado por terceros sin pertenecer a la CGR. Los errores de ejecución, problemas de reproducibilidad y observaciones metodológicas se reportan mediante **GitHub Issues**; la guía completa está en [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+Las vulnerabilidades de seguridad **no deben reportarse en issues públicos**: el procedimiento de reporte privado está descrito en [`SECURITY.md`](SECURITY.md).
