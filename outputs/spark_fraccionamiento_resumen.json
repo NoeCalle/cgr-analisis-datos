@@ -25,6 +25,6 @@
   "ranking": "outputs/ranking_riesgo_fraccionamiento_spark.csv",
   "modelo_runtime": "outputs/runtime/modelo_fraccionamiento_spark_kmeans",
   "scaler_runtime": "outputs/runtime/modelo_fraccionamiento_spark_scaler",
-  "duracion_s": 25.71,
+  "duracion_s": 14.613,
   "advertencia": "Sanity check sobre benchmark sintético; la evidencia out-of-sample del KMeans se publica en tuning_fraccionamiento_spark_resumen.json. No estima desempeño productivo."
 }

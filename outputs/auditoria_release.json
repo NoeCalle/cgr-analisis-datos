@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "version_declarada": "1.0.0-rc.1",
-  "git_commit_auditado": "ffd7f45b8187beaddf9fb40212348105202706a8",
+  "git_commit_auditado": "0f9cf09a34bc401158dbcc25dc2a183ca2173ec5",
   "naturaleza": "gate de coherencia del estado actual de main; la versión declarada puede corresponder a un snapshot histórico y no implica que el tag se mueva con cambios posteriores",
   "total_checks": 19,
   "checks_ok": 19,
@@ -91,7 +91,7 @@
     {
       "check": "manifiesto reproducible Spark/GraphFrames",
       "ok": true,
-      "detalle": "commit evidencia=ffd7f45b8187beaddf9fb40212348105202706a8"
+      "detalle": "commit evidencia=0f9cf09a34bc401158dbcc25dc2a183ca2173ec5"
     },
     {
       "check": "sin residuos de nomenclatura obsoleta en artefactos canónicos",
