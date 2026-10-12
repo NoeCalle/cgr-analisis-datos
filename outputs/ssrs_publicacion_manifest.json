@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
-  "fecha_ejecucion": "2026-08-15T05:57:42.462299+00:00",
-  "git_commit_evidencia": "0f9cf09a34bc401158dbcc25dc2a183ca2173ec5",
+  "fecha_ejecucion": "2026-10-12T18:33:39.951026+00:00",
+  "git_commit_evidencia": "14035d8f92763818ce35689c0f5c1d78b716ccfe",
   "naturaleza": "stand-in SQLite para validar contrato SSRS; SQL Server/SSRS CGR no ejecutado",
   "fuentes_oro": {
     "favoritismo": {
       "ruta": "lakehouse/oro/ranking_riesgo_favoritismo.csv",
-      "sha256": "a2600bb8cc283da61f952699d9cc2513b07c4318103a0a4e123e523f6d10626e"
+      "sha256": "6b23b890cac22dd704313a5315bce2d50d76f0fa450daa792a73964f49f8807f"
     },
     "fraccionamiento": {
       "ruta": "lakehouse/oro/ranking_riesgo_fraccionamiento.csv",
-      "sha256": "0daad5d180f68275b85d96d8c57706227feaf050fcf2a95489273e8e0dc64ef7"
+      "sha256": "4d3d3e7221b616f5f84befa07462f09098c13b07c14e4eebb00e37494fceab78"
     },
     "vinculos": {
       "ruta": "lakehouse/oro/ranking_vinculos_proveedor_funcionario.csv",
