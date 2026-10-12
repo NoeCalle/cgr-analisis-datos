@@ -60,7 +60,7 @@
       "active_profile": "spark_mllib",
       "champion_id": "spark-poc-81b28cf92909acb2",
       "candidate_generated": true,
-      "candidate_id": "spark-poc-78454ad32a82bd34",
+      "candidate_id": "spark-poc-75c4c192f8cced3e",
       "automatic_promotion": false,
       "candidate_manifest": "outputs/runtime/retraining/normal/candidate/candidate_manifest.json",
       "candidate_validation_state": "pending_candidate_evaluation"
@@ -114,7 +114,7 @@
       "active_profile": "spark_mllib",
       "champion_id": "spark-poc-81b28cf92909acb2",
       "candidate_generated": true,
-      "candidate_id": "spark-poc-426d796a39cd3033",
+      "candidate_id": "spark-poc-9f0478bcbf4a86e7",
       "automatic_promotion": false,
       "candidate_manifest": "outputs/runtime/retraining/con_drift/candidate/candidate_manifest.json",
       "candidate_validation_state": "pending_candidate_evaluation"

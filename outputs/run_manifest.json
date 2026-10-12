@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
-  "generado_utc": "2026-10-12T18:33:39.951026+00:00",
-  "git_commit": "14035d8f92763818ce35689c0f5c1d78b716ccfe",
+  "generado_utc": "2026-10-12T18:57:50.895637+00:00",
+  "git_commit": "54ba95818e790118fd0406e99a77cf9a38af3f84",
   "entorno": {
     "python": "3.12.15",
     "pandas": "3.0.2",
@@ -27,7 +27,7 @@
       "graphviz": "0.21"
     },
     "inputs_sha256": {
-      "requirements.txt": "e4a89b2614c9d65a5d69e55b1c22dac5caaf7c29c771015b36cc6a412b1d8b28",
+      "requirements.txt": "0f69e79a4e97b6747a38e050d6636b61e4d0111b8f8657b7306084e311ef661b",
       "reporte/package-lock.json": "db27a6bed423ef91472fcda2af70c9199e5138d80d403458f0cc87a69c6b275b",
       "config/local.yaml": "8fb0f229eceaebbbbddd9345f3d82118a4b614d754c40b93c7b06c0ea2d5ca8a",
       "config/local-training.yaml": "104b8fc89ec6e578890b066dadb1cde9b004f7b531755f9104daf8e5948b2355",
@@ -44,7 +44,7 @@
       "data/pagos_siaf_sintetico.csv": "e16c4b40776746daf604ccb1ebf5e915eca9ee276decba790c63c2efb50d1ca5"
     },
     "algorithm": "sha256",
-    "fingerprint_sha256": "2509b43c4e312ccc6790761beb8ab66681e366b94446226aad8b8941fbba1c51",
+    "fingerprint_sha256": "9d6445e00206db165b632ef591e1eb51d5502125fdb4128babc70c853cff45a4",
     "excludes_execution_metadata": [
       "generado_utc",
       "duracion_s"
@@ -329,7 +329,7 @@
     "amount_source": "monto",
     "ranking": "outputs/ranking_riesgo_favoritismo_spark.csv",
     "modelo_runtime": "outputs/runtime/modelo_favoritismo_spark_rf",
-    "duracion_s": 46.223,
+    "duracion_s": 46.491,
     "advertencia": "Benchmark sintético/reproducible: la métrica CV valida la ejecución del pipeline y no se usa como estimación de desempeño productivo. Ejecución Spark local; clúster CGR pendiente."
   },
   "spark_fraccionamiento": {
@@ -359,7 +359,7 @@
     "ranking": "outputs/ranking_riesgo_fraccionamiento_spark.csv",
     "modelo_runtime": "outputs/runtime/modelo_fraccionamiento_spark_kmeans",
     "scaler_runtime": "outputs/runtime/modelo_fraccionamiento_spark_scaler",
-    "duracion_s": 24.071,
+    "duracion_s": 24.343,
     "advertencia": "Sanity check sobre benchmark sintético; la evidencia out-of-sample del KMeans se publica en tuning_fraccionamiento_spark_resumen.json. No estima desempeño productivo."
   },
   "graphframes": {
@@ -379,7 +379,7 @@
       "outputs/vinculos_graphframes_sospechosos.csv",
       "outputs/vinculos_graphframes_pagerank.csv"
     ],
-    "duracion_s": 20.457,
+    "duracion_s": 21.343,
     "advertencia": "Datos de contacto sintéticos; clúster y fuentes institucionales CGR pendientes."
   },
   "validacion_p0_datos_reales": {
@@ -499,8 +499,8 @@
     },
     "outputs/ranking_riesgo_favoritismo.csv": {
       "existe": true,
-      "sha256": "6b23b890cac22dd704313a5315bce2d50d76f0fa450daa792a73964f49f8807f",
-      "bytes": 198423
+      "sha256": "2fb32a6b1be53071dcecc221ea4ddade008d3860d939140fa1b29892047c4cae",
+      "bytes": 198424
     },
     "outputs/ranking_riesgo_fraccionamiento.csv": {
       "existe": true,
@@ -514,17 +514,17 @@
     },
     "outputs/spark_favoritismo_resumen.json": {
       "existe": true,
-      "sha256": "df521fc7e4a87599a121b9155937f7f86fc451fc79dfc93afbc784b506b07de5",
+      "sha256": "9a9a6da5917658fe889ae8088591d7da7ba15842acec2f384be7b747dec1bc7f",
       "bytes": 1120
     },
     "outputs/spark_fraccionamiento_resumen.json": {
       "existe": true,
-      "sha256": "e76179643669bc5ca859e4c1640257647efaa2a71c67dbf4b3f23849522b0ed4",
+      "sha256": "ed0c9c1aa4cdc88b334f4759837bb7bc354194bac862e7776f595a190e8c202d",
       "bytes": 1248
     },
     "outputs/graphframes_resumen.json": {
       "existe": true,
-      "sha256": "d559be609e8209f7198da08fcefc9df341d1a552c20ad4e934cfb6274fa5e1e2",
+      "sha256": "98f46af5168e7c1afe76934adb544f03cbd409ada06a36a01bd53a2e85e64e30",
       "bytes": 603
     },
     "outputs/ranking_riesgo_favoritismo_spark.csv": {
