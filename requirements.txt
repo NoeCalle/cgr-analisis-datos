@@ -19,7 +19,7 @@ PyYAML==6.0.2
 pytest==9.0.2
 
 # --- Apache Spark y extensiones ---
-pyspark==4.1.1
+pyspark==4.2.0
 pyarrow==25.0.0
 
 # Los wrappers Python se fijan a la MISMA versión del núcleo JVM versionado
